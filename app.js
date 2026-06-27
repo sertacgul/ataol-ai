@@ -281,9 +281,8 @@ function initApp() {
     // Load Chat History
     if (appState.messages.length === 0) {
         // First welcome message from Sertaç Father
-        const welcomeText = `Dehacığım, canım oğlum, ben baban Sertaç. Bu sene seninle harika bir ortaokula hazırlık ve matematik serüvenine çıkıyoruz. Annen Feriş ve ben seni dünyalar kadar seviyoruz! Burası seninle özel sohbet edeceğimiz yer. Bana dilediğin her şeyi yazabilirsin. Hazır mısın? Sana bir matematik sorusu sorayım mı? 🌟`;
+        const welcomeText = `Dehacığım, canım oğlum, ben baban Sertaç. Bu sene seninle harika bir ortaokula hazırlık ve matematik serüvenine çıkıyoruz. Annen Feriş and ben seni dünyalar kadar seviyoruz! Burası seninle özel sohbet edeceğimiz yer. Bana dilediğin her şeyi yazabilirsin. Hazır mısın? Sana bir matematik sorusu sorayım mı? 🌟`;
         addMessageToState("model", welcomeText);
-        speakText(welcomeText);
     }
     renderChatHistory();
     renderSuggestions("standard");
@@ -546,17 +545,7 @@ function renderChatHistory() {
         const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         meta.innerHTML = `<span>${time}</span>`;
         
-        // Add text-to-speech button to model responses
-        if (msg.role === "model") {
-            const speakerBtn = document.createElement("button");
-            speakerBtn.classList.add("speaker-btn");
-            speakerBtn.innerHTML = `<span class="material-symbols-rounded">volume_up</span>`;
-            speakerBtn.title = "Sesli Oku";
-            speakerBtn.addEventListener("click", () => {
-                speakText(msg.text);
-            });
-            meta.appendChild(speakerBtn);
-        }
+
         
         wrapper.appendChild(bubble);
         wrapper.appendChild(meta);
@@ -675,9 +664,6 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
         // Analyze AI message to auto-award points/badges based on keyword check if necessary
         analyzeAIResponseForGamification(responseText, userPrompt);
         
-        // Speak response out loud
-        speakText(responseText);
-
     } catch (error) {
         console.error("Gemini API call failed:", error);
         removeTypingIndicator();
@@ -689,7 +675,6 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
         
         addMessageToState("model", errorMessage);
         renderChatHistory();
-        speakText(errorMessage);
     }
 }
 
@@ -918,36 +903,7 @@ function renderSuggestions(type) {
     });
 }
 
-// --- 12. TEXT TO SPEECH (TTS) VOICE ---
-function speakText(text) {
-    if (!('speechSynthesis' in window)) return;
-    
-    // Cancel current speaking
-    window.speechSynthesis.cancel();
-    
-    // Clean text from markdown bold stars etc.
-    const cleanText = text.replace(/[*#_`~]/g, '');
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "tr-TR";
-    
-    // Try to find a Turkish voice
-    const voices = window.speechSynthesis.getVoices();
-    const trVoice = voices.find(v => v.lang.startsWith("tr"));
-    if (trVoice) {
-        utterance.voice = trVoice;
-    }
-    
-    utterance.rate = 1.0; // Playful normal rate
-    utterance.pitch = 0.95; // Friendly warm pitch
-    
-    window.speechSynthesis.speak(utterance);
-}
 
-// Make sure voices are loaded
-if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => {};
-}
 
 // --- 13. FULLSCREEN CONFETTI ENGINE ---
 const canvas = document.getElementById("confetti-canvas");
