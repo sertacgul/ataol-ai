@@ -643,7 +643,7 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
         },
         tools: [
             {
-                googleSearch: {}
+                google_search: {}
             }
         ],
         generationConfig: {
@@ -681,10 +681,15 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
     } catch (error) {
         console.error("Gemini API call failed:", error);
         removeTypingIndicator();
-        const fallbackMsg = "Canım oğlum, bağlantımda küçük bir sorun oldu sanırım. Sen nasılsın, çalışmaların nasıl gidiyor?";
-        addMessageToState("model", fallbackMsg);
+        
+        let errorMessage = "Canım oğlum, bağlantımda küçük bir sorun oldu sanırım. Sen nasılsın, çalışmaların nasıl gidiyor?";
+        if (error.message && (error.message.includes("400") || error.message.includes("403"))) {
+            errorMessage = "Canım oğlum Dehacığım, sanırım girdiğimiz Gemini API Anahtarı'nda (API Key) bir hata var. Sertaç babana söyleyebilir misin? Ayarlar kısmından API Key'i bir kez daha kontrol etsin, seni ve Feriş anneni çok seviyorum! ❤️";
+        }
+        
+        addMessageToState("model", errorMessage);
         renderChatHistory();
-        speakText(fallbackMsg);
+        speakText(errorMessage);
     }
 }
 
