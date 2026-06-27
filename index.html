@@ -59,10 +59,48 @@
                 </div>
                 
                 <div class="chat-input-area">
+                    <!-- Collapsible Chatboard Panel -->
+                    <div id="chatboard-panel" class="chatboard-panel">
+                        <div class="chatboard-category">
+                            <h5>🧮 Matematik Görevleri</h5>
+                            <div class="chatboard-chips">
+                                <button type="button" class="board-chip" data-msg="Bana matematik sorusu sor!">Soru Sor</button>
+                                <button type="button" class="board-chip" data-msg="Çarpım tablosu çalışalım!">Çarpım Tablosu</button>
+                                <button type="button" class="board-chip" data-msg="Bana biraz daha zor bir soru sorabilir misin?">Zor Soru Sor</button>
+                            </div>
+                        </div>
+                        <div class="chatboard-category">
+                            <h5>🌟 Başarı ve Görevler</h5>
+                            <div class="chatboard-chips">
+                                <button type="button" class="board-chip" data-msg="Günün görevini söyle!">Günün Görevi</button>
+                                <button type="button" class="board-chip" data-msg="Yıldızlarımı göster 🌟">Yıldızlarım 🌟</button>
+                            </div>
+                        </div>
+                        <div class="chatboard-category">
+                            <h5>❤️ Aile Sevgisi</h5>
+                            <div class="chatboard-chips">
+                                <button type="button" class="board-chip" data-msg="Seni çok seviyorum babacım!">Babacım ❤️</button>
+                                <button type="button" class="board-chip" data-msg="Anneme bugün yardım ettim ve ona çok iyi davrandım!">Anneme Yardım Ettim</button>
+                                <button type="button" class="board-chip" data-msg="Bugün nasılsınız?">Nasılsınız?</button>
+                            </div>
+                        </div>
+                        <div class="chatboard-category">
+                            <h5>🌳 Sağlıklı Alışkanlıklar</h5>
+                            <div class="chatboard-chips">
+                                <button type="button" class="board-chip" data-msg="Bugün hiç YouTube Shorts izlemedim, yerine kitap okudum/oyun oynadım 📚">Sıfır Shorts 📱</button>
+                                <button type="button" class="board-chip" data-msg="Sokaktaki hayvanları uzaktan sevdim ve ellerimi hemen yıkadım 🐾">Güvenli Hayvan Sevgisi 🐾</button>
+                                <button type="button" class="board-chip" data-msg="Yabancılarla konuşurken mesafemi korudum ve kimseyi rahatsız etmedim 🚶">Sokak Kuralları 🚶</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="chat-suggestions" id="chat-suggestions">
                         <!-- Quick reply chips will be generated here -->
                     </div>
                     <form id="chat-form" class="chat-form" onsubmit="return false;">
+                        <button type="button" id="chatboard-btn" class="chatboard-btn" aria-label="Sohbet Tahtası">
+                            <span class="material-symbols-rounded">grid_view</span>
+                        </button>
                         <input type="text" id="chat-input" placeholder="Babana mesaj yaz..." autocomplete="off">
                         <button type="button" id="mic-btn" class="mic-btn" aria-label="Sesle Yaz">
                             <span class="material-symbols-rounded">mic</span>

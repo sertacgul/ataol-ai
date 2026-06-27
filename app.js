@@ -158,6 +158,8 @@ const dailyMissionText = document.getElementById("daily-mission-text");
 const completeDailyBtn = document.getElementById("complete-daily-btn");
 const badgesGrid = document.getElementById("badges-grid");
 const micBtn = document.getElementById("mic-btn");
+const chatboardBtn = document.getElementById("chatboard-btn");
+const chatboardPanel = document.getElementById("chatboard-panel");
 
 // Overlays, Panels & Modals
 const apiSetupOverlay = document.getElementById("api-setup-overlay");
@@ -326,6 +328,31 @@ function setupEventListeners() {
     if (micBtn) {
         micBtn.addEventListener("click", () => {
             toggleRecording();
+        });
+    }
+    
+    // Chatboard Toggle Click
+    if (chatboardBtn && chatboardPanel) {
+        chatboardBtn.addEventListener("click", () => {
+            chatboardBtn.classList.toggle("active");
+            chatboardPanel.classList.toggle("active");
+        });
+    }
+    
+    // Chatboard Chip Click Selection
+    if (chatboardPanel) {
+        chatboardPanel.addEventListener("click", (e) => {
+            if (e.target.classList.contains("board-chip")) {
+                const msg = e.target.getAttribute("data-msg");
+                if (msg) {
+                    chatInput.value = msg;
+                    handleUserSendMessage();
+                    
+                    // Collapse board panel
+                    chatboardBtn.classList.remove("active");
+                    chatboardPanel.classList.remove("active");
+                }
+            }
         });
     }
     
