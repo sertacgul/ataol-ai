@@ -1161,3 +1161,121 @@ h2 {
     pointer-events: none;
     z-index: 1000;
 }
+
+/* Heroes / Inspiration Section Styles */
+.heroes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.hero-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.hero-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px dashed rgba(108, 92, 231, 0.15);
+    padding-bottom: 10px;
+}
+
+.hero-emoji-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #FFF 30%, rgba(108, 92, 231, 0.15) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.6rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--card-border);
+}
+
+.hero-title-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-title-section h3 {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.hero-subtitle {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-gray);
+}
+
+.hero-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hero-story {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-dark);
+}
+
+.hero-quote-box {
+    background: rgba(108, 92, 231, 0.05);
+    border-left: 3px solid var(--primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero-quote-box p {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.quote-icon {
+    color: var(--primary-light);
+    font-size: 1.2rem;
+}
+
+.hero-lesson-box {
+    background: rgba(253, 203, 110, 0.08);
+    border-left: 3px solid var(--gold);
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero-lesson-box p {
+    font-size: 0.8rem;
+    color: var(--text-dark);
+    line-height: 1.35;
+    margin: 0;
+}
+
+.lesson-icon {
+    color: var(--gold);
+    font-size: 1.2rem;
+}

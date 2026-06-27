@@ -122,6 +122,65 @@ const SUGGESTIONS = {
     behavior: ["Hayvanları uzaktan seveceğim 🐾", "Anneme iyi davranacağım ❤️", "Shorts izlemek yerine kitap okuyacağım 📚"]
 };
 
+const HEROES_DATA = [
+    {
+        name: "Mustafa Kemal ATATÜRK",
+        title: "Eşsiz Lider ve Matematikçi 🇹🇷",
+        emoji: "🇹🇷",
+        story: "Atatürk sadece ülkemizi kurtarmakla kalmadı, bilime ve matematiğe de büyük önem verdi. Hatta Türkçe geometri terimlerini (üçgen, açı, artı, eksi vb.) kendisi yazdı! Hayatta en gerçek yol göstericinin bilim olduğunu söyledi.",
+        quote: "Hayatta en hakiki mürşit ilimdir.",
+        lesson: "Geleceğin lideri olmak için kitap okumayı ve araştırmayı asla bırakma!"
+    },
+    {
+        name: "Prof. Dr. Aziz Sancar",
+        title: "Nobel Ödüllü Kimyagerimiz 🧪",
+        emoji: "🧪",
+        story: "Mardin'in bir köyünde doğdu. Çok çalıştı ve hücrelerimizin kendini nasıl tamir ettiğini çözerek Nobel Kimya Ödülü'nü kazandı. Başarının zeka değil, odaklanıp çalışmak olduğunu gösterdi.",
+        quote: "Bizi birbirimizden ayıran emektir, çalışmaktır.",
+        lesson: "Pes etmeden çalışırsan, dünyadaki en büyük ödülü bile kazanabilirsin!"
+    },
+    {
+        name: "Ali Kuşçu",
+        title: "Gökbilim ve Astronomi Dehası 🔭",
+        emoji: "🔭",
+        story: "Bundan yüzlerce yıl önce yaşadı. Gökyüzündeki yıldızları ve Ay'ı inceledi, ilk kez Ay'ın haritasını çıkardı. İstanbul'da rasathaneler kurarak astronomi dersleri verdi.",
+        quote: "Zihnini bilimle dolduran insan, karanlıkta yolunu bulan fener gibidir.",
+        lesson: "Merak duygunu kaybetme, gökyüzüne bakıp hayal kurmaktan korkma!"
+    },
+    {
+        name: "Isaac Newton",
+        title: "Yerçekimini Keşfeden Fizikçi 🍎",
+        emoji: "🍎",
+        story: "Bahçede otururken kafasına bir elma düştü. 'Neden bu elma havaya değil de yere düşüyor?' diye sordu ve yerçekimi kanununu buldu. Basit soruların büyük keşifler getirdiğini kanıtladı.",
+        quote: "Her büyük keşif, merakla başlar.",
+        lesson: "Çevrendeki basit şeyleri sorgula; her büyük keşif bir 'neden?' sorusuyla başlar!"
+    },
+    {
+        name: "Albert Einstein",
+        title: "Zaman ve Uzay Kaşifi 🧠",
+        emoji: "🧠",
+        story: "Çocukken öğretmenleri onun yavaş öğrendiğini düşünüyordu ama o hayal kurmaktan hiç vazgeçmedi. Uzay, zaman ve ışık hakkında hayaller kurarak modern fiziği baştan yazdı.",
+        quote: "Hayal gücü, bilgiden daha önemlidir.",
+        lesson: "Bir şeyi hemen anlamazsan üzülme; senin zihnin ve hayal gücün benzersizdir!"
+    },
+    {
+        name: "Marie Curie",
+        title: "Nobel Kazanan İlk Kadın Bilim İnsanı 💡",
+        emoji: "💡",
+        story: "Zor şartlar altında çalıştı, laboratuvarda iki farklı bilim dalında (fizik ve kimya) iki adet Nobel Ödülü kazandı. Radyolojiyi keşfederek tıp dünyasında milyonlarca insanın hayatını kurtardı.",
+        quote: "Hayatta hiçbir şey korkulacak şey değildir, sadece anlaşılacak şeydir.",
+        lesson: "Zorluklar karşısında cesur ol; merakın korkularından daha güçlü olsun!"
+    },
+    {
+        name: "Nikola Tesla",
+        title: "Elektriğin ve Geleceğin Mucidi ⚡",
+        emoji: "⚡",
+        story: "Tüm dünyaya kablosuz elektrik yaymayı hayal etti. Alternatif akımı keşfederek bugün evlerimizde kullandığımız elektriği ve radyo gibi cihazları icat etti. Tam bir fikir üretme makinesiydi.",
+        quote: "Bırakın geleceği gerçekler söylesin.",
+        lesson: "Büyük rüyalar kurmaktan ve çılgın fikirlerini denemekten asla vazgeçme!"
+    }
+];
+
 // --- 2. LOCAL STATE MANAGEMENT ---
 let appState = {
     apiKey: localStorage.getItem("ataol_api_key") || "",
@@ -160,6 +219,7 @@ const badgesGrid = document.getElementById("badges-grid");
 const micBtn = document.getElementById("mic-btn");
 const chatboardBtn = document.getElementById("chatboard-btn");
 const chatboardPanel = document.getElementById("chatboard-panel");
+const heroesList = document.getElementById("heroes-list");
 
 // Overlays, Panels & Modals
 const apiSetupOverlay = document.getElementById("api-setup-overlay");
@@ -277,6 +337,7 @@ function initApp() {
     renderWeeksSlider();
     renderWeekDetails(appState.currentWeek);
     renderBadges();
+    renderHeroes();
     
     // Load Chat History
     if (appState.messages.length === 0) {
@@ -883,6 +944,40 @@ function renderBadges() {
         `;
         
         badgesGrid.appendChild(card);
+    });
+}
+
+// --- 10b. HEROES / INSPIRATION PANEL LOGIC ---
+function renderHeroes() {
+    if (!heroesList) return;
+    heroesList.innerHTML = "";
+    
+    HEROES_DATA.forEach(hero => {
+        const card = document.createElement("div");
+        card.classList.add("hero-card");
+        
+        card.innerHTML = `
+            <div class="hero-card-header">
+                <div class="hero-emoji-circle">${hero.emoji}</div>
+                <div class="hero-title-section">
+                    <h3>${hero.name}</h3>
+                    <span class="hero-subtitle">${hero.title}</span>
+                </div>
+            </div>
+            <div class="hero-body">
+                <p class="hero-story"><strong>Hikayesi:</strong> ${hero.story}</p>
+                <div class="hero-quote-box">
+                    <span class="material-symbols-rounded quote-icon">format_quote</span>
+                    <p class="hero-quote">"${hero.quote}"</p>
+                </div>
+                <div class="hero-lesson-box">
+                    <span class="material-symbols-rounded lesson-icon">emoji_objects</span>
+                    <p class="hero-lesson"><strong>Deha'ya Altın Öğüt:</strong> ${hero.lesson}</p>
+                </div>
+            </div>
+        `;
+        
+        heroesList.appendChild(card);
     });
 }
 
