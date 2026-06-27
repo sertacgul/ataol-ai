@@ -181,6 +181,15 @@ const HEROES_DATA = [
     }
 ];
 
+const STAR_GOALS = [
+    { key: "ice_cream", name: "Dondurma", target: 30, emoji: "🍦" },
+    { key: "baklava", name: "Baklava", target: 100, emoji: "🥮" },
+    { key: "kunefe", name: "Künefe", target: 150, emoji: "🥞" },
+    { key: "korean", name: "Kore Restoranı", target: 200, emoji: "🍜" },
+    { key: "bicycle", name: "Bisiklet", target: 1000, emoji: "🚲" },
+    { key: "playstation", name: "PlayStation", target: 1500, emoji: "🎮" }
+];
+
 // --- 2. LOCAL STATE MANAGEMENT ---
 let appState = {
     apiKey: localStorage.getItem("ataol_api_key") || "",
@@ -216,6 +225,7 @@ const selectedWeekTasks = document.getElementById("selected-week-tasks");
 const dailyMissionText = document.getElementById("daily-mission-text");
 const completeDailyBtn = document.getElementById("complete-daily-btn");
 const badgesGrid = document.getElementById("badges-grid");
+const goalsGrid = document.getElementById("goals-grid");
 const micBtn = document.getElementById("mic-btn");
 const chatboardBtn = document.getElementById("chatboard-btn");
 const chatboardPanel = document.getElementById("chatboard-panel");
@@ -338,6 +348,7 @@ function initApp() {
     renderWeekDetails(appState.currentWeek);
     renderBadges();
     renderHeroes();
+    renderStarGoals();
     
     // Load Chat History
     if (appState.messages.length === 0) {
@@ -791,6 +802,9 @@ function addStars(amount) {
     // Update Badge display
     totalStarsSpan.textContent = appState.stars;
     
+    // Update Goals display
+    renderStarGoals();
+    
     // Confetti & Star Pop animation
     triggerConfetti();
     animateStarBadge();
@@ -944,6 +958,40 @@ function renderBadges() {
         `;
         
         badgesGrid.appendChild(card);
+    });
+}
+
+// --- 10c. STAR GOALS PANEL LOGIC ---
+function renderStarGoals() {
+    if (!goalsGrid) return;
+    goalsGrid.innerHTML = "";
+    
+    STAR_GOALS.forEach(goal => {
+        const isAchieved = appState.stars >= goal.target;
+        const percent = Math.min(100, Math.floor((appState.stars / goal.target) * 100));
+        
+        const card = document.createElement("div");
+        card.classList.add("goal-card", isAchieved ? "achieved" : "in-progress");
+        
+        card.innerHTML = `
+            <div class="goal-icon-box">${goal.emoji}</div>
+            <div class="goal-details">
+                <div class="goal-meta">
+                    <h3>${goal.name}</h3>
+                    <span class="goal-cost">${goal.target} Yıldız</span>
+                </div>
+                <div class="goal-progress-container">
+                    <div class="goal-progress-bar" style="width: ${percent}%;"></div>
+                </div>
+                <div class="goal-status">
+                    <span>${percent}% Tamamlandı</span>
+                    <span>${appState.stars}/${goal.target} 🌟</span>
+                </div>
+                ${isAchieved ? '<div class="goal-unlocked-badge">Almaya Hazır! 🎁</div>' : ''}
+            </div>
+        `;
+        
+        goalsGrid.appendChild(card);
     });
 }
 

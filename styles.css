@@ -1279,3 +1279,120 @@ h2 {
     color: var(--gold);
     font-size: 1.2rem;
 }
+
+/* Star Goals / Rewards Styles */
+.goals-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.goal-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.goal-card.achieved {
+    border-color: rgba(46, 213, 115, 0.35);
+    background: linear-gradient(135deg, var(--card-bg) 75%, rgba(46, 213, 115, 0.05) 100%);
+    box-shadow: 0 4px 12px rgba(46, 213, 115, 0.1);
+}
+
+.goal-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(108, 92, 231, 0.06);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.goal-card.achieved .goal-icon-box {
+    background: rgba(46, 213, 115, 0.1);
+}
+
+.goal-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.goal-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goal-meta h3 {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.goal-cost {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.goal-card.achieved .goal-cost {
+    color: #2ED573;
+}
+
+.goal-progress-container {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin: 2px 0;
+}
+
+.goal-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    transition: width 0.4s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+.goal-card.achieved .goal-progress-bar {
+    background: linear-gradient(90deg, #2ED573 0%, #7BED9F 100%);
+}
+
+.goal-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text-gray);
+    font-weight: 600;
+}
+
+.goal-unlocked-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #2ED573;
+    color: #FFF;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-bottom-left-radius: 10px;
+    text-transform: uppercase;
+}

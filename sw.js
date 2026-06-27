@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ataol-ai-v6';
+const CACHE_NAME = 'ataol-ai-v7';
 const ASSETS = [
   './',
   './index.html',
