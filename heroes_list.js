@@ -9,9 +9,9 @@ const HEROES_DATA = [
     },
     {
         "name": "Sertaç GÜL",
-        "title": "Sistem & Yapay Zeka Mühendisi | Yönetim Danışmanı 💻",
+        "title": "Sistem & Yapay Zeka Mühendisi | Airbus Pilotu 💻✈️",
         "emoji": "💻",
-        "story": "Deha'nın biricik babası! Sistem ve Yapay Zeka Mühendisi, Yönetim Danışmanı ve doktora adayıdır. Havacılık ve havalimanı işletmeciliği gibi yüksek teknolojili sektörlerde 18 yılı aşkın tecrübeye sahiptir. JetŞef firmasında Chief Operating Officer (COO) olarak sistemlerin tasarlanması, süreçlerin optimize edilmesi ve teknolojik büyüme adımlarına liderlik etmiştir. ATAOL AI Techs kurucusu olarak Deha için bu harika yapay zeka uygulamasını geliştirdi. Ayrıca ActLedger ve ShiftZen gibi akıllı kurumsal çözümleri tasarlayarak dünyaya katkı sunuyor. Deha'nın en büyük gururu ve ilham kaynağı!",
+        "story": "Deha'nın biricik babası! Sistem ve Yapay Zeka Mühendisi, Yönetim Danışmanı, Airbus Pilotu ve doktora adayıdır. Havacılık ve havalimanı işletmeciliği gibi yüksek teknolojili sektörlerde 18 yılı aşkın tecrübeye sahiptir. JetŞef firmasında Chief Operating Officer (COO) olarak sistemlerin tasarlanması, süreçlerin optimize edilmesi ve teknolojik büyüme adımlarına liderlik etmiştir. ATAOL AI Techs kurucusu olarak Deha için bu harika yapay zeka uygulamasını geliştirdi. Ayrıca ActLedger ve ShiftZen gibi akıllı kurumsal çözümleri tasarlayarak dünyaya katkı sunuyor. Deha'nın en büyük gururu ve ilham kaynağı!",
         "quote": "Benim en büyük projem ve başarımı süsleyen gururum, oğlum Deha'dır.",
         "lesson": "Baban her zaman senin arkanda aslan oğlum! Teknolojiyi öğren, analitik düşün ve geleceği inşa et!"
     },

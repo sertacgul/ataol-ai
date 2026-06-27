@@ -1732,6 +1732,23 @@ h2 {
     font-weight: 500;
 }
 
+/* Category Colors (History & Geography) */
+.fact-card.history::before {
+    background: linear-gradient(180deg, #F39C12 0%, #D35400 100%);
+}
+.fact-card.geography::before {
+    background: linear-gradient(180deg, #3498DB 0%, #2980B9 100%);
+}
+
+.fact-card.history .fact-badge {
+    background: rgba(243, 156, 18, 0.1);
+    color: #D35400;
+}
+.fact-card.geography .fact-badge {
+    background: rgba(52, 152, 219, 0.1);
+    color: #2980B9;
+}
+
 /* Keyframes */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
