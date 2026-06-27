@@ -576,10 +576,6 @@ body {
     justify-content: space-between;
     align-items: center;
     z-index: 10;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
 }
 
 .nav-item {
