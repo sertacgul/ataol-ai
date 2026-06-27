@@ -1,0 +1,18 @@
+{
+  "name": "ATAOL Yapay Zeka",
+  "short_name": "ATAOL AI",
+  "description": "Deha Ataol GÜL için Özel Matematik ve Gelişim Rehberi",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#6C5CE7",
+  "theme_color": "#6C5CE7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
