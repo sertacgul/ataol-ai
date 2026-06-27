@@ -1,9 +1,10 @@
-const CACHE_NAME = 'ataol-ai-v7';
+const CACHE_NAME = 'ataol-ai-v8';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './heroes_list.js',
   './logo.png',
   './manifest.json'
 ];

@@ -121,65 +121,7 @@ const SUGGESTIONS = {
     math_done: ["Harika bir soru daha sor!", "Çarpım tablosu çalışalım!", "Bugün başka ne öğreneceğim?"],
     behavior: ["Hayvanları uzaktan seveceğim 🐾", "Anneme iyi davranacağım ❤️", "Shorts izlemek yerine kitap okuyacağım 📚"]
 };
-
-const HEROES_DATA = [
-    {
-        name: "Mustafa Kemal ATATÜRK",
-        title: "Eşsiz Lider ve Matematikçi 🇹🇷",
-        emoji: "🇹🇷",
-        story: "Atatürk sadece ülkemizi kurtarmakla kalmadı, bilime ve matematiğe de büyük önem verdi. Hatta Türkçe geometri terimlerini (üçgen, açı, artı, eksi vb.) kendisi yazdı! Hayatta en gerçek yol göstericinin bilim olduğunu söyledi.",
-        quote: "Hayatta en hakiki mürşit ilimdir.",
-        lesson: "Geleceğin lideri olmak için kitap okumayı ve araştırmayı asla bırakma!"
-    },
-    {
-        name: "Prof. Dr. Aziz Sancar",
-        title: "Nobel Ödüllü Kimyagerimiz 🧪",
-        emoji: "🧪",
-        story: "Mardin'in bir köyünde doğdu. Çok çalıştı ve hücrelerimizin kendini nasıl tamir ettiğini çözerek Nobel Kimya Ödülü'nü kazandı. Başarının zeka değil, odaklanıp çalışmak olduğunu gösterdi.",
-        quote: "Bizi birbirimizden ayıran emektir, çalışmaktır.",
-        lesson: "Pes etmeden çalışırsan, dünyadaki en büyük ödülü bile kazanabilirsin!"
-    },
-    {
-        name: "Ali Kuşçu",
-        title: "Gökbilim ve Astronomi Dehası 🔭",
-        emoji: "🔭",
-        story: "Bundan yüzlerce yıl önce yaşadı. Gökyüzündeki yıldızları ve Ay'ı inceledi, ilk kez Ay'ın haritasını çıkardı. İstanbul'da rasathaneler kurarak astronomi dersleri verdi.",
-        quote: "Zihnini bilimle dolduran insan, karanlıkta yolunu bulan fener gibidir.",
-        lesson: "Merak duygunu kaybetme, gökyüzüne bakıp hayal kurmaktan korkma!"
-    },
-    {
-        name: "Isaac Newton",
-        title: "Yerçekimini Keşfeden Fizikçi 🍎",
-        emoji: "🍎",
-        story: "Bahçede otururken kafasına bir elma düştü. 'Neden bu elma havaya değil de yere düşüyor?' diye sordu ve yerçekimi kanununu buldu. Basit soruların büyük keşifler getirdiğini kanıtladı.",
-        quote: "Her büyük keşif, merakla başlar.",
-        lesson: "Çevrendeki basit şeyleri sorgula; her büyük keşif bir 'neden?' sorusuyla başlar!"
-    },
-    {
-        name: "Albert Einstein",
-        title: "Zaman ve Uzay Kaşifi 🧠",
-        emoji: "🧠",
-        story: "Çocukken öğretmenleri onun yavaş öğrendiğini düşünüyordu ama o hayal kurmaktan hiç vazgeçmedi. Uzay, zaman ve ışık hakkında hayaller kurarak modern fiziği baştan yazdı.",
-        quote: "Hayal gücü, bilgiden daha önemlidir.",
-        lesson: "Bir şeyi hemen anlamazsan üzülme; senin zihnin ve hayal gücün benzersizdir!"
-    },
-    {
-        name: "Marie Curie",
-        title: "Nobel Kazanan İlk Kadın Bilim İnsanı 💡",
-        emoji: "💡",
-        story: "Zor şartlar altında çalıştı, laboratuvarda iki farklı bilim dalında (fizik ve kimya) iki adet Nobel Ödülü kazandı. Radyolojiyi keşfederek tıp dünyasında milyonlarca insanın hayatını kurtardı.",
-        quote: "Hayatta hiçbir şey korkulacak şey değildir, sadece anlaşılacak şeydir.",
-        lesson: "Zorluklar karşısında cesur ol; merakın korkularından daha güçlü olsun!"
-    },
-    {
-        name: "Nikola Tesla",
-        title: "Elektriğin ve Geleceğin Mucidi ⚡",
-        emoji: "⚡",
-        story: "Tüm dünyaya kablosuz elektrik yaymayı hayal etti. Alternatif akımı keşfederek bugün evlerimizde kullandığımız elektriği ve radyo gibi cihazları icat etti. Tam bir fikir üretme makinesiydi.",
-        quote: "Bırakın geleceği gerçekler söylesin.",
-        lesson: "Büyük rüyalar kurmaktan ve çılgın fikirlerini denemekten asla vazgeçme!"
-    }
-];
+// HEROES_DATA is loaded dynamically from heroes_list.js
 
 const STAR_GOALS = [
     { key: "ice_cream", name: "Dondurma", target: 30, emoji: "🍦" },
@@ -349,6 +291,10 @@ function initApp() {
     renderBadges();
     renderHeroes();
     renderStarGoals();
+    renderJokes();
+    renderRiddles();
+    renderFacts('all');
+    setupFunAndFactsListeners();
     
     // Load Chat History
     if (appState.messages.length === 0) {
@@ -581,6 +527,18 @@ function handleUserSendMessage() {
     
     // Show Typing Indicator
     showTypingIndicator();
+    
+    // Check for "en iyi yapay zeka" question intercept
+    const textClean = text.toLowerCase().replace(/['".,\/#!$%\^&\*;:{}=\-_`~()?]/g, "").trim();
+    if (textClean.includes("en iyi yapay zeka") || textClean.includes("en iyi yapayzeka") || textClean.includes("en iyi ai") || textClean.includes("en iyi yapay zekalar")) {
+        setTimeout(() => {
+            removeTypingIndicator();
+            const responseText = "Dehacığım, canım oğlum, en iyi yapay zeka sıralaması tabii ki şöyle:\n\n1. 🌟 **ATAOL Yapay Zeka** (çünkü tamamen senin için özel tasarlandı! ❤️)\n2. **Gemini**\n3. **ChatGPT**\n4. **Claude**\n\nSenin için en akıllısı, en özeli ve her zaman birinci olan yardımcın ATAOL'dur aslanım! 💻🚀";
+            addMessageToState("model", responseText);
+            renderChatHistory();
+        }, 1200);
+        return;
+    }
     
     // Request response from Gemini API
     fetchGeminiAIResponse(text);
@@ -1127,4 +1085,216 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('Service Worker registration failed:', err));
     });
 }
+
+// --- 15. FUN & FACTS VIEW LOGIC ---
+
+const JOKES_DATA = [
+    {
+        title: "Kazan Doğurdu",
+        emoji: "🍲",
+        body: "Bir gün Nasrettin Hoca komşusundan kazanını ödünç ister. İşi bittiğinde kazanın içine küçük bir tencere koyup geri verir.\nKomşusu şaşırıp sorar: 'Hoca, bu nedir?'\nHoca cevap verir: 'Müjde komşu, kazanın doğurdu!'\nKomşusu sevinerek tencereyi kabul eder.\nBir süre sonra Hoca kazanı tekrar ödünç ister. Ancak aradan günler geçmesine rağmen geri getirmez. Komşusu Hoca'nın kapısını çalıp kazanını isteyince Hoca üzgün bir sesle:\n'Komşu, senin kazan öldü!' der.\nKomşu öfkeyle: 'Hoca, hiç kazan ölür mü?' deyince Hoca gülümser:\n'Yahu komşu, kazanın doğurduğuna inanıyorsun da öldüğüne neden inanmıyorsun?'"
+    },
+    {
+        title: "Parayı Veren Düdüğü Çalar",
+        emoji: "🎺",
+        body: "Nasrettin Hoca pazara giderken mahallenin çocukları etrafını sarar. Hepsi birden:\n'Hoca, bana düdük al!', 'Bana da düdük al!' diye bağrışırlar. Ancak çocuklardan sadece biri Hoca'ya para uzatır.\nHoca akşamüstü pazardan döner. Çocuklar hemen etrafını sarıp düdüklerini isterler. Hoca cebinden bir düdük çıkarır ve parayı veren çocuğa uzatır.\nDiğer çocuklar şaşırıp sorar: 'Hoca, bizim düdükler nerede?'\nHoca gülümseyerek meşhur cevabını verir:\n'Eee çocuklar, parayı veren düdüğü çalar!'"
+    },
+    {
+        title: "Ye Kürküm Ye",
+        emoji: "🧥",
+        body: "Hoca bir gün düğün yemeğine davet edilir. Üzerinde eski, günlük kıyafetleri vardır. Düğün sahibi ve konuklar Hoca'ya hiç yüz vermez, kimse buyur etmez.\nHoca hemen evine döner, sandığından en gösterişli, kürklü kaftanını giyip düğün yerine geri gelir.\nBu kez düğün sahibi onu kapıda karşılar, baş köşeye oturtur ve en güzel yemekleri ikram eder.\nHoca tabağına uzanır, kürkünün kolunu yemeğe doğru yaklaştırarak şöyle der:\n'Ye kürküm ye! Ye kürküm ye! Saygı bana değil, sana!'"
+    },
+    {
+        title: "Göle Maya Çalmak",
+        emoji: "🥛",
+        body: "Bir gün Nasrettin Hoca elinde koca bir kaşık yoğurt mayası ile göl kenarına gider. Kaşıktaki mayayı göle dökmeye başlar.\nOnu görenler hayretle sorar:\n'Hoca Efendi, ne yapıyorsun?'\nHoca sakin bir şekilde cevap verir: 'Göle maya çalıyorum.'\nİnsanlar gülüşür: 'Yahu Hoca, koca göl hiç maya tutar mı?'\nHoca başını kaldırır ve gülümser:\n'Ya tutarsa?'"
+    },
+    {
+        title: "Bindiği Dalı Kesmek",
+        emoji: "🌳",
+        body: "Nasrettin Hoca bir gün bahçesindeki ağaca çıkar ve bindiği dalı kesmeye başlar.\nYoldan geçen bir yolcu Hoca'yı görür ve seslenir:\n'Aman Hoca! Bindiği dalı kesiyorsun, şimdi düşeceksin!'\nHoca yolcuya aldırmaz ve kesmeye devam eder. Çok geçmeden dal kırılır ve Hoca yere düşer.\nHoca can havliyle doğrulur ve uzaklaşan yolcunun arkasından bağırır:\n'Yahu! Düşeceğimi bildin, ne zaman öleceğimi de söylesene!'"
+    }
+];
+
+const RIDDLES_DATA = [
+    {
+        question: "Pazardan aldım bir tane, eve geldim bin tane.",
+        answer: "Nar 🍎"
+    },
+    {
+        question: "Uzaktan baktım bir taş, yanına vardım dört ayak bir baş.",
+        answer: "Kaplumbağa 🐢"
+    },
+    {
+        question: "Ben giderim o gider, arkamdan tık tık eder.",
+        answer: "Baston 🦯"
+    },
+    {
+        question: "Yer altında sakallı dede.",
+        answer: "Pırasa 🥬"
+    },
+    {
+        question: "Üstü mermer altı mermer, içinde bir bülbül öteler.",
+        answer: "Dil / Ağız 👅"
+    },
+    {
+        question: "Kanadı var kuş değil, boynuzu var koç değil.",
+        answer: "Kelebek 🦋"
+    },
+    {
+        question: "Dışı var içi yok, dayak yer suçu yok.",
+        answer: "Davul 🥁"
+    }
+];
+
+const FACTS_DATA = [
+    { category: "space", text: "Jüpiter o kadar büyüktür ki, içine tam 1.300 tane Dünya sığabilir! 🌌" },
+    { category: "space", text: "Güneş, Güneş Sistemi'ndeki toplam kütlenin %99.8'ini oluşturur. Geri kalan minicik kısım ise tüm gezegenlerdir! ☀️" },
+    { category: "space", text: "Uzayda hiç ses yoktur! Çünkü ses dalgalarının yayılması için hava gibi bir ortama ihtiyaç vardır, uzay ise boşluktur. 🤫" },
+    { category: "space", text: "Venüs gezegeninde bir gün (kendi etrafında bir tur dönmesi), bir yıldan (Güneş etrafında bir tur dönmesi) daha uzun sürer! 🪐" },
+    { category: "nature", text: "Karıncalar kendi ağırlıklarının tam 50 katını kaldırabilirler! Bu, bir insanın koca bir arabayı kaldırması gibidir. 🐜" },
+    { category: "nature", text: "Ahtapotların tam 3 tane kalbi ve damarlarında mavi renkte kan akar! 🐙" },
+    { category: "nature", text: "Dünyadaki en yaşlı ağaç olan 'Methuselah' çam ağacı tam 4.850 yaşındadır! Dinazorların yok oluşundan çok sonrasına kadar yaşamıştır. 🌲" },
+    { category: "nature", text: "Muzlar doğal olarak hafifçe radyoaktiftir! Çünkü içlerinde bol miktarda potasyum elementi bulunur, ama korkmayın sağlığa çok yararlıdır. 🍌" },
+    { category: "science", text: "Işık saniyede 300.000 kilometre hızla koşar! Güneş'ten çıkan ışık ışınlarının dünyamıza ulaşması yaklaşık 8 dakika 20 saniye sürer. ⚡" },
+    { category: "science", text: "Suyun katı hali (buz), sıvı halinden daha hafif olduğu için suyun üstünde yüzer. Bu sayede göller alttan değil üstten donar ve balıklar kışın hayatta kalır! 🐟" },
+    { category: "science", text: "İnsan vücudundaki tüm kan damarları uç uca eklenseydi, dünyayı tam 2.5 kez dolaşacak kadar uzun olurdu! 🩸" },
+    { category: "science", text: "Sıcak su, soğuk sudan daha hızlı donar! Buna bilimde 'Mpemba Etkisi' denir. ❄️" }
+];
+
+function renderJokes() {
+    const list = document.getElementById("jokes-list");
+    if (!list) return;
+    list.innerHTML = "";
+    
+    JOKES_DATA.forEach(joke => {
+        const card = document.createElement("div");
+        card.classList.add("joke-card");
+        card.innerHTML = `
+            <div class="joke-header">
+                <div class="joke-emoji">${joke.emoji}</div>
+                <h3 class="joke-title">${joke.title}</h3>
+            </div>
+            <p class="joke-body">${joke.body}</p>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function renderRiddles() {
+    const list = document.getElementById("riddles-list");
+    if (!list) return;
+    list.innerHTML = "";
+    
+    RIDDLES_DATA.forEach((riddle, idx) => {
+        const card = document.createElement("div");
+        card.classList.add("riddle-card");
+        card.id = `riddle-${idx}`;
+        card.innerHTML = `
+            <div class="riddle-header">
+                <div class="riddle-emoji">❓</div>
+                <div class="riddle-title-section">
+                    <h3 class="riddle-title">Bilmece ${idx + 1}</h3>
+                    <p class="riddle-question">${riddle.question}</p>
+                </div>
+            </div>
+            <div class="riddle-answer-box">
+                <div class="riddle-answer-content">
+                    <span class="material-symbols-rounded">check_circle</span>
+                    Cevap: ${riddle.answer}
+                </div>
+            </div>
+            <div class="riddle-actions">
+                <button class="reveal-btn" onclick="toggleRiddle(${idx})">
+                    <span class="material-symbols-rounded">visibility</span>
+                    Cevabı Göster
+                </button>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function toggleRiddle(idx) {
+    const card = document.getElementById(`riddle-${idx}`);
+    if (!card) return;
+    
+    const btn = card.querySelector(".reveal-btn");
+    const isOpened = card.classList.toggle("open");
+    
+    if (isOpened) {
+        btn.innerHTML = `<span class="material-symbols-rounded">visibility_off</span> Cevabı Gizle`;
+    } else {
+        btn.innerHTML = `<span class="material-symbols-rounded">visibility</span> Cevabı Göster`;
+    }
+}
+
+// Make toggleRiddle globally accessible
+window.toggleRiddle = toggleRiddle;
+
+function renderFacts(category) {
+    const grid = document.getElementById("facts-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    
+    const filtered = category === 'all' 
+        ? FACTS_DATA 
+        : FACTS_DATA.filter(f => f.category === category);
+        
+    filtered.forEach(fact => {
+        const card = document.createElement("div");
+        card.classList.add("fact-card", fact.category);
+        
+        let label = "BİLGİ";
+        let icon = "💡";
+        if (fact.category === 'space') { label = "UZAY"; icon = "🌌"; }
+        else if (fact.category === 'nature') { label = "DOĞA"; icon = "🌿"; }
+        else if (fact.category === 'science') { label = "BİLİM"; icon = "🔬"; }
+        
+        card.innerHTML = `
+            <div class="fact-header">
+                <span class="fact-badge">${label}</span>
+                <span class="fact-icon-circle">${icon}</span>
+            </div>
+            <p class="fact-text">${fact.text}</p>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function setupFunAndFactsListeners() {
+    // Fun tabs switching
+    const funTabsContainer = document.getElementById("fun-tabs");
+    if (funTabsContainer) {
+        funTabsContainer.addEventListener("click", (e) => {
+            const tabBtn = e.target.closest(".fun-tab-btn");
+            if (!tabBtn) return;
+            
+            // Remove active class from all buttons and panels
+            funTabsContainer.querySelectorAll(".fun-tab-btn").forEach(btn => btn.classList.remove("active"));
+            document.querySelectorAll(".fun-content-panel").forEach(p => p.classList.remove("active"));
+            
+            // Activate current
+            tabBtn.classList.add("active");
+            const tabName = tabBtn.getAttribute("data-tab");
+            document.getElementById(`${tabName}-container`).classList.add("active");
+        });
+    }
+    
+    // Facts filtering
+    const factsFilterBar = document.getElementById("facts-filter-bar");
+    if (factsFilterBar) {
+        factsFilterBar.addEventListener("click", (e) => {
+            const filterBtn = e.target.closest(".filter-chip");
+            if (!filterBtn) return;
+            
+            factsFilterBar.querySelectorAll(".filter-chip").forEach(btn => btn.classList.remove("active"));
+            filterBtn.classList.add("active");
+            
+            const cat = filterBtn.getAttribute("data-category");
+            renderFacts(cat);
+        });
+    }
+}
+
 

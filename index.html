@@ -179,6 +179,50 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Eğlence (Fıkra & Bilmece) View -->
+            <section id="fun-view" class="view-panel">
+                <div class="fun-container">
+                    <h2>Eğlence Köşesi</h2>
+                    <p class="missions-intro">Hem eğlenelim hem de zihnimizi dinlendirelim! Nasrettin Hoca fıkraları ve eğlenceli bilmeceler burada. 😄</p>
+                    
+                    <div class="fun-tabs" id="fun-tabs">
+                        <button class="fun-tab-btn active" data-tab="jokes">Nasrettin Hoca Fıkraları</button>
+                        <button class="fun-tab-btn" data-tab="riddles">Bilmeceler</button>
+                    </div>
+                    
+                    <div id="jokes-container" class="fun-content-panel active">
+                        <div class="jokes-list" id="jokes-list">
+                            <!-- Dynamic jokes will load here -->
+                        </div>
+                    </div>
+                    
+                    <div id="riddles-container" class="fun-content-panel">
+                        <div class="riddles-list" id="riddles-list">
+                            <!-- Dynamic riddles will load here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bilgi (Bunu Biliyor Muydun?) View -->
+            <section id="facts-view" class="view-panel">
+                <div class="facts-container">
+                    <h2>Bunu Biliyor Muydun?</h2>
+                    <p class="missions-intro">Doğa, uzay ve fen bilimlerinden en şaşırtıcı ve ilginç gerçekleri keşfet! 🌌🌿🔬</p>
+                    
+                    <div class="facts-filter-bar" id="facts-filter-bar">
+                        <button class="filter-chip active" data-category="all">Tümü</button>
+                        <button class="filter-chip" data-category="space">🌌 Uzay</button>
+                        <button class="filter-chip" data-category="nature">🌿 Doğa</button>
+                        <button class="filter-chip" data-category="science">🔬 Bilim</button>
+                    </div>
+                    
+                    <div class="facts-grid" id="facts-grid">
+                        <!-- Dynamic facts will load here -->
+                    </div>
+                </div>
+            </section>
             
         </main>
 
@@ -191,6 +235,14 @@
             <button class="nav-item" id="nav-missions" data-target="missions-view">
                 <span class="material-symbols-rounded">assignment</span>
                 <span>Görevler</span>
+            </button>
+            <button class="nav-item" id="nav-fun" data-target="fun-view">
+                <span class="material-symbols-rounded">sentiment_very_satisfied</span>
+                <span>Eğlence</span>
+            </button>
+            <button class="nav-item" id="nav-facts" data-target="facts-view">
+                <span class="material-symbols-rounded">psychology</span>
+                <span>Bilgi</span>
             </button>
             <button class="nav-item" id="nav-heroes" data-target="heroes-view">
                 <span class="material-symbols-rounded">lightbulb</span>
@@ -300,6 +352,7 @@
     <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
 
     <!-- Custom JS -->
+    <script src="heroes_list.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

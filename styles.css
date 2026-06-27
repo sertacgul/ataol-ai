@@ -1396,3 +1396,344 @@ h2 {
     border-bottom-left-radius: 10px;
     text-transform: uppercase;
 }
+
+/* Bottom Nav adjustments for 6 items */
+.app-nav {
+    padding: 8px 8px calc(6px + var(--safe-bottom)) 8px !important;
+}
+
+.nav-item span:first-child {
+    font-size: 1.35rem !important;
+}
+
+.nav-item span:last-child {
+    font-size: 0.65rem !important;
+}
+
+/* Entertainment (Fun View) Styles */
+.fun-container, .facts-container {
+    padding-bottom: 20px;
+}
+
+.fun-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 4px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    gap: 4px;
+}
+
+.fun-tab-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 10px;
+    color: var(--text-gray);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.fun-tab-btn.active {
+    background: #FFF;
+    color: var(--primary-dark);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.fun-content-panel {
+    display: none;
+}
+
+.fun-content-panel.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Jokes Card Styles */
+.jokes-list, .riddles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.joke-card {
+    background: #FFF;
+    border-radius: 20px;
+    padding: 16px 20px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.joke-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, #FF9F43 0%, #FFB142 100%);
+}
+
+.joke-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.joke-emoji {
+    font-size: 1.5rem;
+}
+
+.joke-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.joke-body {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text-gray);
+    margin: 0;
+    white-space: pre-line;
+}
+
+/* Riddles Styles */
+.riddle-card {
+    background: #FFF;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    position: relative;
+}
+
+.riddle-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.riddle-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.riddle-emoji {
+    font-size: 1.4rem;
+}
+
+.riddle-title-section {
+    flex: 1;
+}
+
+.riddle-title {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 2px 0;
+}
+
+.riddle-question {
+    font-size: 0.88rem;
+    color: var(--text-gray);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.riddle-actions {
+    padding: 0 20px 16px 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.reveal-btn {
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--primary-dark);
+    border: none;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.25s ease;
+}
+
+.reveal-btn:hover {
+    background: var(--primary);
+    color: #FFF;
+}
+
+.reveal-btn span {
+    font-size: 1rem !important;
+}
+
+.riddle-answer-box {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(46, 213, 115, 0.05);
+    border-top: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
+.riddle-card.open .riddle-answer-box {
+    max-height: 200px;
+}
+
+.riddle-answer-content {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #26af5a;
+}
+
+.riddle-answer-content span {
+    font-size: 1.3rem !important;
+}
+
+/* Did You Know (Facts View) Styles */
+.facts-filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 16px 0;
+    margin-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.facts-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    flex-shrink: 0;
+    border: 1px solid var(--card-border);
+    background: #FFF;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-chip.active {
+    background: var(--primary-dark);
+    color: #FFF;
+    border-color: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+}
+
+.facts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.fact-card {
+    background: #FFF;
+    border-radius: 22px;
+    padding: 18px 20px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.fact-card:hover {
+    transform: translateY(-2px);
+}
+
+.fact-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+}
+
+/* Category Colors */
+.fact-card.space::before {
+    background: linear-gradient(180deg, #9b5DE5 0%, #F15BB5 100%);
+}
+.fact-card.nature::before {
+    background: linear-gradient(180deg, #00F5D4 0%, #00BBF9 100%);
+}
+.fact-card.science::before {
+    background: linear-gradient(180deg, #FEE440 0%, #F15BB5 100%);
+}
+
+.fact-card.space .fact-badge {
+    background: rgba(155, 93, 229, 0.1);
+    color: #9b5DE5;
+}
+.fact-card.nature .fact-badge {
+    background: rgba(0, 245, 212, 0.1);
+    color: #00bbf9;
+}
+.fact-card.science .fact-badge {
+    background: rgba(254, 228, 64, 0.15);
+    color: #e2b700;
+}
+
+.fact-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.fact-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-family: var(--font-heading);
+}
+
+.fact-icon-circle {
+    font-size: 1.3rem;
+}
+
+.fact-text {
+    font-size: 0.88rem;
+    line-height: 1.52;
+    color: var(--text-dark);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
