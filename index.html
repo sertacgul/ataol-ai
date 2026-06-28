@@ -25,6 +25,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">ATAOL AI</div>
+            <div class="splash-spinner"></div>
+            <p class="splash-subtitle">Deha için Sevgiyle Tasarlandı ❤️</p>
+        </div>
+    </div>
     <!-- App Container -->
     <div id="app-container" class="app-container">
         
@@ -80,7 +88,7 @@
                             <h5>❤️ Aile Sevgisi</h5>
                             <div class="chatboard-chips">
                                 <button type="button" class="board-chip" data-msg="Seni çok seviyorum babacım!">Babacım ❤️</button>
-                                <button type="button" class="board-chip" data-msg="Anneme bugün yardım ettim ve ona çok iyi davrandım!">Anneme Yardım Ettim</button>
+                                <button type="button" class="board-chip" data-msg="Feriş mama'ya bugün yardım ettim ve ona çok iyi davrandım!">Feriş Mama'ya Yardım Ettim</button>
                                 <button type="button" class="board-chip" data-msg="Bugün nasılsınız?">Nasılsınız?</button>
                             </div>
                         </div>
@@ -189,6 +197,7 @@
                     <div class="fun-tabs" id="fun-tabs">
                         <button class="fun-tab-btn active" data-tab="jokes">Nasrettin Hoca Fıkraları</button>
                         <button class="fun-tab-btn" data-tab="riddles">Bilmeceler</button>
+                        <button class="fun-tab-btn" data-tab="math-table">Çarpım Tablosu</button>
                     </div>
                     
                     <div id="jokes-container" class="fun-content-panel active">
@@ -201,6 +210,10 @@
                         <div class="riddles-list" id="riddles-list">
                             <!-- Dynamic riddles will load here -->
                         </div>
+                    </div>
+                    
+                    <div id="math-table-container" class="fun-content-panel">
+                        <!-- Multiplication Table learning module dynamically loaded -->
                     </div>
                 </div>
             </section>
@@ -275,7 +288,7 @@
         <div id="parental-gate-modal" class="modal-panel">
             <div class="modal-card">
                 <h3>Ebeveyn Girişi</h3>
-                <p>Bu alana sadece anne veya baban girebilir. Devam etmek için lütfen aşağıdaki işlemi çöz:</p>
+                <p>Bu alana sadece baban veya Feriş mama girebilir. Devam etmek için lütfen aşağıdaki işlemi çöz:</p>
                 <div class="gate-math-question" id="gate-question">24 x 3 = ?</div>
                 <input type="number" id="gate-answer" placeholder="Cevap yazın">
                 <div class="modal-actions">
@@ -307,7 +320,7 @@
                         <strong>Sertaç GÜL</strong>
                     </div>
                     <div class="info-row">
-                        <span>Anne:</span>
+                        <span>Feriş Mama:</span>
                         <strong>Feriş GÜL</strong>
                     </div>
                 </div>

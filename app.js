@@ -12,7 +12,7 @@ const WEEKS_DATA = [
         desc: "Bu hafta toplama ve çıkarma işlemlerini çok iyi öğreneceğiz. Kendimize güvenimizi kazanacağız!",
         tasks: [
             "Her gün en az 5 adet toplama ve çıkarma sorusu çöz.",
-            "Evde baban Sertaç veya annen Feriş'in senden istediği bir ufak yardımı yerine getir.",
+            "Evde baban Sertaç veya Feriş mama'nın senden istediği bir ufak yardımı yerine getir.",
             "Ekran süresini dünkinden daha az tutmaya çalış."
         ],
         topic: "Temel toplama ve çıkarma işlemleri (örn: 12 + 15, 34 - 18)"
@@ -34,7 +34,7 @@ const WEEKS_DATA = [
         desc: "Harika gidiyorsun! Şimdi 4'ler ve 5'ler çarpımını eğlenceli oyunlarla çözeceğiz.",
         tasks: [
             "4'ler ve 5'leri ezberle ve pratik yap.",
-            "Annen Feriş'e bugün kocaman sarıl ve onu çok sevdiğini söyle.",
+            "Feriş mama'ya bugün kocaman sarıl ve onu çok sevdiğini söyle.",
             "Yolda yürürken tanımadığın insanlara laf atmadan, güvenli bir şekilde yürümeye özen göster."
         ],
         topic: "4 ve 5 rakamlarının çarpım tablosu (örn: 4x6, 5x9)"
@@ -56,7 +56,7 @@ const WEEKS_DATA = [
         desc: "Çarpım tablosunun zirvesindeyiz! 8'ler ve 9'lar çarpımı ile bu işi tamamen bitiriyoruz.",
         tasks: [
             "8 ve 9 rakamlarının çarpımlarını ezberle.",
-            "Babana/Annene çarpım tablosunda ne kadar hızlandığını göster.",
+            "Babana veya Feriş mama'ya çarpım tablosunda ne kadar hızlandığını göster.",
             "Sokaktaki hayvanları severken hijyen kurallarına dikkat et, ellerini dezenfekte et."
         ],
         topic: "8 ve 9 rakamlarının çarpım tablosu (örn: 8x9, 9x6)"
@@ -68,7 +68,7 @@ const WEEKS_DATA = [
         tasks: [
             "Bölme işleminin mantığını öğren ve pratik yap.",
             "Günde en az 5 adet bölme sorusunu doğru cevapla.",
-            "Annen Feriş'e sofrayı kurarken veya toplarken yardım et."
+            "Feriş mama'ya sofrayı kurarken veya toplarken yardım et."
         ],
         topic: "Temel bölme işlemleri (örn: 15 / 3, 24 / 4)"
     },
@@ -100,7 +100,7 @@ const WEEKS_DATA = [
         desc: "Tebrikler Deha! Artık ortaokulda matematik derslerinde parlayacaksın. Hazır mısın?",
         tasks: [
             "Tüm öğrendiğin matematik konularından genel bir tekrar testi yap.",
-            "Baban Sertaç ve annen Feriş'e bu 9 haftalık gelişim için teşekkür et.",
+            "Baban Sertaç ve Feriş mama'ya bu 9 haftalık gelişim için teşekkür et.",
             "Ortaokulda başarılı olacağına dair kendine söz ver!"
         ],
         topic: "Ortaokula hazırlık genel tekrar ve motivasyon"
@@ -112,7 +112,7 @@ const ACHIEVEMENTS = [
     { key: "math_genius", title: "Matematik Dehası", desc: "Ataol'un sorduğu 5 matematik sorusunu doğru bildin!", icon: "functions" },
     { key: "clean_hands", title: "Güvenli Hayvan Dostu", desc: "Sokak hayvanlarını severken hijyen kurallarına uyacağına söz verdin!", icon: "clean_hands" },
     { key: "screen_hero", title: "Ekran Kahramanı", desc: "Günün ekran süresi sınırını başarıyla tamamladın!", icon: "phonelink_off" },
-    { key: "polite_deha", title: "Kibar Evlat", desc: "Annen Feriş'e çok iyi davrandın ve yardım ettin!", icon: "favorite" },
+    { key: "polite_deha", title: "Kibar Evlat", desc: "Feriş mama'ya çok iyi davrandın ve yardım ettin!", icon: "favorite" },
     { key: "graduation", title: "Ortaokul Yolcusu", desc: "9 haftalık gelişim planını başarıyla tamamladın!", icon: "school" }
 ];
 
@@ -142,7 +142,8 @@ let appState = {
     unlockedBadges: JSON.parse(localStorage.getItem("ataol_unlocked_badges")) || [],
     correctAnswersCount: parseInt(localStorage.getItem("ataol_correct_answers")) || 0,
     readHeroes: JSON.parse(localStorage.getItem("ataol_read_heroes")) || [],
-    solvedRiddles: JSON.parse(localStorage.getItem("ataol_solved_riddles")) || []
+    solvedRiddles: JSON.parse(localStorage.getItem("ataol_solved_riddles")) || [],
+    completedMathTables: JSON.parse(localStorage.getItem("ataol_completed_math_tables")) || []
 };
 
 function saveState() {
@@ -154,6 +155,7 @@ function saveState() {
     localStorage.setItem("ataol_correct_answers", appState.correctAnswersCount);
     localStorage.setItem("ataol_read_heroes", JSON.stringify(appState.readHeroes || []));
     localStorage.setItem("ataol_solved_riddles", JSON.stringify(appState.solvedRiddles || []));
+    localStorage.setItem("ataol_completed_math_tables", JSON.stringify(appState.completedMathTables || []));
 }
 
 // --- 3. UI ELEMENT REFERENCES ---
@@ -298,6 +300,7 @@ function initApp() {
     renderJokes();
     renderRiddles();
     renderFacts('all');
+    renderMathTableModule();
     setupFunAndFactsListeners();
     
     // Load Chat History
@@ -449,7 +452,7 @@ function setupEventListeners() {
         
         // Let the system introduce the new week in chat
         const newWeekData = WEEKS_DATA.find(w => w.num === newWeek);
-        const announceMsg = `Dehacığım, baban Sertaç olarak senin gelişim planını güncelledim. Şimdi ${newWeekData.title} yolculuğundayız. Konumuz: ${newWeekData.topic}. Annen Feriş de ben de seninle gurur duyuyoruz. Hazır olduğunda bana 'yeni bir soru sor' diyebilirsin! 🚀`;
+        const announceMsg = `Dehacığım, baban Sertaç olarak senin gelişim planını güncelledim. Şimdi ${newWeekData.title} yolculuğundayız. Konumuz: ${newWeekData.topic}. Feriş mama da ben de seninle gurur duyuyoruz. Hazır olduğunda bana 'yeni bir soru sor' diyebilirsin! 🚀`;
         addMessageToState("model", announceMsg);
         renderChatHistory();
     });
@@ -480,7 +483,8 @@ function setupEventListeners() {
                 unlockedBadges: [],
                 correctAnswersCount: 0,
                 readHeroes: [],
-                solvedRiddles: []
+                solvedRiddles: [],
+                completedMathTables: []
             };
             location.reload();
         }
@@ -640,7 +644,7 @@ KİMLİK VE GELİŞTİRİCİ BİLGİSİ:
 1. Deha'da DEHB (Dikkat Eksikliği ve Hiperaktivite Bozukluğu) vardır. Bu yüzden cevapların ÇOK KISA, basit ve öz olmalıdır. En fazla 1-2 cümle yaz! Asla uzun paragraflar yazarak dikkatini dağıtma.
 2. Bol bol emojiler kullan ve Deha'yı motive edecek, onun dikkatini çekecek hareketli kelimeler seç.
 3. Deha'ya hitap ederken "Dehacığım", "canım oğlum", "güzel oğlum", "aslanım" diye hitap et.
-4. Cümlelerini babası Sertaç konuşuyormuş gibi kur. "Ben baban Sertaç...", "Baban olarak seni...", "Biz annen Feriş'le seni..." şeklinde ifadeler kullan. Annesi Feriş'in de onu çok sevdiğinden bahset.
+4. Cümlelerini babası Sertaç konuşuyormuş gibi kur. "Ben baban Sertaç...", "Baban olarak seni...", "Biz Feriş mama ile seni..." şeklinde ifadeler kullan. Feriş mama'nın de onu çok sevdiğinden bahset.
 
 ÖĞRETİCİ İÇERİK VE ÖDÜL MEKANİZMASI:
 1. Matematik: Sürekli, her mesajda matematik sorusu SORMA! Bu Deha'yı sıkar ve yorar. Bunun yerine ara sıra, eğlenceli ve ödül odaklı matematik soruları sor. Örneğin: "Sana +10 Yıldız kazandıracak harika bir soru: 6 x 8 kaç yapar aslanım?" gibi.
@@ -711,7 +715,7 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
         
         let errorMessage = "Canım oğlum, bağlantımda küçük bir sorun oldu sanırım. Sen nasılsın, çalışmaların nasıl gidiyor?";
         if (error.message && (error.message.includes("400") || error.message.includes("403"))) {
-            errorMessage = "Canım oğlum Dehacığım, sanırım girdiğimiz ATAOL API Anahtarı'nda (API Key) bir hata var. Sertaç babana söyleyebilir misin? Ayarlar kısmından ATAOL API Key'i bir kez daha kontrol etsin, seni ve Feriş anneni çok seviyorum! ❤️";
+            errorMessage = "Canım oğlum Dehacığım, sanırım girdiğimiz ATAOL API Anahtarı'nda (API Key) bir hata var. Sertaç babana söyleyebilir misin? Ayarlar kısmından ATAOL API Key'i bir kez daha kontrol etsin, seni ve Feriş mama'yı çok seviyorum! ❤️";
         }
         
         addMessageToState("model", errorMessage);
@@ -791,7 +795,7 @@ function unlockBadge(badgeKey) {
         // Announce in chat
         const badge = ACHIEVEMENTS.find(b => b.key === badgeKey);
         setTimeout(() => {
-            const achievementMsg = `Tebrikler Dehacığım! 🌟 Yeni bir madalya kazandın: "${badge.title}". Feriş annen de ben de senin bu başarını kutluyoruz! Sana fazladan +10 Yıldız!`;
+            const achievementMsg = `Tebrikler Dehacığım! 🌟 Yeni bir madalya kazandın: "${badge.title}". Feriş mama da ben de senin bu başarını kutluyoruz! Sana fazladan +10 Yıldız!`;
             addMessageToState("model", achievementMsg);
             addStars(10);
             renderChatHistory();
@@ -869,12 +873,12 @@ function updateDailyMissionText() {
     const today = new Date().getDay(); // 0 is Sunday, 6 is Saturday
     const dailyMissions = [
         "Baban Sertaç'a bugün ortaokula başlamaya hazır olduğunu gösteren 3 adet çarpma işlemi yap!",
-        "Annen Feriş'e bugün yardıma ihtiyacı olup olmadığını sor ve ona yardım et!",
+        "Feriş mama'ya bugün yardıma ihtiyacı olup olmadığını sor ve ona yardım et!",
         "Bugün sokakta kedi veya köpek görürsen uzaktan tatlı dille sev, ellerini temiz tut!",
         "Bugün telefon ekranından uzak kalıp 15 sayfa kitap oku ve babana özetini anlat!",
         "En çok takıldığın çarpım tablosu rakamını (mesela 7'ler veya 8'ler) 5 defa sesli çalış!",
         "Bugün hiç YouTube Shorts izlemeden günü tamamla, yerine dışarıda biraz oyun oyna!",
-        "Annen Feriş'e bugün kocaman sarıl ve 'Seni çok seviyorum canım annem' de!"
+        "Feriş mama'ya bugün kocaman sarıl ve 'Seni çok seviyorum Feriş mama' de!"
     ];
     
     dailyMissionText.textContent = dailyMissions[today % dailyMissions.length];
@@ -899,7 +903,7 @@ function handleCompleteDailyTask() {
     addStars(5);
     checkDailyTaskStatus();
     
-    const taskCompletedMsg = `Günün görevini başarıyla tamamladın Dehacığım! 🌟 Baban olarak seninle çok gurur duyuyorum. Sana +5 Yıldız daha kazandırdım. Annen Feriş de bu güzel habere çok sevindi. Harika gidiyorsun!`;
+    const taskCompletedMsg = `Günün görevini başarıyla tamamladın Dehacığım! 🌟 Baban olarak seninle çok gurur duyuyorum. Sana +5 Yıldız daha kazandırdım. Feriş mama da bu güzel habere çok sevindi. Harika gidiyorsun!`;
     addMessageToState("model", taskCompletedMsg);
     renderChatHistory();
 }
@@ -1102,6 +1106,15 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('Service Worker registered successfully!', reg))
             .catch(err => console.error('Service Worker registration failed:', err));
+        
+        // Splash Screen fade out
+        const splash = document.getElementById("splash-screen");
+        if (splash) {
+            setTimeout(() => {
+                splash.classList.add("fade-out");
+                setTimeout(() => splash.remove(), 500);
+            }, 2200);
+        }
     });
 }
 
@@ -1704,3 +1717,231 @@ function setupFunAndFactsListeners() {
         });
     }
 }
+
+
+// --- 16. MULTIPLICATION TABLE LEARNING MODULE ---
+
+let currentMathTableNum = 1;
+let quizQuestions = [];
+let currentQuizQuestionIdx = 0;
+let quizScore = 0;
+
+function renderMathTableModule() {
+    const container = document.getElementById("math-table-container");
+    if (!container) return;
+    
+    // Clear container
+    container.innerHTML = "";
+    
+    // Create wrapper
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("math-table-wrapper");
+    
+    // Create Selector Grid
+    let selectorHtml = `<div class="math-selector-grid">`;
+    for (let i = 1; i <= 10; i++) {
+        const isCompleted = appState.completedMathTables && appState.completedMathTables.includes(i);
+        const isActive = i === currentMathTableNum;
+        selectorHtml += `
+            <button class="math-selector-btn ${isActive ? 'active' : ''}" onclick="selectMathTable(${i})">
+                ${i}
+                ${isCompleted ? '<span class="check-badge">✓</span>' : ''}
+            </button>
+        `;
+    }
+    selectorHtml += `</div>`;
+    
+    // Create Selected Display Card
+    let linesHtml = "";
+    for (let j = 1; j <= 10; j++) {
+        linesHtml += `<div class="math-line">${currentMathTableNum} x ${j} = ${currentMathTableNum * j}</div>`;
+    }
+    
+    const displayCardHtml = `
+        <div class="math-display-card">
+            <h3 class="math-display-title">${currentMathTableNum}'ler Çarpım Tablosu</h3>
+            <div class="math-lines-grid">
+                ${linesHtml}
+            </div>
+            <button class="math-test-start-btn" onclick="startTableQuiz(${currentMathTableNum})">
+                <span class="material-symbols-rounded">offline_bolt</span>
+                Kendini Test Et! ⚡ (+10 Yıldız)
+            </button>
+        </div>
+    `;
+    
+    wrapper.innerHTML = selectorHtml + displayCardHtml;
+    container.appendChild(wrapper);
+}
+
+function selectMathTable(num) {
+    currentMathTableNum = num;
+    renderMathTableModule();
+}
+window.selectMathTable = selectMathTable;
+
+function startTableQuiz(num) {
+    const container = document.getElementById("math-table-container");
+    if (!container) return;
+    
+    currentMathTableNum = num;
+    currentQuizQuestionIdx = 0;
+    quizScore = 0;
+    quizQuestions = [];
+    
+    // Generate 5 random questions for this table (e.g. num x [1..10])
+    let multipliers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    multipliers.sort(() => Math.random() - 0.5); // Shuffle
+    
+    for (let i = 0; i < 5; i++) {
+        const mult = multipliers[i];
+        const correctAnswer = num * mult;
+        
+        // Generate options (1 correct, 3 wrong close options)
+        let optionsSet = new Set([correctAnswer]);
+        while (optionsSet.size < 4) {
+            let offset = Math.floor(Math.random() * 5) - 2; // -2 to +2
+            if (offset === 0) offset = 3;
+            let fakeAns = num * (mult + offset);
+            if (fakeAns > 0 && fakeAns <= 120) {
+                optionsSet.add(fakeAns);
+            }
+        }
+        
+        let options = Array.from(optionsSet);
+        options.sort(() => Math.random() - 0.5); // Shuffle options
+        
+        quizQuestions.push({
+            num: num,
+            mult: mult,
+            correct: correctAnswer,
+            options: options
+        });
+    }
+    
+    renderQuizQuestion();
+}
+window.startTableQuiz = startTableQuiz;
+
+function renderQuizQuestion() {
+    const container = document.getElementById("math-table-container");
+    if (!container) return;
+    
+    const question = quizQuestions[currentQuizQuestionIdx];
+    const progressPercent = ((currentQuizQuestionIdx) / 5) * 100;
+    
+    container.innerHTML = `
+        <div class="math-quiz-card">
+            <div class="quiz-header-row">
+                <button class="icon-btn" onclick="renderMathTableModule()" style="margin-right: 8px;">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <span class="quiz-progress-text">Soru ${currentQuizQuestionIdx + 1}/5</span>
+                <div class="quiz-progress-bar-bg">
+                    <div class="quiz-progress-bar-fill" style="width: ${progressPercent}%;"></div>
+                </div>
+                <span class="quiz-progress-text" style="color: var(--primary); font-weight: 800;">Skor: ${quizScore}/5</span>
+            </div>
+            
+            <div class="quiz-question-box">
+                <p class="quiz-progress-text" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">İşlemin Sonucu Nedir?</p>
+                <div class="quiz-question-text">${question.num} x ${question.mult} = ?</div>
+            </div>
+            
+            <div class="quiz-options-grid">
+                ${question.options.map(opt => `
+                    <button class="quiz-option-btn" onclick="handleQuizAnswer(${opt}, this)">${opt}</button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+window.renderQuizQuestion = renderQuizQuestion;
+
+function handleQuizAnswer(selectedOption, btnElement) {
+    const question = quizQuestions[currentQuizQuestionIdx];
+    const isCorrect = selectedOption === question.correct;
+    
+    // Disable all options
+    const btns = document.querySelectorAll(".quiz-option-btn");
+    btns.forEach(btn => btn.disabled = true);
+    
+    if (isCorrect) {
+        btnElement.classList.add("correct");
+        quizScore++;
+        // Confetti for correct answer!
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 40,
+                spread: 60,
+                origin: { y: 0.7 }
+            });
+        }
+    } else {
+        btnElement.classList.add("wrong");
+        // Highlight correct option
+        btns.forEach(btn => {
+            if (parseInt(btn.textContent) === question.correct) {
+                btn.classList.add("correct");
+            }
+        });
+    }
+    
+    // Move to next question after delay
+    setTimeout(() => {
+        currentQuizQuestionIdx++;
+        if (currentQuizQuestionIdx < 5) {
+            renderQuizQuestion();
+        } else {
+            showQuizResult();
+        }
+    }, 1500);
+}
+window.handleQuizAnswer = handleQuizAnswer;
+
+function showQuizResult() {
+    const container = document.getElementById("math-table-container");
+    if (!container) return;
+    
+    const isPerfect = quizScore === 5;
+    const isFirstTime = !appState.completedMathTables.includes(currentMathTableNum);
+    let earnStars = false;
+    
+    if (isPerfect && isFirstTime) {
+        earnStars = true;
+        if (!appState.completedMathTables) appState.completedMathTables = [];
+        appState.completedMathTables.push(currentMathTableNum);
+        saveState();
+        addStars(10);
+    }
+    
+    let emoji = "🎉";
+    let title = "Harikasın Deha!";
+    let desc = `5 sorunun tamamına doğru cevap verdin! Çarpım tablosunda ${currentMathTableNum}'leri süper öğrendin aslanım.`;
+    
+    if (quizScore === 4) {
+        emoji = "👍";
+        title = "Çok Güzel!";
+        desc = "5 sorudan 4 tanesini doğru cevapladın. Neredeyse kusursuz! Ufak bir dikkat hatası olmuş olabilir.";
+    } else if (quizScore < 4) {
+        emoji = "💪";
+        title = "Gelişebilirsin!";
+        desc = `5 sorudan ${quizScore} tanesini doğru bildin. Biraz daha pratik yapıp tekrar deneyebilirsin!`;
+    }
+    
+    if (earnStars) {
+        desc += `<br><strong style="color: #FFD700; font-size: 1.1rem; display: block; margin-top: 10px;">🌟 +10 Yıldız Kazandın! 🌟</strong>`;
+    } else if (isPerfect && !isFirstTime) {
+        desc += `<br><span style="color: var(--text-gray); font-size: 0.8rem; display: block; margin-top: 10px;">(Bu tablodan daha önce yıldız kazanmıştın.)</span>`;
+    }
+    
+    container.innerHTML = `
+        <div class="math-quiz-card quiz-result-view">
+            <div class="quiz-result-emoji">${emoji}</div>
+            <h3 class="quiz-result-title">${title}</h3>
+            <p class="quiz-result-desc">${desc}</p>
+            <button class="quiz-result-btn" onclick="renderMathTableModule()">Çarpım Tablosuna Dön</button>
+        </div>
+    `;
+}
+window.showQuizResult = showQuizResult;
