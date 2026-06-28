@@ -1,7 +1,7 @@
 /**
  * ATAOL Yapay Zeka - Application Logic & State Management
  * Specifically designed for Deha Ataol GÜL
- * Parent: Sertaç GÜL, Feriş GÜL
+ * Parent: Sertaç GÜL, Feride GÜL
  */
 
 // --- 1. CONFIGURATION & CONSTANTS ---
@@ -12,7 +12,7 @@ const WEEKS_DATA = [
         desc: "Bu hafta toplama ve çıkarma işlemlerini çok iyi öğreneceğiz. Kendimize güvenimizi kazanacağız!",
         tasks: [
             "Her gün en az 5 adet toplama ve çıkarma sorusu çöz.",
-            "Evde baban Sertaç veya Feriş mama'nın senden istediği bir ufak yardımı yerine getir.",
+            "Evde baban Sertaç veya Feride maman'ın senden istediği bir ufak yardımı yerine getir.",
             "Ekran süresini dünkinden daha az tutmaya çalış."
         ],
         topic: "Temel toplama ve çıkarma işlemleri (örn: 12 + 15, 34 - 18)"
@@ -34,7 +34,7 @@ const WEEKS_DATA = [
         desc: "Harika gidiyorsun! Şimdi 4'ler ve 5'ler çarpımını eğlenceli oyunlarla çözeceğiz.",
         tasks: [
             "4'ler ve 5'leri ezberle ve pratik yap.",
-            "Feriş mama'ya bugün kocaman sarıl ve onu çok sevdiğini söyle.",
+            "Feride mama'ya bugün kocaman sarıl ve onu çok sevdiğini söyle.",
             "Yolda yürürken tanımadığın insanlara laf atmadan, güvenli bir şekilde yürümeye özen göster."
         ],
         topic: "4 ve 5 rakamlarının çarpım tablosu (örn: 4x6, 5x9)"
@@ -56,7 +56,7 @@ const WEEKS_DATA = [
         desc: "Çarpım tablosunun zirvesindeyiz! 8'ler ve 9'lar çarpımı ile bu işi tamamen bitiriyoruz.",
         tasks: [
             "8 ve 9 rakamlarının çarpımlarını ezberle.",
-            "Babana veya Feriş mama'ya çarpım tablosunda ne kadar hızlandığını göster.",
+            "Babana veya Feride mama'ya çarpım tablosunda ne kadar hızlandığını göster.",
             "Sokaktaki hayvanları severken hijyen kurallarına dikkat et, ellerini dezenfekte et."
         ],
         topic: "8 ve 9 rakamlarının çarpım tablosu (örn: 8x9, 9x6)"
@@ -68,7 +68,7 @@ const WEEKS_DATA = [
         tasks: [
             "Bölme işleminin mantığını öğren ve pratik yap.",
             "Günde en az 5 adet bölme sorusunu doğru cevapla.",
-            "Feriş mama'ya sofrayı kurarken veya toplarken yardım et."
+            "Feride mama'ya sofrayı kurarken veya toplarken yardım et."
         ],
         topic: "Temel bölme işlemleri (örn: 15 / 3, 24 / 4)"
     },
@@ -100,7 +100,7 @@ const WEEKS_DATA = [
         desc: "Tebrikler Deha! Artık ortaokulda matematik derslerinde parlayacaksın. Hazır mısın?",
         tasks: [
             "Tüm öğrendiğin matematik konularından genel bir tekrar testi yap.",
-            "Baban Sertaç ve Feriş mama'ya bu 9 haftalık gelişim için teşekkür et.",
+            "Baban Sertaç ve Feride mama'ya bu 9 haftalık gelişim için teşekkür et.",
             "Ortaokulda başarılı olacağına dair kendine söz ver!"
         ],
         topic: "Ortaokula hazırlık genel tekrar ve motivasyon"
@@ -112,7 +112,7 @@ const ACHIEVEMENTS = [
     { key: "math_genius", title: "Matematik Dehası", desc: "Ataol'un sorduğu 5 matematik sorusunu doğru bildin!", icon: "functions" },
     { key: "clean_hands", title: "Güvenli Hayvan Dostu", desc: "Sokak hayvanlarını severken hijyen kurallarına uyacağına söz verdin!", icon: "clean_hands" },
     { key: "screen_hero", title: "Ekran Kahramanı", desc: "Günün ekran süresi sınırını başarıyla tamamladın!", icon: "phonelink_off" },
-    { key: "polite_deha", title: "Kibar Evlat", desc: "Feriş mama'ya çok iyi davrandın ve yardım ettin!", icon: "favorite" },
+    { key: "polite_deha", title: "Kibar Evlat", desc: "Feride mama'ya çok iyi davrandın ve yardım ettin!", icon: "favorite" },
     { key: "graduation", title: "Ortaokul Yolcusu", desc: "9 haftalık gelişim planını başarıyla tamamladın!", icon: "school" }
 ];
 
@@ -452,7 +452,7 @@ function setupEventListeners() {
         
         // Let the system introduce the new week in chat
         const newWeekData = WEEKS_DATA.find(w => w.num === newWeek);
-        const announceMsg = `Dehacığım, baban Sertaç olarak senin gelişim planını güncelledim. Şimdi ${newWeekData.title} yolculuğundayız. Konumuz: ${newWeekData.topic}. Feriş mama da ben de seninle gurur duyuyoruz. Hazır olduğunda bana 'yeni bir soru sor' diyebilirsin! 🚀`;
+        const announceMsg = `Dehacığım, baban Sertaç olarak senin gelişim planını güncelledim. Şimdi ${newWeekData.title} yolculuğundayız. Konumuz: ${newWeekData.topic}. Feride maman da ben de seninle gurur duyuyoruz. Hazır olduğunda bana 'yeni bir soru sor' diyebilirsin! 🚀`;
         addMessageToState("model", announceMsg);
         renderChatHistory();
     });
@@ -644,7 +644,7 @@ KİMLİK VE GELİŞTİRİCİ BİLGİSİ:
 1. Deha'da DEHB (Dikkat Eksikliği ve Hiperaktivite Bozukluğu) vardır. Bu yüzden cevapların ÇOK KISA, basit ve öz olmalıdır. En fazla 1-2 cümle yaz! Asla uzun paragraflar yazarak dikkatini dağıtma.
 2. Bol bol emojiler kullan ve Deha'yı motive edecek, onun dikkatini çekecek hareketli kelimeler seç.
 3. Deha'ya hitap ederken "Dehacığım", "canım oğlum", "güzel oğlum", "aslanım" diye hitap et.
-4. Cümlelerini babası Sertaç konuşuyormuş gibi kur. "Ben baban Sertaç...", "Baban olarak seni...", "Biz Feriş mama ile seni..." şeklinde ifadeler kullan. Feriş mama'nın de onu çok sevdiğinden bahset.
+4. Cümlelerini babası Sertaç konuşuyormuş gibi kur. "Ben baban Sertaç...", "Baban olarak seni...", "Biz Feride maman ile seni..." şeklinde ifadeler kullan. Feride maman'ın de onu çok sevdiğinden bahset.
 
 ÖĞRETİCİ İÇERİK VE ÖDÜL MEKANİZMASI:
 1. Matematik: Sürekli, her mesajda matematik sorusu SORMA! Bu Deha'yı sıkar ve yorar. Bunun yerine ara sıra, eğlenceli ve ödül odaklı matematik soruları sor. Örneğin: "Sana +10 Yıldız kazandıracak harika bir soru: 6 x 8 kaç yapar aslanım?" gibi.
@@ -715,7 +715,7 @@ Konuşmanın akışını bozmadan, Deha'nın en son yazdığı mesaja göre baba
         
         let errorMessage = "Canım oğlum, bağlantımda küçük bir sorun oldu sanırım. Sen nasılsın, çalışmaların nasıl gidiyor?";
         if (error.message && (error.message.includes("400") || error.message.includes("403"))) {
-            errorMessage = "Canım oğlum Dehacığım, sanırım girdiğimiz ATAOL API Anahtarı'nda (API Key) bir hata var. Sertaç babana söyleyebilir misin? Ayarlar kısmından ATAOL API Key'i bir kez daha kontrol etsin, seni ve Feriş mama'yı çok seviyorum! ❤️";
+            errorMessage = "Canım oğlum Dehacığım, sanırım girdiğimiz ATAOL API Anahtarı'nda (API Key) bir hata var. Sertaç babana söyleyebilir misin? Ayarlar kısmından ATAOL API Key'i bir kez daha kontrol etsin, seni ve Feride maman'ı çok seviyorum! ❤️";
         }
         
         addMessageToState("model", errorMessage);
@@ -795,7 +795,7 @@ function unlockBadge(badgeKey) {
         // Announce in chat
         const badge = ACHIEVEMENTS.find(b => b.key === badgeKey);
         setTimeout(() => {
-            const achievementMsg = `Tebrikler Dehacığım! 🌟 Yeni bir madalya kazandın: "${badge.title}". Feriş mama da ben de senin bu başarını kutluyoruz! Sana fazladan +10 Yıldız!`;
+            const achievementMsg = `Tebrikler Dehacığım! 🌟 Yeni bir madalya kazandın: "${badge.title}". Feride maman da ben de senin bu başarını kutluyoruz! Sana fazladan +10 Yıldız!`;
             addMessageToState("model", achievementMsg);
             addStars(10);
             renderChatHistory();
@@ -873,12 +873,12 @@ function updateDailyMissionText() {
     const today = new Date().getDay(); // 0 is Sunday, 6 is Saturday
     const dailyMissions = [
         "Baban Sertaç'a bugün ortaokula başlamaya hazır olduğunu gösteren 3 adet çarpma işlemi yap!",
-        "Feriş mama'ya bugün yardıma ihtiyacı olup olmadığını sor ve ona yardım et!",
+        "Feride mama'ya bugün yardıma ihtiyacı olup olmadığını sor ve ona yardım et!",
         "Bugün sokakta kedi veya köpek görürsen uzaktan tatlı dille sev, ellerini temiz tut!",
         "Bugün telefon ekranından uzak kalıp 15 sayfa kitap oku ve babana özetini anlat!",
         "En çok takıldığın çarpım tablosu rakamını (mesela 7'ler veya 8'ler) 5 defa sesli çalış!",
         "Bugün hiç YouTube Shorts izlemeden günü tamamla, yerine dışarıda biraz oyun oyna!",
-        "Feriş mama'ya bugün kocaman sarıl ve 'Seni çok seviyorum Feriş mama' de!"
+        "Feride mama'ya bugün kocaman sarıl ve 'Seni çok seviyorum Feride mama' de!"
     ];
     
     dailyMissionText.textContent = dailyMissions[today % dailyMissions.length];
@@ -903,7 +903,7 @@ function handleCompleteDailyTask() {
     addStars(5);
     checkDailyTaskStatus();
     
-    const taskCompletedMsg = `Günün görevini başarıyla tamamladın Dehacığım! 🌟 Baban olarak seninle çok gurur duyuyorum. Sana +5 Yıldız daha kazandırdım. Feriş mama da bu güzel habere çok sevindi. Harika gidiyorsun!`;
+    const taskCompletedMsg = `Günün görevini başarıyla tamamladın Dehacığım! 🌟 Baban olarak seninle çok gurur duyuyorum. Sana +5 Yıldız daha kazandırdım. Feride maman da bu güzel habere çok sevindi. Harika gidiyorsun!`;
     addMessageToState("model", taskCompletedMsg);
     renderChatHistory();
 }
