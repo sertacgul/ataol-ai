@@ -306,7 +306,7 @@ function initApp() {
     // Load Chat History
     if (appState.messages.length === 0) {
         // First welcome message from Sertaç Father
-        const welcomeText = `Dehacığım, canım oğlum, ben baban Sertaç. Bu sene seninle harika bir ortaokula hazırlık ve matematik serüvenine çıkıyoruz. Annen Feriş and ben seni dünyalar kadar seviyoruz! Burası seninle özel sohbet edeceğimiz yer. Bana dilediğin her şeyi yazabilirsin. Hazır mısın? Sana bir matematik sorusu sorayım mı? 🌟`;
+        const welcomeText = `Dehacığım, canım oğlum, ben baban Sertaç. Bu sene seninle harika bir ortaokula hazırlık ve matematik serüvenine çıkıyoruz. Feride maman ve ben seni dünyalar kadar seviyoruz! Burası seninle özel sohbet edeceğimiz yer. Bana dilediğin her şeyi yazabilirsin. Hazır mısın? Sana bir matematik sorusu sorayım mı? 🌟`;
         addMessageToState("model", welcomeText);
     }
     renderChatHistory();
@@ -755,7 +755,7 @@ function analyzeAIResponseForGamification(aiText, userPrompt) {
         unlockBadge("screen_hero");
     }
     
-    if (lowerUser.includes("anne") || lowerUser.includes("feriş") || lowerUser.includes("yardım")) {
+    if (lowerUser.includes("mama") || lowerUser.includes("feride") || lowerUser.includes("yardım")) {
         unlockBadge("polite_deha");
     }
     
