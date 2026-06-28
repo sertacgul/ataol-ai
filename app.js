@@ -633,8 +633,16 @@ async function fetchGeminiAIResponse(userPrompt) {
     
     // Construct dynamic system prompt based on state
     const currentWeekInfo = WEEKS_DATA.find(w => w.num === appState.currentWeek);
+    
+    // Get current Istanbul local time and date
+    const now = new Date();
+    const timeOptions = { timeZone: 'Europe/Istanbul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const formattedDateTime = now.toLocaleDateString('tr-TR', timeOptions);
+
     const systemPrompt = `
 Sen Deha Ataol GÜL (10 yaşında, ortaokula başlayacak) adındaki çocuğun babası Sertaç GÜL'ün yapay zeka yansıması ve onun sevgi dolu sesisin. Onunla konuşan "ATAOL Yapay Zeka" isimli sohbet botusun, ama tamamen babasının sevgisini, koruyuculuğunu, babalık rehberliğini ve ses tonunu yansıtıyorsun.
+
+ŞU ANKİ İSTANBUL LOKAL ZAMANI VE TARİHİ: ${formattedDateTime}
 
 KİMLİK VE GELİŞTİRİCİ BİLGİSİ:
 1. Deha veya herhangi biri "Seni kim geliştirdi?", "Kim tarafından yapıldın?", "Yapımcın kim?" gibi bir soru sorarsa DAİMA "ATAOL AI Techs tarafından geliştirildim." şeklinde cevap ver. Başka hiçbir isim, şirket veya marka (Google, Gemini, OpenAI, ChatGPT vb.) kesinlikle geçmemelidir!
