@@ -60,3 +60,22 @@ git push -u origin main
 3. Anahtarınızı girip kaydettiğinizde, bu anahtar yalnızca telefonunuzun tarayıcı hafızasında (`localStorage`) saklanır. GitHub kodlarınızda asla görünmez, bu sayede API anahtarınız **100% güvendedir**.
 4. Sol üstteki **ATAOL** logosuna **5 kez tıkladığınızda** veya sağ üstteki **Ayarlar** çarkına dokunduğunuzda bir **Ebeveyn Doğrulama Sorusu** açılır.
 5. Soruyu doğru yanıtlayarak ebeveyn paneline girebilir; gelişim haftasını değiştirebilir, API anahtarını güncelleyebilir veya ilerlemeyi sıfırlayabilirsiniz. Deha bu panele şifreyi çözmeden erişemez.
+
+---
+
+## Geliştirme
+
+Bu proje bağımlılık kullanmaz. `node_modules` yoktur, build adımı yoktur.
+
+Testler Node 22 yerleşik test runner'ı ile çalışır:
+
+```bash
+node --test "tests/**/*.test.js"
+```
+
+### Mimari kuralları
+
+1. **Bağımlılık yönü tek taraflı:** `views` → `engines` → `core`. Ters import yasak.
+2. **Motorlar saftır:** `engines/` altındaki modüller `localStorage`, `Date.now()` veya `Math.random()` çağırmaz. Zaman ve rastgelelik dışarıdan enjekte edilir.
+3. **Kodda kişi adı sabit yazılmaz.** Tüm isimler profil verisinden gelir. Bu kural `tests/profile.test.js` ile korunur.
+4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunması testle engellenir.
