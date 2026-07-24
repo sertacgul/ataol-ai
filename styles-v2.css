@@ -1,0 +1,310 @@
+/* ATAOL v2 - yeni bilesenler. Renkler ve fontlar styles.css'teki
+   degiskenlerden gelir, burada yeni renk tanimlanmaz. */
+
+#app {
+  min-height: 100vh;
+  padding-bottom: calc(72px + var(--safe-bottom));
+  background: var(--bg-app);
+  font-family: var(--font-body);
+  color: var(--text-dark);
+}
+
+.v2-view {
+  display: none;
+  padding: calc(16px + var(--safe-top)) 16px 16px;
+}
+
+.v2-view.active {
+  display: block;
+}
+
+/* --- Rutin ekrani --- */
+
+.routine-header {
+  margin-bottom: 20px;
+}
+
+.routine-header__greeting {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.routine-header__totals {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.routine-block {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.routine-block__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.routine-block__time {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.routine-block__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.routine-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.routine-card__icon {
+  font-size: 26px;
+}
+
+.routine-card__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.routine-card__reward {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Locked: silik, dokunulamaz oldugu acik */
+.routine-card.card--locked {
+  opacity: 0.45;
+  background: transparent;
+  filter: grayscale(60%);
+}
+
+/* Available: su an yapilacak tek sey, one cikmali */
+.routine-card.card--available {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  border-color: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.routine-card.card--available .routine-card__title,
+.routine-card.card--available .routine-card__reward,
+.routine-card.card--available .routine-card__icon {
+  color: #fff;
+}
+
+.routine-card.card--available:active {
+  transform: scale(0.97);
+}
+
+/* Awaiting approval: buyuge bagli oldugu net */
+.routine-card.card--awaiting_approval {
+  background: rgba(255, 210, 94, 0.25);
+  border-color: var(--gold);
+}
+
+.routine-card.card--awaiting_approval .routine-card__title {
+  color: var(--text-dark);
+}
+
+/* Done: bitmis, sakin */
+.routine-card.card--done {
+  background: rgba(0, 206, 201, 0.12);
+  border-color: var(--secondary);
+  opacity: 0.8;
+}
+
+.routine-card.card--done .routine-card__icon {
+  color: var(--secondary);
+}
+
+/* --- Ebeveyn ekrani --- */
+
+.parent-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parent-queue__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+}
+
+.parent-queue__title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.parent-queue__reward {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.parent-queue__approve {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.parent-empty {
+  text-align: center;
+  color: var(--text-muted);
+  margin-top: 40px;
+}
+
+/* --- Alt navigasyon --- */
+
+.v2-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: var(--card-bg);
+  border-top: 1px solid var(--card-border);
+  padding-bottom: var(--safe-bottom);
+  box-shadow: var(--shadow-lg);
+}
+
+.v2-nav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.v2-nav button.active {
+  color: var(--primary);
+}
+
+/* --- PIN modal --- */
+
+.v2-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 52, 54, 0.5);
+  padding: 16px;
+  z-index: 100;
+}
+
+.v2-modal[hidden] {
+  display: none;
+}
+
+.v2-modal__box {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  font-family: var(--font-body);
+}
+
+.v2-modal__box h2 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+#pin-guardians {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+#pin-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 20px;
+  letter-spacing: 4px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  margin-bottom: 8px;
+}
+
+.v2-modal__error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.v2-modal__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.v2-modal__actions button {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+#pin-cancel {
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+}
+
+#pin-submit {
+  background: var(--primary);
+  color: #fff;
+}
