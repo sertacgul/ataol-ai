@@ -372,7 +372,7 @@ git commit -m "fix(engines): cappedMinutes negatif tavanda sifir dondursun"
 - [ ] **Step 1: Tüm testleri çalıştır**
 
 Run: `node --test "tests/**/*.test.js"`
-Expected: `# pass 68`, `# fail 0`
+Expected: `# pass 70`, `# fail 0`
 
 Dağılım: smoke 1, storage 5, crypto 5, profile 8, routine 20, math 12, rewards 11, diary 8.
 
