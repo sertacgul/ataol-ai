@@ -25,9 +25,9 @@ export function createProfile({ childName, birthYear, avatar = null }) {
     guardians: [],
     cards: [],
     routine: { morning: [], afternoon: [], evening: [] },
-    schedule: { ...DEFAULT_SCHEDULE },
+    schedule: structuredClone(DEFAULT_SCHEDULE),
     rewards: [],
-    settings: { ...DEFAULT_SETTINGS }
+    settings: structuredClone(DEFAULT_SETTINGS)
   };
 }
 

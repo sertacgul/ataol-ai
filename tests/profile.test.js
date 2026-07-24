@@ -5,7 +5,8 @@ import {
   SCHEMA_VERSION,
   createProfile,
   addGuardian,
-  validateProfile
+  validateProfile,
+  DEFAULT_SCHEDULE
 } from '../src/core/profile.js';
 
 test('createProfile sema surumu ve bos bakim veren listesi verir', () => {
@@ -48,4 +49,17 @@ test('kodda kisi adi sabit yazili degil', () => {
   for (const name of ['Deha', 'Feride', 'Sertaç', 'Sertac']) {
     assert.ok(!src.includes(name), `profile.js icinde "${name}" gecmemeli`);
   }
+});
+
+test('profiller schedule nesnesini paylasmaz', () => {
+  const p1 = createProfile({ childName: 'A', birthYear: 2016 });
+  const p2 = createProfile({ childName: 'B', birthYear: 2017 });
+  p1.schedule.morning.from = '09:00';
+  assert.equal(p2.schedule.morning.from, '06:30');
+});
+
+test('profil degisikligi modul sabitini bozmaz', () => {
+  const p = createProfile({ childName: 'A', birthYear: 2016 });
+  p.schedule.evening.from = '23:00';
+  assert.equal(DEFAULT_SCHEDULE.evening.from, '19:00');
 });
