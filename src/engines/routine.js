@@ -74,15 +74,17 @@ export function cardStates(profile, dayProgress, date) {
   return out;
 }
 
-export function completeCard(dayProgress, card) {
-  if (dayProgress.cards[card.id]) return dayProgress;
+export function completeCard(profile, dayProgress, cardId, date) {
+  const entry = cardStates(profile, dayProgress, date).find((s) => s.cardId === cardId);
+  if (!entry || entry.state !== 'available' || !entry.card) return dayProgress;
 
+  const card = entry.card;
   const needsApproval = card.type === 'approved';
   const state = needsApproval ? 'awaiting_approval' : 'done';
 
   return {
     ...dayProgress,
-    cards: { ...dayProgress.cards, [card.id]: { state } },
+    cards: { ...dayProgress.cards, [cardId]: { state } },
     stars: dayProgress.stars + (needsApproval ? 0 : card.stars),
     minutes: dayProgress.minutes + (needsApproval ? 0 : card.minutes)
   };

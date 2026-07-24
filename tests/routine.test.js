@@ -50,20 +50,38 @@ test('blok icinde sadece ilk kart available, sonrakiler locked', () => {
 
 test('onay gerektiren kart tamamlaninca awaiting_approval olur', () => {
   const card = { id: 'c1', block: 'morning', type: 'approved', stars: 10, minutes: 10 };
-  const dp = completeCard(emptyDayProgress(), card);
+  const profile = {
+    schedule,
+    settings: { dayResetHour: 4 },
+    cards: [card],
+    routine: { morning: ['c1'], afternoon: [], evening: [] }
+  };
+  const dp = completeCard(profile, emptyDayProgress(), 'c1', new Date('2026-07-24T07:00:00'));
   assert.equal(dp.cards.c1.state, 'awaiting_approval');
 });
 
 test('onay bekleyen kart puan vermez', () => {
   const card = { id: 'c1', block: 'morning', type: 'approved', stars: 10, minutes: 10 };
-  const dp = completeCard(emptyDayProgress(), card);
+  const profile = {
+    schedule,
+    settings: { dayResetHour: 4 },
+    cards: [card],
+    routine: { morning: ['c1'], afternoon: [], evening: [] }
+  };
+  const dp = completeCard(profile, emptyDayProgress(), 'c1', new Date('2026-07-24T07:00:00'));
   assert.equal(dp.stars, 0);
   assert.equal(dp.minutes, 0);
 });
 
 test('onaylandiktan sonra puan verilir ve onaylayan kaydedilir', () => {
   const card = { id: 'c1', block: 'morning', type: 'approved', stars: 10, minutes: 10 };
-  let dp = completeCard(emptyDayProgress(), card);
+  const profile = {
+    schedule,
+    settings: { dayResetHour: 4 },
+    cards: [card],
+    routine: { morning: ['c1'], afternoon: [], evening: [] }
+  };
+  let dp = completeCard(profile, emptyDayProgress(), 'c1', new Date('2026-07-24T07:00:00'));
   dp = approveCard(dp, card, 'guardian-7', '2026-07-24T08:00:00Z');
   assert.equal(dp.cards.c1.state, 'done');
   assert.equal(dp.stars, 10);
@@ -73,28 +91,41 @@ test('onaylandiktan sonra puan verilir ve onaylayan kaydedilir', () => {
 
 test('olcum karti onaysiz dogrudan puan verir', () => {
   const card = { id: 'm1', block: 'morning', type: 'measured', stars: 8, minutes: 4 };
-  const dp = completeCard(emptyDayProgress(), card);
+  const profile = {
+    schedule,
+    settings: { dayResetHour: 4 },
+    cards: [card],
+    routine: { morning: ['m1'], afternoon: [], evening: [] }
+  };
+  const dp = completeCard(profile, emptyDayProgress(), 'm1', new Date('2026-07-24T07:00:00'));
   assert.equal(dp.cards.m1.state, 'done');
   assert.equal(dp.stars, 8);
 });
 
 test('ayni kart iki kez puan vermez', () => {
   const card = { id: 'm1', block: 'morning', type: 'measured', stars: 8, minutes: 4 };
-  let dp = completeCard(emptyDayProgress(), card);
-  dp = completeCard(dp, card);
+  const profile = {
+    schedule,
+    settings: { dayResetHour: 4 },
+    cards: [card],
+    routine: { morning: ['m1'], afternoon: [], evening: [] }
+  };
+  let dp = completeCard(profile, emptyDayProgress(), 'm1', new Date('2026-07-24T07:00:00'));
+  dp = completeCard(profile, dp, 'm1', new Date('2026-07-24T07:00:00'));
   assert.equal(dp.stars, 8);
 });
 
 test('tamamlanan karttan sonraki kart acilir', () => {
   const profile = {
     schedule,
+    settings: { dayResetHour: 4 },
     cards: [
       { id: 'c1', block: 'morning', type: 'measured', stars: 5, minutes: 5 },
       { id: 'c2', block: 'morning', type: 'inapp', stars: 5, minutes: 5 }
     ],
     routine: { morning: ['c1', 'c2'], afternoon: [], evening: [] }
   };
-  const dp = completeCard(emptyDayProgress(), profile.cards[0]);
+  const dp = completeCard(profile, emptyDayProgress(), 'c1', new Date('2026-07-24T07:00:00'));
   const states = cardStates(profile, dp, new Date('2026-07-24T07:00:00'));
   assert.equal(states.find((s) => s.cardId === 'c2').state, 'available');
 });
@@ -119,4 +150,46 @@ test('bozuk saat metni patlamak yerine blogu kapali sayar', () => {
     availableBlocks(new Date('2026-07-24T10:00:00'), { morning: { from: 'abc' } }, 4),
     []
   );
+});
+
+const gatingProfile = {
+  schedule,
+  settings: { dayResetHour: 4 },
+  cards: [
+    { id: 'm1', block: 'morning', type: 'measured', stars: 5, minutes: 5 },
+    { id: 'm2', block: 'morning', type: 'measured', stars: 5, minutes: 5 },
+    { id: 'e1', block: 'evening', type: 'measured', stars: 7, minutes: 7 }
+  ],
+  routine: { morning: ['m1', 'm2'], afternoon: [], evening: ['e1'] }
+};
+
+test('saati gelmemis blogun karti puan vermez', () => {
+  const dp = completeCard(gatingProfile, emptyDayProgress(), 'e1', new Date('2026-07-24T07:00:00'));
+  assert.equal(dp.stars, 0);
+  assert.equal(dp.cards.e1, undefined);
+});
+
+test('sirasi gelmemis kart puan vermez', () => {
+  const dp = completeCard(gatingProfile, emptyDayProgress(), 'm2', new Date('2026-07-24T07:00:00'));
+  assert.equal(dp.stars, 0);
+});
+
+test('sirasi gelen kart puan verir', () => {
+  const dp = completeCard(gatingProfile, emptyDayProgress(), 'm1', new Date('2026-07-24T07:00:00'));
+  assert.equal(dp.stars, 5);
+});
+
+test('onceki tamamlaninca sonraki kart puan verebilir', () => {
+  let dp = completeCard(gatingProfile, emptyDayProgress(), 'm1', new Date('2026-07-24T07:00:00'));
+  dp = completeCard(gatingProfile, dp, 'm2', new Date('2026-07-24T07:00:00'));
+  assert.equal(dp.stars, 10);
+});
+
+test('routine icinde karsiligi olmayan id puan vermez', () => {
+  const hayalet = {
+    ...gatingProfile,
+    routine: { morning: ['yok'], afternoon: [], evening: [] }
+  };
+  const dp = completeCard(hayalet, emptyDayProgress(), 'yok', new Date('2026-07-24T07:00:00'));
+  assert.equal(dp.stars, 0);
 });
