@@ -8,8 +8,7 @@
 const MAX_LADDER_RATIO = 2;
 
 export function cappedMinutes(minutes, cap) {
-  if (minutes < 0) return 0;
-  return Math.min(minutes, cap);
+  return Math.max(0, Math.min(minutes, Math.max(0, cap)));
 }
 
 export function totalStars(days) {

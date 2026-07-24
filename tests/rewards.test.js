@@ -67,3 +67,11 @@ test('negatif yildizda ilerleme sifirin altina inmez', () => {
   assert.equal(p[0].progress, 0);
   assert.equal(p[0].unlocked, false);
 });
+
+test('negatif tavan negatif sonuc uretmez', () => {
+  assert.equal(cappedMinutes(30, -5), 0);
+});
+
+test('sifir tavan sifir dondurur', () => {
+  assert.equal(cappedMinutes(30, 0), 0);
+});
