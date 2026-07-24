@@ -98,3 +98,25 @@ test('tamamlanan karttan sonraki kart acilir', () => {
   const states = cardStates(profile, dp, new Date('2026-07-24T07:00:00'));
   assert.equal(states.find((s) => s.cardId === 'c2').state, 'available');
 });
+
+test('gece yarisi ile sifirlama saati arasinda bloklar acik kalir', () => {
+  assert.deepEqual(
+    availableBlocks(new Date('2026-07-25T00:30:00'), schedule, 4),
+    ['morning', 'afternoon', 'evening']
+  );
+});
+
+test('sifirlama saatinden sonra yeni gunun bloklari henuz acilmaz', () => {
+  assert.deepEqual(availableBlocks(new Date('2026-07-25T05:00:00'), schedule, 4), []);
+});
+
+test('eksik from alani patlamak yerine blogu kapali sayar', () => {
+  assert.deepEqual(availableBlocks(new Date('2026-07-24T10:00:00'), { afternoon: {} }, 4), []);
+});
+
+test('bozuk saat metni patlamak yerine blogu kapali sayar', () => {
+  assert.deepEqual(
+    availableBlocks(new Date('2026-07-24T10:00:00'), { morning: { from: 'abc' } }, 4),
+    []
+  );
+});

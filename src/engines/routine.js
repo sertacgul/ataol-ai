@@ -4,6 +4,9 @@
  * Tasarim karari: bir blok, baslangic saati gectikten sonra gunun sonuna
  * kadar acik kalir. Kapanma yoktur. Sabah gorevini 10'da yapan bir cocuk
  * kilitlenmis hissetmemeli, bu direnc uretir.
+ *
+ * Gun modeli dayKey ile ayni: sifirlama saatinden onceki bir an hala
+ * onceki gune aittir, bu yuzden bloklar o saatlerde de acik kalir.
  */
 
 export const BLOCKS = ['morning', 'afternoon', 'evening'];
@@ -29,13 +32,21 @@ function parseTime(hhmm) {
   return h * 60 + m;
 }
 
-export function availableBlocks(date, schedule) {
-  const now = minutesOfDay(date);
-  return BLOCKS.filter((b) => schedule[b] && now >= parseTime(schedule[b].from));
+export function availableBlocks(date, schedule, resetHour = 4) {
+  let now = minutesOfDay(date);
+  if (date.getHours() < resetHour) now += 24 * 60;
+
+  return BLOCKS.filter((b) => {
+    const from = schedule[b]?.from;
+    if (typeof from !== 'string') return false;
+    const start = parseTime(from);
+    return Number.isFinite(start) && now >= start;
+  });
 }
 
 export function cardStates(profile, dayProgress, date) {
-  const open = new Set(availableBlocks(date, profile.schedule));
+  const resetHour = profile.settings?.dayResetHour ?? 4;
+  const open = new Set(availableBlocks(date, profile.schedule, resetHour));
   const byId = new Map(profile.cards.map((c) => [c.id, c]));
   const out = [];
 
