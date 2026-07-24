@@ -19,7 +19,7 @@ export function totalStars(days) {
 export function rewardProgress(stars, rewards) {
   return rewards.map((r) => ({
     ...r,
-    progress: r.target > 0 ? Math.min(1, stars / r.target) : 1,
+    progress: r.target > 0 ? Math.max(0, Math.min(1, stars / r.target)) : 1,
     unlocked: stars >= r.target
   }));
 }

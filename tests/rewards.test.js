@@ -61,3 +61,9 @@ test('validateRewardLadder duzgun merdiveni onaylar', () => {
   ]);
   assert.equal(r.valid, true);
 });
+
+test('negatif yildizda ilerleme sifirin altina inmez', () => {
+  const p = rewardProgress(-500, [{ id: 'r1', name: 'X', target: 100 }]);
+  assert.equal(p[0].progress, 0);
+  assert.equal(p[0].unlocked, false);
+});
