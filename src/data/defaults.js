@@ -7,6 +7,11 @@ import { createProfile, addGuardian } from '../core/profile.js';
  * Yildiz: kucuk is 2, orta 3, buyuk 5. Gunluk toplam 30.
  * Dakika: mukemmel gun tam 60'a denk gelir, yani tavan mukemmel gunde
  * devreye girer ve "her sey bitti, sinirsiz ekran" durumu olusmaz.
+ *
+ * 1B'de tum kartlar 'approved'. measured (uygulama olcer) ve inapp
+ * (uygulama icinde tamamlanir) tipleri motorda hazir ama akislari
+ * 1C'de gelecek. O zamana kadar kullanilirlarsa tek dokunusla puan
+ * odenir, cunku dogrulanacak bir aktivite yok.
  */
 
 export const DEFAULT_CARDS = [
@@ -16,11 +21,11 @@ export const DEFAULT_CARDS = [
 
   { id: 'ogle-ust', block: 'afternoon', type: 'approved', title: 'Üstünü değiştir, ellerini yıka', icon: 'wash', stars: 2, minutes: 4 },
   { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev', icon: 'edit_note', stars: 5, minutes: 10 },
-  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', icon: 'functions', stars: 5, minutes: 10 },
+  { id: 'ogle-matematik', block: 'afternoon', type: 'approved', title: 'Matematik seti', icon: 'functions', stars: 5, minutes: 10 },
 
   { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', icon: 'volunteer_activism', stars: 5, minutes: 10 },
   { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', icon: 'shower', stars: 2, minutes: 4 },
-  { id: 'aksam-kitap', block: 'evening', type: 'inapp', title: '15 dakika kitap', icon: 'menu_book', stars: 3, minutes: 6 },
+  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '15 dakika kitap', icon: 'menu_book', stars: 3, minutes: 6 },
   { id: 'aksam-canta', block: 'evening', type: 'approved', title: 'Yarının çantası', icon: 'checklist', stars: 2, minutes: 4 }
 ];
 

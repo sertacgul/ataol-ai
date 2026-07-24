@@ -79,3 +79,12 @@ test('seedProfile cagrilari birbirini etkilemez', () => {
   assert.equal(b.cards[0].stars, DEFAULT_CARDS[0].stars);
   assert.equal(b.rewards[0].target, DEFAULT_REWARDS[0].target);
 });
+
+test('1B de hicbir kart dogrulamasiz odeme yapmaz', () => {
+  // measured ve inapp kartlar tamamlaninca dogrudan puan verir.
+  // Bu tiplerin gercek akislari 1C'de gelecek; o zamana kadar tohum
+  // veride kullanilmazlar, yoksa cocuk tek dokunusla puan alir.
+  for (const c of DEFAULT_CARDS) {
+    assert.equal(c.type, 'approved', `${c.id} onaya bagli olmali (1C'ye kadar)`);
+  }
+});
