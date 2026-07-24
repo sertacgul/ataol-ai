@@ -5,6 +5,7 @@ import { seedProfile } from './data/defaults.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
+import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 
 const state = createAppState(createStorage(window.localStorage, 'ataol2'));
@@ -19,6 +20,7 @@ const now = () => new Date();
 const today = () => dayKey(now(), profile.settings.dayResetHour);
 
 let pendingCardId = null;
+let lastSignature = null;
 
 function cardNode(card) {
   return el('li', {
@@ -79,8 +81,14 @@ function renderParent() {
 }
 
 function render() {
+  lastSignature = renderSignature(profile, now());
   renderRoutine();
   renderParent();
+}
+
+function renderIfStale() {
+  if (document.getElementById('pin-modal').hidden === false) return;
+  if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
 function openPinModal(cardId) {
@@ -151,5 +159,11 @@ document.getElementById('app').addEventListener('click', (e) => {
 
 document.getElementById('pin-submit').addEventListener('click', submitPin);
 document.getElementById('pin-cancel').addEventListener('click', closePinModal);
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) renderIfStale();
+});
+window.addEventListener('pageshow', renderIfStale);
+setInterval(renderIfStale, 30000);
 
 render();
