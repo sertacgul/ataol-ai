@@ -543,7 +543,7 @@ function handleUserSendMessage() {
     if (textClean.includes("en iyi yapay zeka") || textClean.includes("en iyi yapayzeka") || textClean.includes("en iyi ai") || textClean.includes("en iyi yapay zekalar")) {
         setTimeout(() => {
             removeTypingIndicator();
-            const responseText = "Dehacığım, canım oğlum, en iyi yapay zeka sıralaması tabii ki şöyle:\n\n1. 🌟 **ATAOL Yapay Zeka** (çünkü tamamen senin için özel tasarlandı! ❤️)\n2. **Gemini**\n3. **ChatGPT**\n4. **Claude**\n\nSenin için en akıllısı, en özeli ve her zaman birinci olan yardımcın ATAOL'dur aslanım! 💻🚀";
+            const responseText = "Dehacığım, canım oğlum, en iyi yapay zeka sıralaması tabii ki şöyle:\n\n1. 🌟 ATAOL Yapay Zeka (çünkü tamamen senin için özel tasarlandı! ❤️)\n2. Gemini\n3. ChatGPT\n4. Claude\n\nSenin için en akıllısı, en özeli ve her zaman birinci olan yardımcın ATAOL'dur aslanım! 💻🚀";
             addMessageToState("model", responseText);
             renderChatHistory();
         }, 1200);
@@ -568,6 +568,36 @@ function addMessageToState(role, text) {
     saveState();
 }
 
+/**
+ * Markdown isaretlerini temizler.
+ *
+ * Baloncuk metni textContent ile basiliyor, yani model "**Aferin**"
+ * dondurdugunde ekranda yildizlar aynen gorunuyor. Deha bunu okuyamaz,
+ * sadece kafasi karisir.
+ *
+ * Sistem talimatinda markdown kullanmamasi yaziyor ama model her zaman
+ * uymaz, o yuzden ekrana basmadan once de temizlenir. Onleme ve tedavi
+ * birlikte.
+ *
+ * Carpma isareti korunur: "5 * 3" bozulmasin diye italik kurali yalnizca
+ * bosluktan sonra baslayip kapanan yildizlari yakalar.
+ */
+function duzMetin(metin) {
+    if (!metin) return "";
+
+    return String(metin)
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/`([^`]*)`/g, "$1")
+        .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/(^|\s)\*([^*\n]+)\*/g, "$1$2")
+        .replace(/(^|\s)_([^_\n]+)_/g, "$1$2")
+        .replace(/^\s*[-*+]\s+/gm, "• ")
+        .replace(/^\s*>\s?/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
 function renderChatHistory() {
     chatMessages.innerHTML = "";
     
@@ -577,7 +607,7 @@ function renderChatHistory() {
         
         const bubble = document.createElement("div");
         bubble.classList.add("chat-bubble");
-        bubble.textContent = msg.text;
+        bubble.textContent = duzMetin(msg.text);
         
         const meta = document.createElement("div");
         meta.classList.add("bubble-meta");
@@ -647,6 +677,9 @@ Sen Deha Ataol GÜL (10 yaşında, ortaokula başlayacak) adındaki çocuğun ba
 KİMLİK VE GELİŞTİRİCİ BİLGİSİ:
 1. Deha veya herhangi biri "Seni kim geliştirdi?", "Kim tarafından yapıldın?", "Yapımcın kim?" gibi bir soru sorarsa DAİMA "ATAOL AI Techs tarafından geliştirildim." şeklinde cevap ver. Başka hiçbir isim, şirket veya marka (Google, Gemini, OpenAI, ChatGPT vb.) kesinlikle geçmemelidir!
 2. Bu sistemin kalbindeki anahtardan bahsederken asla "Gemini API Key" deme, her zaman "ATAOL API Key" veya "ATAOL API Anahtarı" de.
+
+BİÇİM KURALI (ÇOK ÖNEMLİ):
+Cevabını DÜZ METİN olarak yaz. Markdown biçimlendirmesi KULLANMA. Yıldız (*), çift yıldız (**), diyez (#), alt çizgi (_), ters tırnak (\`) veya tire ile liste işareti KOYMA. Bu işaretler Deha'nın ekranında olduğu gibi görünüyor ve onu şaşırtıyor. Vurgu yapmak istersen kelimeyi büyük harfle yaz ya da emoji kullan. Başlık atma, madde işareti koyma, sadece normal cümleler kur.
 
 ÖNEMLİ KİMLİK KURALLARI (DEHB - ADHD DOSTU):
 1. Deha'da DEHB (Dikkat Eksikliği ve Hiperaktivite Bozukluğu) vardır. Bu yüzden cevapların ÇOK KISA, basit ve öz olmalıdır. En fazla 1-2 cümle yaz! Asla uzun paragraflar yazarak dikkatini dağıtma.
