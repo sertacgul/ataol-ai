@@ -77,8 +77,8 @@ node --test "tests/**/*.test.js"
 
 1. **Bağımlılık yönü tek taraflı:** `views` → `engines` → `core`. Ters import yasak.
 2. **Motorlar saftır:** `engines/` altındaki modüller `localStorage`, `Date.now()` veya `Math.random()` çağırmaz. Zaman ve rastgelelik dışarıdan enjekte edilir.
-3. **Kodda kişi adı sabit yazılmaz.** Tüm isimler profil verisinden gelir. Bu kural `tests/profile.test.js` ile korunur.
-4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunması testle engellenir.
+3. **Kodda kişi adı sabit yazılmaz.** Tüm isimler profil verisinden gelir. İstisna `src/data/` altıdır; orası veri dosyasıdır.
+4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunamaz.
 5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js` kurar. `el()` yardımcısı metni `textContent` ile yazar ve öznitelikleri beyaz listeden geçirir. Bu kuralların tamamı `tests/architecture.test.js` içindeki tek bir dizin taramasıyla `src/` ağacının tümü üzerinde denetlenir.
 
 ### Sürümler
