@@ -237,7 +237,9 @@ function cizDrill() {
   const s = drillSession;
   document.getElementById('drill-progress').textContent =
     `${SESSION_LENGTH - s.remaining + 1} / ${SESSION_LENGTH}`;
-  document.getElementById('drill-question').textContent = s.current ? s.current.text : '';
+  const soruEl = document.getElementById('drill-question');
+  soruEl.textContent = s.current ? s.current.text : '';
+  soruEl.className = s.current?.kind === 'problem' ? 'drill__question drill__question--problem' : 'drill__question';
   document.getElementById('drill-input').textContent = drillTyped;
 }
 
