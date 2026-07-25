@@ -45,8 +45,6 @@ export const DEFAULT_REWARDS = [
   { id: 'playstation', name: 'PlayStation', emoji: '🎮', target: 1200 }
 ];
 
-export const DEFAULT_MATH_TABLES = [2, 3, 4, 5, 6, 7, 8, 9, 10];
-
 export function seedProfile({ childName, birthYear, guardians = [] }) {
   let profile = createProfile({ childName, birthYear });
 

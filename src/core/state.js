@@ -1,8 +1,7 @@
-import { createFactSet } from '../engines/math.js';
+import { createDrill, LEVELS } from '../engines/drill.js';
 import { normalizeDayProgress } from '../engines/routine.js';
 import { emptyDiary } from '../engines/diary.js';
 import { createTimeFacts } from '../engines/timequiz.js';
-import { DEFAULT_MATH_TABLES } from '../data/defaults.js';
 import { SCHEMA_VERSION, validateProfile } from './profile.js';
 
 /**
@@ -43,12 +42,18 @@ export function createAppState(storage) {
         .reduce((sum, d) => sum + (d.stars ?? 0), 0);
     },
 
-    loadFacts() {
-      return storage.get('facts', null) ?? createFactSet(DEFAULT_MATH_TABLES);
+    loadDrill() {
+      const kayit = storage.get('drill', null);
+      const level = kayit?.level ?? LEVELS[0].id;
+      const byLevel = kayit?.byLevel ?? {};
+      return {
+        level,
+        byLevel: { ...byLevel, [level]: byLevel[level] ?? createDrill(level) }
+      };
     },
 
-    saveFacts(facts) {
-      storage.set('facts', facts);
+    saveDrill(drill) {
+      storage.set('drill', drill);
     },
 
     loadDiary() {
