@@ -2,6 +2,8 @@ import {
   createDrill, selectDrillFact, recordDrillAnswer, formatQuestion,
   isLevelMastered, nextLevel
 } from '../engines/drill.js';
+import { buildProblem } from '../engines/problems.js';
+import { VEHICLE_THEME } from '../data/themes.js';
 
 /**
  * Alistirma oturumu.
@@ -16,8 +18,9 @@ import {
 
 export const SESSION_LENGTH = 10;
 const SPEED_THRESHOLD_MS = 6000;
+const PROBLEM_COUNT = 2;
 
-function soruSec(drill, rng, haric = null) {
+function soruSec(drill, rng, kalan, haric = null) {
   const facts = drill.byLevel[drill.level];
   let key = selectDrillFact(facts, rng);
 
@@ -27,14 +30,20 @@ function soruSec(drill, rng, haric = null) {
   }
 
   if (!key) return null;
-  const f = facts[key];
-  return { key, text: formatQuestion(f), answer: f.answer };
+  const f = { ...facts[key], key };
+
+  if (kalan <= PROBLEM_COUNT) {
+    const p = buildProblem(f, VEHICLE_THEME, rng);
+    if (p) return { key, kind: 'problem', text: p.text, answer: p.answer };
+  }
+
+  return { key, kind: 'fact', text: formatQuestion(f), answer: f.answer };
 }
 
 export function startSession(drill, rng = Math.random) {
   return {
     drill,
-    current: soruSec(drill, rng),
+    current: soruSec(drill, rng, SESSION_LENGTH),
     remaining: SESSION_LENGTH,
     correctCount: 0,
     lastCorrect: null,
@@ -49,11 +58,12 @@ export function answerCurrent(session, verilen, ms, rng = Math.random) {
 
   const { key, answer } = session.current;
   const dogru = Number(verilen) === answer;
+  const esik = session.current.kind === 'problem' ? Infinity : SPEED_THRESHOLD_MS;
 
   const facts = recordDrillAnswer(session.drill.byLevel[session.drill.level], key, {
     correct: dogru,
     ms,
-    thresholdMs: SPEED_THRESHOLD_MS
+    thresholdMs: esik
   });
 
   let drill = {
@@ -78,7 +88,7 @@ export function answerCurrent(session, verilen, ms, rng = Math.random) {
 
   return {
     drill,
-    current: finished ? null : soruSec(drill, rng, key),
+    current: finished ? null : soruSec(drill, rng, remaining, key),
     remaining,
     correctCount: session.correctCount + (dogru ? 1 : 0),
     lastCorrect: dogru,

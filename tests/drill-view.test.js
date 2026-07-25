@@ -103,6 +103,46 @@ test('seviye atlayinca yeni seviyenin basligi bulunabilir', () => {
   assert.ok(yeniSeviye.title.length > 0);
 });
 
+test('oturumun son iki sorusu problemdir', () => {
+  let s = startSession(yeni(), () => 0.5);
+  const tipler = [];
+  for (let i = 0; i < SESSION_LENGTH; i++) {
+    tipler.push(s.current.kind);
+    s = answerCurrent(s, s.current.answer, 900, () => 0.5);
+  }
+  assert.deepEqual(tipler.slice(0, 8), Array(8).fill('fact'));
+  assert.deepEqual(tipler.slice(8), ['problem', 'problem']);
+});
+
+test('problem sorusunun metni bir cumledir', () => {
+  let s = startSession(yeni(), () => 0.5);
+  for (let i = 0; i < 8; i++) s = answerCurrent(s, s.current.answer, 900, () => 0.5);
+  assert.equal(s.current.kind, 'problem');
+  assert.ok(s.current.text.length > 20, `cok kisa: ${s.current.text}`);
+  assert.ok(s.current.text.endsWith('?'));
+});
+
+test('problemde yavas dogru cevap da kutuyu yukseltir', () => {
+  let s = startSession(yeni(), () => 0.5);
+  for (let i = 0; i < 8; i++) s = answerCurrent(s, s.current.answer, 900, () => 0.5);
+  assert.equal(s.current.kind, 'problem', 'test yanlis soruyu olcuyor');
+  const k = s.current.key;
+  const oncekiKutu = s.drill.byLevel[s.drill.level][k].box;
+  s = answerCurrent(s, s.current.answer, 30000, () => 0.5);
+  assert.ok(
+    s.drill.byLevel[s.drill.level][k].box > oncekiKutu,
+    'problemde sure olculmemeli, yavas dogru cevap da yukseltmeli'
+  );
+});
+
+test('ciplak islemde yavas dogru cevap kutuyu yukseltmez', () => {
+  const s = startSession(yeni(), () => 0.5);
+  assert.equal(s.current.kind, 'fact', 'test yanlis soruyu olcuyor');
+  const k = s.current.key;
+  const s2 = answerCurrent(s, s.current.answer, 30000, () => 0.5);
+  assert.equal(s2.drill.byLevel[s2.drill.level][k].box, 1);
+});
+
 test('gorunum modulu DOM api si icermez', () => {
   const src = readFileSync(new URL('../src/views/drill.js', import.meta.url), 'utf8');
   for (const y of ['document', 'window.', 'addEventListener']) {
