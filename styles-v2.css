@@ -544,6 +544,12 @@
   margin-bottom: 12px;
 }
 
+/* display:grid tarayicinin [hidden] kuralini ezer; kutlama ekraninda
+   tus takimi gercekten gizlensin diye acikca yaziliyor. */
+.drill__pad[hidden] {
+  display: none;
+}
+
 .drill__key {
   min-height: 56px;
   font-family: var(--font-body);

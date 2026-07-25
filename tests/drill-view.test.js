@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { startSession, answerCurrent, SESSION_LENGTH } from '../src/views/drill.js';
-import { createDrill } from '../src/engines/drill.js';
+import { createDrill, levelById } from '../src/engines/drill.js';
 
 const yeni = () => ({ level: 'topla-10', byLevel: { 'topla-10': createDrill('topla-10') } });
 
@@ -88,6 +88,19 @@ test('metin olarak girilen cevap da kabul edilir', () => {
   const s = startSession(yeni(), () => 0.5);
   const s2 = answerCurrent(s, String(s.current.answer), 1000, () => 0.5);
   assert.equal(s2.lastCorrect, true);
+});
+
+test('seviye atlayinca yeni seviyenin basligi bulunabilir', () => {
+  const drill = yeni();
+  const facts = drill.byLevel['topla-10'];
+  for (const k of Object.keys(facts)) facts[k] = { ...facts[k], box: 4 };
+  let s = startSession(drill, () => 0.5);
+  for (let i = 0; i < SESSION_LENGTH; i++) s = answerCurrent(s, s.current.answer, 900, () => 0.5);
+  assert.equal(s.levelUp, true);
+  const yeniSeviye = levelById(s.drill.level);
+  assert.ok(yeniSeviye, 'yeni seviye bulunamadi');
+  assert.notEqual(yeniSeviye.id, 'topla-10', 'hala eski seviye');
+  assert.ok(yeniSeviye.title.length > 0);
 });
 
 test('gorunum modulu DOM api si icermez', () => {

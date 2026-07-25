@@ -260,6 +260,33 @@ function drillTusla(tus) {
   document.getElementById('drill-input').textContent = drillTyped;
 }
 
+// Alistirma ekranini normal haline dondurur. Hem acilista hem kapanista
+// cagrilir, yoksa kutlama duzeni bir sonraki oturuma sizar.
+function drillNormalGorunum() {
+  document.getElementById('drill-question').hidden = false;
+  document.getElementById('drill-input').hidden = false;
+  document.getElementById('drill-pad').hidden = false;
+  document.getElementById('drill-feedback').hidden = true;
+  document.getElementById('drill-cancel').textContent = 'Kapat';
+}
+
+// Seviye atlandiginda ekran kendiliginden kapanmaz. Bir seviyeyi bitirmek
+// haftalar suruyor; cocuk bunu gormeden pencere kaybolursa emeginin tek
+// gorunur karsiligi da kaybolur. Kapatma karari cocugun olsun diye
+// zamanlayici degil dugme kullaniliyor.
+function drillKutlama() {
+  document.getElementById('drill-question').hidden = true;
+  document.getElementById('drill-input').hidden = true;
+  document.getElementById('drill-pad').hidden = true;
+  document.getElementById('drill-progress').textContent = 'Bitti';
+
+  const geri = document.getElementById('drill-feedback');
+  geri.textContent = `Yeni seviye: ${levelById(drillSession.drill.level)?.title ?? ''}`;
+  geri.hidden = false;
+
+  document.getElementById('drill-cancel').textContent = 'Devam';
+}
+
 function drillOnayla() {
   if (drillTyped === '') return;
 
@@ -267,8 +294,6 @@ function drillOnayla() {
   const sonraki = answerCurrent(drillSession, drillTyped, gecenMs);
   const dogru = sonraki.lastCorrect;
   const dogruCevap = sonraki.lastAnswer;
-  const seviyeAtladi = sonraki.levelUp;
-  const bitti = sonraki.finished;
   drillSession = sonraki;
   drillTyped = '';
   drillShownAt = performance.now();
@@ -277,17 +302,13 @@ function drillOnayla() {
   geri.textContent = dogru ? 'Doğru!' : `Doğrusu: ${dogruCevap}`;
   geri.hidden = false;
 
-  if (bitti) {
+  if (sonraki.finished) {
     state.saveDrill(sonraki.drill);
     const dp = state.loadDayProgress(today());
     state.saveDayProgress(today(), completeCard(profile, dp, 'ogle-matematik', now()));
 
-    if (seviyeAtladi) {
-      geri.textContent = `Harika! Yeni seviye: ${levelById(sonraki.drill.level)?.title ?? ''}`;
-    }
-
-    kapatDrill();
-    render();
+    if (sonraki.levelUp) drillKutlama();
+    else kapatDrill();
     return;
   }
 
@@ -300,14 +321,19 @@ function acDrill() {
   drillShownAt = performance.now();
   cizDrillPad();
   cizDrill();
-  document.getElementById('drill-feedback').hidden = true;
+  drillNormalGorunum();
   document.getElementById('drill-modal').hidden = false;
 }
 
 function kapatDrill() {
+  const bitmisti = drillSession?.finished === true;
+
   document.getElementById('drill-modal').hidden = true;
+  drillNormalGorunum();
   drillSession = null;
   drillTyped = '';
+
+  if (bitmisti) render();
 }
 
 function openPinModal(cardId) {
