@@ -110,3 +110,44 @@ test('yolcu araclari toplama ve cikarmada hala gorunur', () => {
   }
   assert.ok(gorulen > 0, 'yolcu araclari hic gorunmuyor, cocugun ilgi alani kayboldu');
 });
+
+test('yolcu sayisi aracin kapasitesini asmaz', () => {
+  const kapasite = new Map(
+    VEHICLE_THEME.nesneler.filter((n) => n.enCok !== undefined).map((n) => [n.ad, n.enCok])
+  );
+
+  for (const f of [{ op: '-', a: 17, b: 8, answer: 9 }, { op: '+', a: 8, b: 9, answer: 17 }]) {
+    const enBuyuk = Math.max(f.a, f.b, f.answer);
+    for (let i = 0; i < 200; i++) {
+      const p = buildProblem(f, VEHICLE_THEME, () => i / 200);
+      const metin = p.text.toLocaleLowerCase('tr');
+      for (const [ad, cap] of kapasite) {
+        if (metin.includes(ad.toLocaleLowerCase('tr'))) {
+          assert.ok(cap >= enBuyuk, `${ad} (kapasite ${cap}) icin ${enBuyuk} yolcu: ${p.text}`);
+        }
+      }
+    }
+  }
+});
+
+test('kucuk sayilarda taksi hala secilebilir', () => {
+  let gorulen = 0;
+  for (let i = 0; i < 200; i++) {
+    const p = buildProblem({ op: '-', a: 4, b: 1, answer: 3 }, VEHICLE_THEME, () => i / 200);
+    if (p.text.toLocaleLowerCase('tr').includes('taksi')) gorulen++;
+  }
+  assert.ok(gorulen > 0, 'taksi tamamen kayboldu, cocugun ilgi alani eksildi');
+});
+
+test('buyuk harf Turkce kurallarina uyar', () => {
+  const sahte = {
+    id: 'test',
+    ad: 'Test',
+    nesneler: [{ ad: 'itfaiye aracı', bulunma: 'itfaiye aracında', yonelme: 'itfaiye aracına', birimler: ['yolcu'], enCok: 50 }]
+  };
+  // rng 0.9: cumleye arac adiyla baslayan 'inme' sablonunu sectirir.
+  // Sadece o sablon buyuk harf uygular; 'indirme' ile hata gorunmez.
+  const p = buildProblem({ op: '-', a: 9, b: 4, answer: 5 }, sahte, () => 0.9);
+  assert.ok(p.text.startsWith('İtfaiye'), `Turkce olmayan buyuk harf: ${p.text}`);
+  assert.ok(!p.text.includes('Itfaiye'), `Turkce olmayan buyuk harf: ${p.text}`);
+});

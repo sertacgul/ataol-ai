@@ -7,6 +7,10 @@
  *
  * Her aracin kendi birimi vardir. "Takside 8 palet vardi" sacmadir ve
  * zorlanan bir cocukta yalnizca kafa karisikligi uretir.
+ *
+ * enCok: yolcu araclarinin gercekci kapasitesi. Bir takside 17 yolcu
+ * olmaz; cocuk araclara merakli ve bunu bilir, bildigi bir gercekle
+ * celisen cumle dikkatini aritmetikten koparir.
  */
 
 export const VEHICLE_THEME = {
@@ -18,9 +22,9 @@ export const VEHICLE_THEME = {
     { ad: 'kamyonet', bulunma: 'kamyonette', yonelme: 'kamyonete', birimler: ['koli', 'sandık'] },
     { ad: 'vinç', bulunma: 'vinçte', yonelme: 'vince', birimler: ['blok', 'boru'] },
     { ad: 'traktör', bulunma: 'traktörde', yonelme: 'traktöre', birimler: ['çuval', 'balya'] },
-    { ad: 'otobüs', bulunma: 'otobüste', yonelme: 'otobüse', birimler: ['yolcu'] },
-    { ad: 'taksi', bulunma: 'takside', yonelme: 'taksiye', birimler: ['yolcu'] },
-    { ad: 'minibüs', bulunma: 'minibüste', yonelme: 'minibüse', birimler: ['yolcu'] }
+    { ad: 'otobüs', bulunma: 'otobüste', yonelme: 'otobüse', birimler: ['yolcu'], enCok: 50 },
+    { ad: 'taksi', bulunma: 'takside', yonelme: 'taksiye', birimler: ['yolcu'], enCok: 4 },
+    { ad: 'minibüs', bulunma: 'minibüste', yonelme: 'minibüse', birimler: ['yolcu'], enCok: 15 }
   ]
 };
 

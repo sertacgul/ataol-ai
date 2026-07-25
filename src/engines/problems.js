@@ -10,7 +10,9 @@
  * Saf modul: rastgelelik disaridan gelir.
  */
 
-const buyukHarf = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+// toUpperCase() Turkce'de yanlis sonuc verir: "itfaiye" -> "Itfaiye"
+// olur, dogrusu "İtfaiye"dir.
+const buyukHarf = (s) => s.charAt(0).toLocaleUpperCase('tr') + s.slice(1);
 
 export const TEMPLATES = [
   {
@@ -80,7 +82,22 @@ export function buildProblem(fact, theme, rng = Math.random) {
     ? theme.nesneler
     : theme.nesneler.filter((n) => (sablon.yuk ? !n.birimler.includes('yolcu') : n.birimler.includes('yolcu')));
 
-  const nesne = sec(uygun.length > 0 ? uygun : theme.nesneler, rng);
+  const taban = uygun.length > 0 ? uygun : theme.nesneler;
+
+  // Kapasite: cumlede gecen en buyuk sayi araca sigmali. Cikarmada bu
+  // sayi ilk terim, toplamada sonuctur, o yuzden ucu de bakilir.
+  const enBuyuk = Math.max(fact.a, fact.b, fact.answer);
+  const kapasiteUygun = taban.filter((n) => n.enCok === undefined || n.enCok >= enBuyuk);
+
+  // Hicbiri yetmiyorsa en genis araca dusulur, tum temaya degil:
+  // cok buyuk bir yolcu sayisinda taksi degil otobus secilsin.
+  let havuz = kapasiteUygun;
+  if (havuz.length === 0) {
+    const enGenis = Math.max(...taban.map((n) => n.enCok));
+    havuz = taban.filter((n) => n.enCok === enGenis);
+  }
+
+  const nesne = sec(havuz, rng);
   const birim = sec(nesne.birimler, rng);
 
   return {

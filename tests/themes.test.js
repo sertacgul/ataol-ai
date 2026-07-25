@@ -43,3 +43,20 @@ test('arac adlari benzersiz', () => {
   const adlar = VEHICLE_THEME.nesneler.map((n) => n.ad);
   assert.equal(adlar.length, new Set(adlar).size);
 });
+
+test('yolcu araclarinin kapasitesi tanimli', () => {
+  for (const n of VEHICLE_THEME.nesneler) {
+    if (n.birimler.includes('yolcu')) {
+      assert.equal(typeof n.enCok, 'number', `${n.ad} icin enCok yok`);
+      assert.ok(n.enCok > 0);
+    }
+  }
+});
+
+test('yuk araclarinda kapasite siniri yok', () => {
+  for (const n of VEHICLE_THEME.nesneler) {
+    if (!n.birimler.includes('yolcu')) {
+      assert.equal(n.enCok, undefined, `${n.ad} icin gereksiz enCok`);
+    }
+  }
+});
