@@ -1,12 +1,48 @@
-const CACHE_NAME = 'ataol-ai-v8';
+const CACHE_NAME = 'ataol-ai-v9';
 const ASSETS = [
+  // v1 varliklari (gunluk kullanilan surum)
   './',
   './index.html',
   './styles.css',
   './app.js',
   './heroes_list.js',
   './logo.png',
-  './manifest.json'
+  './manifest.json',
+  // v2
+  './v2.html',
+  './styles-v2.css',
+  './src/main.js',
+  './src/core/crypto.js',
+  './src/core/profile.js',
+  './src/core/state.js',
+  './src/core/storage.js',
+  './src/data/defaults.js',
+  './src/data/themes.js',
+  './src/engines/battleship.js',
+  './src/engines/calendar.js',
+  './src/engines/chess.js',
+  './src/engines/chesspuzzle.js',
+  './src/engines/diary.js',
+  './src/engines/drill.js',
+  './src/engines/leitner.js',
+  './src/engines/migrate.js',
+  './src/engines/problems.js',
+  './src/engines/rewards.js',
+  './src/engines/routine.js',
+  './src/engines/timequiz.js',
+  './src/ui/dom.js',
+  './src/views/chess.js',
+  './src/views/clock.js',
+  './src/views/drill.js',
+  './src/views/games.js',
+  './src/views/parent.js',
+  './src/views/routine.js',
+  './src/views/settings.js',
+  // PWA ikonlari
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (e) => {
