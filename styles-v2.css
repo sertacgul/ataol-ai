@@ -461,22 +461,30 @@
   margin-bottom: 12px;
 }
 
+/* Secenekler beyaz modal kutusunun uzerinde duruyor. --card-bg ve
+   --card-border beyaza cok yakin oldugu icin burada gorunmez kalirlar;
+   o degiskenler uygulamanin gri-mavi zemini icin tasarlanmisti.
+   Cerceve ve yazi marka morundan alinir: cocuk bunlarin dokunulabilir
+   oldugunu gormek zorunda, yoksa tek belirgin dugme olan Kapat'a basar. */
 .timequiz__option {
-  min-height: 44px;
+  min-height: 52px;
   width: 100%;
   font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-dark);
-  background: var(--card-bg);
-  border: 2px solid var(--card-border);
-  border-radius: 12px;
-  padding: 10px 14px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: transparent;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .timequiz__option:active {
   transform: scale(0.97);
+  background: var(--primary);
   border-color: var(--primary);
+  color: #fff;
 }
 
 .timequiz__feedback {
