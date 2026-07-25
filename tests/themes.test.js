@@ -60,3 +60,11 @@ test('yuk araclarinda kapasite siniri yok', () => {
     }
   }
 });
+
+test('yolcu araclarinin inis yeri tanimli', () => {
+  for (const n of VEHICLE_THEME.nesneler) {
+    if (n.birimler.includes('yolcu')) {
+      assert.ok(n.inisYeri && n.inisYeri.length > 0, `${n.ad} icin inisYeri yok`);
+    }
+  }
+});

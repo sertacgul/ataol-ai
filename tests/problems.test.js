@@ -139,6 +139,18 @@ test('kucuk sayilarda taksi hala secilebilir', () => {
   assert.ok(gorulen > 0, 'taksi tamamen kayboldu, cocugun ilgi alani eksildi');
 });
 
+test('taksi duraga degil koseye birakir', () => {
+  let taksiGorulen = 0;
+  for (let i = 0; i < 200; i++) {
+    const p = buildProblem({ op: '-', a: 4, b: 1, answer: 3 }, VEHICLE_THEME, () => i / 200);
+    if (p.text.toLocaleLowerCase('tr').includes('taksi')) {
+      taksiGorulen++;
+      assert.ok(!p.text.includes('Durakta'), `taksi icin durak: ${p.text}`);
+    }
+  }
+  assert.ok(taksiGorulen > 0, 'taksi hic cikmadi, test bosuna geciyor');
+});
+
 test('buyuk harf Turkce kurallarina uyar', () => {
   const sahte = {
     id: 'test',

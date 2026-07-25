@@ -26,8 +26,8 @@ export const TEMPLATES = [
     id: 'inme',
     op: '-',
     yuk: false,
-    yaz: ({ bulunma, birim, a, b }) =>
-      `${buyukHarf(bulunma)} ${a} ${birim} vardı. Durakta ${b} ${birim} indi. Kaç ${birim} kaldı?`
+    yaz: ({ bulunma, birim, a, b, inisYeri }) =>
+      `${buyukHarf(bulunma)} ${a} ${birim} vardı. ${inisYeri} ${b} ${birim} indi. Kaç ${birim} kaldı?`
   },
   {
     id: 'yukleme',
@@ -40,8 +40,8 @@ export const TEMPLATES = [
     id: 'binme',
     op: '+',
     yuk: false,
-    yaz: ({ bulunma, birim, a, b }) =>
-      `${buyukHarf(bulunma)} ${a} ${birim} vardı. Durakta ${b} ${birim} daha bindi. Toplam kaç ${birim} oldu?`
+    yaz: ({ bulunma, birim, a, b, inisYeri }) =>
+      `${buyukHarf(bulunma)} ${a} ${birim} vardı. ${inisYeri} ${b} ${birim} daha bindi. Toplam kaç ${birim} oldu?`
   },
   {
     // Yolcu araci secilmez: "Her taksi 10 yolcu tasiyor" cocugun bildigi
@@ -104,6 +104,14 @@ export function buildProblem(fact, theme, rng = Math.random) {
     key: fact.key ?? null,
     op: fact.op,
     answer: fact.answer,
-    text: sablon.yaz({ ad: nesne.ad, bulunma: nesne.bulunma, yonelme: nesne.yonelme, birim, a: fact.a, b: fact.b })
+    text: sablon.yaz({
+      ad: nesne.ad,
+      bulunma: nesne.bulunma,
+      yonelme: nesne.yonelme,
+      inisYeri: nesne.inisYeri,
+      birim,
+      a: fact.a,
+      b: fact.b
+    })
   };
 }

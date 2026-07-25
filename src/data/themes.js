@@ -22,9 +22,9 @@ export const VEHICLE_THEME = {
     { ad: 'kamyonet', bulunma: 'kamyonette', yonelme: 'kamyonete', birimler: ['koli', 'sandık'] },
     { ad: 'vinç', bulunma: 'vinçte', yonelme: 'vince', birimler: ['blok', 'boru'] },
     { ad: 'traktör', bulunma: 'traktörde', yonelme: 'traktöre', birimler: ['çuval', 'balya'] },
-    { ad: 'otobüs', bulunma: 'otobüste', yonelme: 'otobüse', birimler: ['yolcu'], enCok: 50 },
-    { ad: 'taksi', bulunma: 'takside', yonelme: 'taksiye', birimler: ['yolcu'], enCok: 4 },
-    { ad: 'minibüs', bulunma: 'minibüste', yonelme: 'minibüse', birimler: ['yolcu'], enCok: 15 }
+    { ad: 'otobüs', bulunma: 'otobüste', yonelme: 'otobüse', birimler: ['yolcu'], enCok: 50, inisYeri: 'Durakta' },
+    { ad: 'taksi', bulunma: 'takside', yonelme: 'taksiye', birimler: ['yolcu'], enCok: 4, inisYeri: 'Köşede' },
+    { ad: 'minibüs', bulunma: 'minibüste', yonelme: 'minibüse', birimler: ['yolcu'], enCok: 15, inisYeri: 'Durakta' }
   ]
 };
 
