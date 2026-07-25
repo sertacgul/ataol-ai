@@ -43,6 +43,24 @@
                 </div>
             </div>
         </div>
+
+        <div id="guardian-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box">
+                <p id="guardian-modal__title">Bakım veren ekle</p>
+                <input type="text" id="guardian-name" placeholder="İsim" autocomplete="off">
+                <input type="text" id="guardian-label" placeholder="Nasıl görünsün (örn. Feride mama)" autocomplete="off">
+                <input type="password" id="guardian-pin" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off">
+                <input type="password" id="guardian-pin2" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" autocomplete="off">
+                <div id="guardian-gate" hidden>
+                    <p class="v2-modal__note">Yeni bakım veren eklemek için mevcut bir PIN gerekiyor.</p>
+                    <div id="guardian-gate-list"></div>
+                    <input type="password" id="guardian-gate-pin" inputmode="numeric" maxlength="8" placeholder="Mevcut PIN" autocomplete="off">
+                </div>
+                <p id="guardian-error" class="v2-modal__error" hidden></p>
+                <button type="button" id="guardian-submit">Ekle</button>
+                <button type="button" id="guardian-cancel">Vazgeç</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="src/main.js"></script>

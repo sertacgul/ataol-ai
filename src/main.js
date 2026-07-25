@@ -1,10 +1,12 @@
 import { createStorage } from './core/storage.js';
 import { createAppState } from './core/state.js';
-import { verifyPin } from './core/crypto.js';
+import { verifyPin, hashPin } from './core/crypto.js';
+import { addGuardian } from './core/profile.js';
 import { seedProfile } from './data/defaults.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
+import { guardianSummary, validateGuardianInput, requiresExistingPin } from './views/settings.js';
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 
@@ -83,28 +85,42 @@ function renderRoutine() {
 
 function renderParent() {
   const queue = approvalQueue(profile, state.loadDayProgress(today()));
+  const guardians = guardianSummary(profile);
   const target = document.getElementById('view-parent');
 
-  if (queue.length === 0) {
-    mount(target, [el('p', { className: 'parent-empty', text: 'Onay bekleyen görev yok.' })]);
-    return;
-  }
+  const bolumler = [
+    el('section', { className: 'parent-guardians' }, [
+      el('h2', { className: 'parent-guardians__title', text: 'Bakım verenler' }),
+      guardians.length === 0
+        ? el('p', { className: 'parent-empty', text: 'Henüz bakım veren yok. Onay verebilmek için önce kendinizi ekleyin.' })
+        : el('ul', { className: 'parent-guardians__list' }, guardians.map((g) =>
+            el('li', { className: 'parent-guardians__item', text: g.label })
+          )),
+      el('button', {
+        className: 'parent-guardians__add',
+        text: 'Bakım veren ekle',
+        attrs: { type: 'button' },
+        dataset: { addGuardian: 'yes' }
+      })
+    ]),
+    queue.length === 0
+      ? el('p', { className: 'parent-empty', text: 'Onay bekleyen görev yok.' })
+      : el('ul', { className: 'parent-queue' }, queue.map((c) =>
+          el('li', { className: 'parent-queue__item' }, [
+            el('span', { className: 'material-symbols-rounded', text: c.icon }),
+            el('span', { className: 'parent-queue__title', text: c.title }),
+            el('span', { className: 'parent-queue__reward', text: `${c.stars}★` }),
+            el('button', {
+              className: 'parent-queue__approve',
+              text: 'Onayla',
+              attrs: { type: 'button' },
+              dataset: { approveCard: c.id }
+            })
+          ])
+        ))
+  ];
 
-  mount(target, [
-    el('ul', { className: 'parent-queue' }, queue.map((c) =>
-      el('li', { className: 'parent-queue__item' }, [
-        el('span', { className: 'material-symbols-rounded', text: c.icon }),
-        el('span', { className: 'parent-queue__title', text: c.title }),
-        el('span', { className: 'parent-queue__reward', text: `${c.stars}★` }),
-        el('button', {
-          className: 'parent-queue__approve',
-          text: 'Onayla',
-          attrs: { type: 'button' },
-          dataset: { approveCard: c.id }
-        })
-      ])
-    ))
-  ]);
+  mount(target, bolumler);
 }
 
 function render() {
@@ -115,6 +131,7 @@ function render() {
 
 function renderIfStale() {
   if (document.getElementById('pin-modal').hidden === false) return;
+  if (document.getElementById('guardian-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -157,6 +174,79 @@ async function submitPin() {
   render();
 }
 
+function openGuardianModal() {
+  const kapiGerekli = requiresExistingPin(profile);
+
+  for (const id of ['guardian-name', 'guardian-label', 'guardian-pin', 'guardian-pin2', 'guardian-gate-pin']) {
+    document.getElementById(id).value = '';
+  }
+
+  document.getElementById('guardian-gate').hidden = !kapiGerekli;
+
+  if (kapiGerekli) {
+    mount(document.getElementById('guardian-gate-list'), guardianSummary(profile).map((g, i) =>
+      el('label', {}, [
+        el('input', { attrs: { type: 'radio', name: 'gate-guardian', value: g.id, ...(i === 0 ? { checked: 'checked' } : {}) } }),
+        el('span', { text: g.label })
+      ])
+    ));
+  }
+
+  document.getElementById('guardian-error').hidden = true;
+  document.getElementById('guardian-modal').hidden = false;
+}
+
+function closeGuardianModal() {
+  for (const id of ['guardian-name', 'guardian-label', 'guardian-pin', 'guardian-pin2', 'guardian-gate-pin']) {
+    document.getElementById(id).value = '';
+  }
+  document.getElementById('guardian-modal').hidden = true;
+}
+
+function showGuardianError(mesaj) {
+  const kutu = document.getElementById('guardian-error');
+  kutu.textContent = mesaj;
+  kutu.hidden = false;
+}
+
+async function submitGuardian() {
+  const girdi = {
+    name: document.getElementById('guardian-name').value,
+    label: document.getElementById('guardian-label').value,
+    pin: document.getElementById('guardian-pin').value,
+    pinConfirm: document.getElementById('guardian-pin2').value
+  };
+
+  const sonuc = validateGuardianInput(girdi);
+  if (!sonuc.valid) {
+    showGuardianError(sonuc.errors[0]);
+    return;
+  }
+
+  if (requiresExistingPin(profile)) {
+    const secili = document.querySelector('input[name="gate-guardian"]:checked');
+    const mevcut = profile.guardians.find((g) => g.id === secili?.value);
+    const gatePin = document.getElementById('guardian-gate-pin').value;
+
+    if (!mevcut || !(await verifyPin(gatePin, mevcut.pinHash, mevcut.pinSalt))) {
+      showGuardianError('Mevcut PIN yanlış.');
+      return;
+    }
+  }
+
+  const { hash, salt } = await hashPin(girdi.pin);
+  profile = addGuardian(profile, {
+    name: girdi.name.trim(),
+    label: girdi.label.trim(),
+    pinHash: hash,
+    pinSalt: salt
+  });
+  state.saveProfile(profile);
+
+  closeGuardianModal();
+  render();
+}
+
 document.getElementById('app').addEventListener('click', (e) => {
   const card = e.target.closest('[data-card-id]');
   if (card?.classList.contains('card--available')) {
@@ -175,6 +265,12 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const ekle = e.target.closest('[data-add-guardian]');
+  if (ekle) {
+    openGuardianModal();
+    return;
+  }
+
   const nav = e.target.closest('[data-nav]');
   if (nav) {
     for (const v of document.querySelectorAll('.v2-view')) v.classList.remove('active');
@@ -186,6 +282,8 @@ document.getElementById('app').addEventListener('click', (e) => {
 
 document.getElementById('pin-submit').addEventListener('click', submitPin);
 document.getElementById('pin-cancel').addEventListener('click', closePinModal);
+document.getElementById('guardian-submit').addEventListener('click', submitGuardian);
+document.getElementById('guardian-cancel').addEventListener('click', closeGuardianModal);
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {
