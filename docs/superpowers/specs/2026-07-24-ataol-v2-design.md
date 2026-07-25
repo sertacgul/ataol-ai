@@ -159,18 +159,47 @@ Ay sonunda **tek sayfalık PDF** üretir. Bu, hekim randevusunda elde olacak en 
 ```
 src/
   main.js
+  ui/        dom.js
   core/      state.js  storage.js  profile.js  crypto.js  i18n.js
-  engines/   routine.js  math.js  rewards.js  diary.js
-  views/     routine.js  math.js  rewards.js  heroes.js  fun.js
-             facts.js  parent.js  chat.js
-  data/      heroes.js  jokes.js  riddles.js  facts.js  defaults.js
+  engines/   routine.js  leitner.js  drill.js  problems.js  timequiz.js
+             calendar.js  battleship.js  chess.js  chesspuzzle.js
+             rewards.js  diary.js
+  views/     routine.js  drill.js  games.js  chess.js  parent.js
+             heroes.js  fun.js  facts.js  chat.js
+  data/      themes.js  heroes.js  jokes.js  riddles.js  facts.js  defaults.js
 ```
+
+`leitner.js` ayrı durur çünkü aralıklı tekrar kutuları üç yerde kullanılır: çarpım tablosu, takvim bilgisi ve satranç taşları. Tek uygulama, üç tüketici.
+
+`math.js` yerini `drill.js`e bıraktı; tasarım yalnız çarpımla başlamıştı, dört işleme genişledi.
 
 Bağımlılık kuralı: `views` → `engines` → `core`. Ters yön yasak. `data` saf veri, mantık içermez.
 
 Ek bağımlılık yok, build adımı yok, ES modülleri yeterli. Deploy aynı kalır: statik dosyalar, GitHub Pages.
 
-### 3.8 Sohbet modülünün yeni yeri
+### 3.8 Oyunlar
+
+Oyunlar kazanılır, bedava açılmaz. O an açık olan blokların kartları bitince oyun sekmesi açılır; yeni blok açılınca yeniden kilitlenir. Onay bekleyen kart tamamlanmış sayılır, çünkü çocuk üstüne düşeni yapmıştır; bir yetişkinin gecikmesi onu cezalandırmamalıdır.
+
+**Oyunlar için yıldız veya süre verilmez.** Oyun zaten rutinin ödülüdür. Puanlamak onu ikinci bir göreve çevirir ve rutinin değerini düşürür.
+
+**Amiral Battı.** 8×8, dört gemi. Rakip kasten seyrek takip yapar (`HUNT_CHANCE`): tam takiple oynayan bir rakip, çocuğun oyunların %98'ini kaybetmesine yol açıyordu. Ayarlandıktan sonra rastgele oynayan çocuk %46, isabetin komşusunu denemeyi öğrenen çocuk %97 kazanıyor. Yani oyunun kendisi stratejiyi öğretir: fark, çocuğun davranışından gelir.
+
+**Satranç: oyun değil, taş öğretme modu.** Satranç oynamak altı kuralı, rakibin planını ve kendi planını aynı anda tutmayı ister; bunları hiç bilmeyen bir çocuğa oyun oynatmak öğretmez, yıldırır. Bu modda ekranda tek taş vardır ve tek soru sorulur: bu taş nereye gidebilir.
+
+Satranç bu çocuk için ayrıca bir fırsat: kuralları kesin, istisnasız ve sosyal belirsizlik içermez. Günlük hayatta ona zor gelen "duruma göre değişen" kuralların tam tersi. Kapalı kural sistemleri otizmli çocuklarda sık görülen bir güçlü yandır; burada satranç bir eksik değil, başarabileceği bir alan olarak konumlanır.
+
+Taş sırası zorluğa göre değil sistem mantığına göredir: kale, fil, vezir, şah, at, piyon. Vezir üçüncüdür çünkü kale ile filin *birleşimidir*; çocuk yeni bir kural değil, bildiği iki kuralın toplandığını görür. Piyon sondadır çünkü tek istisnalı taştır (ilerler ama çapraz alır); istisna, kural oturduktan sonra öğrenilir.
+
+Her taşın üç dersi vardır (serbest, engelli, alma) ve her `taş+ders` çifti ayrı bir Leitner kartıdır. Böylece "at serbest" öğrenilmişken "at engelli" tekrar edilmeye devam eder.
+
+Süre ölçülmez: amaç kuralı anlamaktır, otomatikleşme değil. Yanlış kare cezalandırılmaz, doğru cevap gösterilir ve soru kaybedilmez; kural öğrenirken deneme hata değildir.
+
+Geri bildirim cümlesi ders tipine göre değişir, çünkü yeşilin anlamı derse göre değişir: serbest ve engelli derste yeşil "gidebileceği kareler", alma dersinde yalnızca "alabileceği taş" demektir. Aynı cümleyi üçünde de kullanmak yanlış kural öğretir. **Kural öğreten bir ekranda yanlış cümle, eksik cümleden kötüdür.**
+
+Şah tehdidi, mat, rok ve geçerken alma kapsam dışıdır: bunlar oyun kurallarıdır, taş kuralları değil.
+
+### 3.9 Sohbet modülünün yeni yeri
 
 Gemini sohbeti kalır ama artık ana ekran değil, bir modül. Faz 4'te ücretli katmanın çekirdeği olacağı için arayüzü şimdiden **sağlayıcıdan bağımsız** tanımlanır:
 
