@@ -13,6 +13,8 @@ import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timeq
 import { selectWeighted } from './engines/leitner.js';
 import { startSession, answerCurrent, SESSION_LENGTH } from './views/drill.js';
 import { levelById } from './engines/drill.js';
+import { gamesViewModel } from './views/games.js';
+import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiChoose } from './engines/battleship.js';
 
 let state;
 let profile;
@@ -63,6 +65,11 @@ let quizSonuclari = [];
 let drillSession = null;
 let drillTyped = '';
 let drillShownAt = 0;
+
+let amiralDurum = null;
+
+const AMIRAL_KAZANMA = 'Kazandın! Bütün rakip gemilerini batırdın.';
+const AMIRAL_KAYBETME = 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!';
 
 function cardNode(card) {
   return el('li', {
@@ -137,10 +144,40 @@ function renderParent() {
   mount(target, bolumler);
 }
 
+function renderGames() {
+  const vm = gamesViewModel(profile, state.loadDayProgress(today()), now());
+  const target = document.getElementById('view-games');
+
+  if (!vm.unlocked) {
+    mount(target, [
+      el('p', { className: 'games-locked', text: `Önce bugünün görevlerini bitir. ${vm.remaining} görev kaldı.` }),
+      ...vm.games.map((g) =>
+        el('div', { className: 'games-card games-card--locked' }, [
+          el('span', { className: 'material-symbols-rounded games-card__icon', text: g.icon }),
+          el('span', { className: 'games-card__title', text: g.title })
+        ])
+      )
+    ]);
+    return;
+  }
+
+  mount(target, vm.games.map((g) =>
+    el('button', {
+      className: 'games-card games-card--available',
+      attrs: { type: 'button' },
+      dataset: { game: g.id }
+    }, [
+      el('span', { className: 'material-symbols-rounded games-card__icon', text: g.icon }),
+      el('span', { className: 'games-card__title', text: g.title })
+    ])
+  ));
+}
+
 function render() {
   lastSignature = renderSignature(profile, now());
   renderRoutine();
   renderParent();
+  renderGames();
 }
 
 function renderIfStale() {
@@ -148,6 +185,7 @@ function renderIfStale() {
   if (document.getElementById('guardian-modal').hidden === false) return;
   if (document.getElementById('timequiz-modal').hidden === false) return;
   if (document.getElementById('drill-modal').hidden === false) return;
+  if (document.getElementById('amiral-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -348,6 +386,136 @@ function kapatDrill() {
   if (bitmisti) render();
 }
 
+function amiralBitti(durum) {
+  return isDefeated(durum.enemy) || isDefeated(durum.own);
+}
+
+function amiralHucreSinifi(board, cell) {
+  const atis = board.shots[cell];
+  if (!atis) return 'amiral__kare';
+  if (atis === 'miss') return 'amiral__kare amiral__kare--iska';
+
+  const gemi = board.ships.find((s) => s.cells.includes(cell));
+  const batik = gemi && gemi.hits.length === gemi.cells.length;
+  return batik ? 'amiral__kare amiral__kare--batik' : 'amiral__kare amiral__kare--isabet';
+}
+
+function amiralKareNode(board, x, y, bitti) {
+  const cell = cellId(x, y);
+  const atildi = Boolean(board.shots[cell]);
+  return el('button', {
+    className: amiralHucreSinifi(board, cell),
+    attrs: { type: 'button', ...((atildi || bitti) ? { disabled: 'disabled' } : {}) },
+    dataset: { amiralCell: cell }
+  });
+}
+
+function cizAmiralTahta() {
+  const board = amiralDurum.enemy;
+  const bitti = amiralBitti(amiralDurum);
+  const cocuklar = [el('span', { className: 'amiral__etiket' })];
+
+  for (let x = 0; x < BOARD_SIZE; x++) {
+    cocuklar.push(el('span', { className: 'amiral__etiket', text: cellId(x, 0)[0] }));
+  }
+
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    cocuklar.push(el('span', { className: 'amiral__etiket', text: String(y + 1) }));
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      cocuklar.push(amiralKareNode(board, x, y, bitti));
+    }
+  }
+
+  mount(document.getElementById('amiral-tahta'), cocuklar);
+}
+
+function cizAmiralDurum() {
+  document.getElementById('amiral-durum').textContent =
+    `Rakip gemisi: ${remainingShips(amiralDurum.enemy)} · Senin gemin: ${remainingShips(amiralDurum.own)}`;
+}
+
+function amiralMesajGoster(metin) {
+  const kutu = document.getElementById('amiral-mesaj');
+  kutu.textContent = metin;
+  kutu.hidden = false;
+}
+
+function amiralMesajGizle() {
+  const kutu = document.getElementById('amiral-mesaj');
+  kutu.textContent = '';
+  kutu.hidden = true;
+}
+
+function cizAmiral() {
+  cizAmiralTahta();
+  cizAmiralDurum();
+}
+
+function acAmiral() {
+  let durum = state.loadGame('amiral');
+  if (!durum) {
+    durum = { own: createBoard(), enemy: createBoard() };
+    state.saveGame('amiral', durum);
+  }
+  amiralDurum = durum;
+
+  cizAmiral();
+  if (isDefeated(amiralDurum.enemy)) amiralMesajGoster(AMIRAL_KAZANMA);
+  else if (isDefeated(amiralDurum.own)) amiralMesajGoster(AMIRAL_KAYBETME);
+  else amiralMesajGizle();
+
+  document.getElementById('amiral-modal').hidden = false;
+}
+
+function kapatAmiral() {
+  document.getElementById('amiral-modal').hidden = true;
+}
+
+function yeniAmiralOyunu() {
+  amiralDurum = { own: createBoard(), enemy: createBoard() };
+  state.saveGame('amiral', amiralDurum);
+  amiralMesajGizle();
+  cizAmiral();
+}
+
+// Cocuk her tur once ates eder; denge (bkz. engines/battleship.js) bu
+// sirayla olculdu, degistirilirse bozulur.
+function amiralAtis(cell) {
+  if (!amiralDurum || amiralBitti(amiralDurum)) return;
+  if (amiralDurum.enemy.shots[cell]) return;
+
+  const mesajlar = [];
+
+  const cocukAtis = fire(amiralDurum.enemy, cell);
+  amiralDurum = { ...amiralDurum, enemy: cocukAtis.board };
+  if (cocukAtis.result === 'sunk') mesajlar.push('Rakibin bir gemisini batırdın!');
+
+  if (isDefeated(amiralDurum.enemy)) {
+    state.saveGame('amiral', amiralDurum);
+    cizAmiral();
+    amiralMesajGoster(AMIRAL_KAZANMA);
+    return;
+  }
+
+  const hedef = aiChoose(amiralDurum.own);
+  if (hedef) {
+    const rakipAtis = fire(amiralDurum.own, hedef);
+    amiralDurum = { ...amiralDurum, own: rakipAtis.board };
+    if (rakipAtis.result === 'sunk') mesajlar.push('Rakip senin bir gemini batırdı.');
+  }
+
+  state.saveGame('amiral', amiralDurum);
+  cizAmiral();
+
+  if (isDefeated(amiralDurum.own)) {
+    amiralMesajGoster(AMIRAL_KAYBETME);
+    return;
+  }
+
+  if (mesajlar.length > 0) amiralMesajGoster(mesajlar.join(' '));
+  else amiralMesajGizle();
+}
+
 function openPinModal(cardId) {
   pendingCardId = cardId;
 
@@ -506,6 +674,18 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const oyunKart = e.target.closest('[data-game]');
+  if (oyunKart) {
+    if (oyunKart.dataset.game === 'amiral') acAmiral();
+    return;
+  }
+
+  const amiralKare = e.target.closest('[data-amiral-cell]');
+  if (amiralKare) {
+    amiralAtis(amiralKare.dataset.amiralCell);
+    return;
+  }
+
   const nav = e.target.closest('[data-nav]');
   if (nav) {
     for (const v of document.querySelectorAll('.v2-view')) v.classList.remove('active');
@@ -521,6 +701,8 @@ document.getElementById('guardian-submit').addEventListener('click', submitGuard
 document.getElementById('guardian-cancel').addEventListener('click', closeGuardianModal);
 document.getElementById('timequiz-cancel').addEventListener('click', kapatQuiz);
 document.getElementById('drill-cancel').addEventListener('click', kapatDrill);
+document.getElementById('amiral-yeni').addEventListener('click', yeniAmiralOyunu);
+document.getElementById('amiral-kapat').addEventListener('click', kapatAmiral);
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {
