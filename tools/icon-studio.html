@@ -54,6 +54,13 @@
   .durum { margin-top: 14px; font-size: 14px; }
   .durum.iyi { color: var(--iyi); }
   .durum.uyari { color: var(--uyari); }
+  .modlar { display: flex; gap: 10px; flex-wrap: wrap; }
+  .modlar label {
+    flex: 1 1 140px; display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--cizgi); border-radius: 10px; padding: 12px 14px;
+    font-size: 15px; cursor: pointer;
+  }
+  .modlar input { accent-color: var(--mor); }
   ul { margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: var(--soluk); }
   li { margin-bottom: 4px; }
   [hidden] { display: none !important; }
@@ -93,8 +100,24 @@
     </p>
   </div>
 
+  <div class="kart" id="stil-kart" hidden>
+    <h2>3. Görünüm</h2>
+    <div class="modlar">
+      <label><input type="radio" name="mod" value="illustrasyon" checked> İllüstrasyon</label>
+      <label><input type="radio" name="mod" value="fotograf"> Fotoğraf</label>
+    </div>
+    <div id="kademe-sarmal">
+      <label class="kaydir" for="kademe">Kademe sayısı: <span id="kademe-deger">4</span></label>
+      <input type="range" id="kademe" min="3" max="6" value="4">
+    </div>
+    <p class="not">
+      İllüstrasyon, fotoğrafı düz mor tonlara indirger: serigrafi baskı gibi durur.
+      Deha tanınır ama fotoğrafın kendisi ikona girmez.
+    </p>
+  </div>
+
   <div class="kart" id="onizleme-kart" hidden>
-    <h2>3. Telefonda böyle görünecek</h2>
+    <h2>4. Telefonda böyle görünecek</h2>
     <div class="onizlemeler">
       <div class="onizleme">
         <canvas class="squircle" width="120" height="120" data-on="ios"></canvas>
@@ -116,7 +139,7 @@
   </div>
 
   <div class="kart" id="indir-kart" hidden>
-    <h2>4. İkon dosyalarını indir</h2>
+    <h2>5. İkon dosyalarını indir</h2>
     <button id="indir">Dört ikon dosyasını indir</button>
     <div class="durum" id="durum"></div>
     <ul>
@@ -134,8 +157,18 @@
 
 <script>
 const MOR = '#6C5CE7';
+// Koyudan aciga marka moru rampasi. Illustrasyon modunda parlaklik
+// kademeleri bu rampadan esit araliklarla ornekleniyor.
+const RAMPA = [
+  [0x24, 0x1a, 0x4d],
+  [0x4b, 0x3b, 0xb5],
+  [0x6c, 0x5c, 0xe7],
+  [0xa7, 0x9a, 0xf2],
+  [0xff, 0xff, 0xff]
+];
 const tuval = document.getElementById('tuval');
 const yakinlik = document.getElementById('yakinlik');
+const kademe = document.getElementById('kademe');
 const durum = document.getElementById('durum');
 const dosyaDurum = document.getElementById('dosya-durum');
 
@@ -154,7 +187,7 @@ document.getElementById('dosya').addEventListener('change', (e) => {
     dosyaDurum.textContent = '';
     dosyaDurum.className = 'durum';
     kaydirX = 0; kaydirY = 0; yakinlik.value = 100;
-    for (const id of ['duzenle', 'onizleme-kart', 'indir-kart']) {
+    for (const id of ['duzenle', 'stil-kart', 'onizleme-kart', 'indir-kart']) {
       document.getElementById(id).hidden = false;
     }
     ciz();
@@ -218,6 +251,53 @@ function boya(hedef, boyut) {
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
   c.drawImage(gorsel, p.x, p.y, p.en, p.boy);
+  if (illustrasyonMu()) posterlestir(c, boyut);
+}
+
+function illustrasyonMu() {
+  return document.querySelector('input[name=mod]:checked').value === 'illustrasyon';
+}
+
+// Rampadan N renk ornekler: uclar dahil, aradaki kademeler iki durak
+// arasinda dogrusal karisim. N=6 gibi durak sayisini asan degerlerde
+// tekrar eden renk cikmasin diye ara degerler hesaplaniyor.
+function paletUret(n) {
+  const son = RAMPA.length - 1;
+  const palet = [];
+  for (let i = 0; i < n; i++) {
+    const yer = son * i / (n - 1);
+    const alt = Math.floor(yer);
+    const ust = Math.min(son, alt + 1);
+    const k = yer - alt;
+    palet.push([
+      Math.round(RAMPA[alt][0] + (RAMPA[ust][0] - RAMPA[alt][0]) * k),
+      Math.round(RAMPA[alt][1] + (RAMPA[ust][1] - RAMPA[alt][1]) * k),
+      Math.round(RAMPA[alt][2] + (RAMPA[ust][2] - RAMPA[alt][2]) * k)
+    ]);
+  }
+  return palet;
+}
+
+// Parlakligi N kademeye indirger ve her kademeyi bir palet rengine esler.
+// Ara ton kalmaz: sonuc serigrafi baskisi gibi duz renk alanlaridir.
+// Alfa 255'te birakiliyor, iOS seffaf ikonun arkasina siyah koyuyor.
+function posterlestir(c, boyut) {
+  const n = Number(kademe.value);
+  const palet = paletUret(n);
+  const veri = c.getImageData(0, 0, boyut, boyut);
+  const d = veri.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const isik = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    let s = Math.floor(isik * n / 256);
+    if (s < 0) s = 0;
+    if (s > n - 1) s = n - 1;
+    const renk = palet[s];
+    d[i] = renk[0];
+    d[i + 1] = renk[1];
+    d[i + 2] = renk[2];
+    d[i + 3] = 255;
+  }
+  c.putImageData(veri, 0, 0);
 }
 
 function durumGuncelle() {
@@ -233,6 +313,18 @@ function durumGuncelle() {
 }
 
 yakinlik.addEventListener('input', ciz);
+
+kademe.addEventListener('input', () => {
+  document.getElementById('kademe-deger').textContent = kademe.value;
+  ciz();
+});
+
+for (const r of document.querySelectorAll('input[name=mod]')) {
+  r.addEventListener('change', () => {
+    document.getElementById('kademe-sarmal').hidden = !illustrasyonMu();
+    ciz();
+  });
+}
 
 const sarmal = document.getElementById('tuval-sarmal');
 sarmal.addEventListener('pointerdown', (e) => {
