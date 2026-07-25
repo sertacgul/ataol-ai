@@ -76,3 +76,37 @@ test('cikarma probleminde buyuk sayi once gecer', () => {
   const p = buildProblem({ op: '-', a: 9, b: 4, answer: 5 }, VEHICLE_THEME, sabit(0));
   assert.ok(p.text.indexOf('9') < p.text.indexOf('4'), `siralama ters: ${p.text}`);
 });
+
+test('carpma problemi yolcu tasiyan arac secmez', () => {
+  // Bir takside 9 yolcu yoktur. Cocuk araclara merakli ve bunu bilir;
+  // bildigi bir gercekle celisen cumle, dikkatini aritmetikten koparir.
+  const yolcuAraclari = VEHICLE_THEME.nesneler
+    .filter((n) => n.birimler.includes('yolcu'))
+    .map((n) => n.ad);
+
+  // Arac cumle basinda buyuk harfle gecebilir ("Takside"), o yuzden
+  // karsilastirma Turkce kucuk harfe cevrilerek yapilir.
+  for (let i = 0; i < 200; i++) {
+    const p = buildProblem({ op: 'x', a: 9, b: 10, answer: 90 }, VEHICLE_THEME, () => i / 200);
+    const metin = p.text.toLocaleLowerCase('tr');
+    for (const ad of yolcuAraclari) {
+      assert.ok(!metin.includes(ad), `carpma probleminde ${ad} cikti: ${p.text}`);
+    }
+  }
+});
+
+test('yolcu araclari toplama ve cikarmada hala gorunur', () => {
+  const yolcuAraclari = VEHICLE_THEME.nesneler
+    .filter((n) => n.birimler.includes('yolcu'))
+    .map((n) => n.ad);
+
+  let gorulen = 0;
+  for (let i = 0; i < 200; i++) {
+    for (const op of ['+', '-']) {
+      const p = buildProblem({ op, a: 9, b: 4, answer: op === '+' ? 13 : 5 }, VEHICLE_THEME, () => i / 200);
+      const metin = p.text.toLocaleLowerCase('tr');
+      if (yolcuAraclari.some((ad) => metin.includes(ad))) gorulen++;
+    }
+  }
+  assert.ok(gorulen > 0, 'yolcu araclari hic gorunmuyor, cocugun ilgi alani kayboldu');
+});

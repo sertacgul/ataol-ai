@@ -42,9 +42,12 @@ export const TEMPLATES = [
       `${buyukHarf(bulunma)} ${a} ${birim} vardı. Durakta ${b} ${birim} daha bindi. Toplam kaç ${birim} oldu?`
   },
   {
+    // Yolcu araci secilmez: "Her taksi 10 yolcu tasiyor" cocugun bildigi
+    // bir gercekle celisir ve dikkatini aritmetikten koparir. Yolcu
+    // araclari toplama ve cikarmada bolca gorunur.
     id: 'filo',
     op: 'x',
-    yuk: null,
+    yuk: true,
     yaz: ({ ad, birim, a, b }) =>
       `${a} ${ad} sıraya dizildi. Her ${ad} ${b} ${birim} taşıyor. Toplam kaç ${birim} taşınıyor?`
   },
