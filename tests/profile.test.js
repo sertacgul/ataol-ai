@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import {
   SCHEMA_VERSION,
   createProfile,
@@ -42,13 +41,6 @@ test('validateProfile gecerli profili onaylar', () => {
   let p = createProfile({ childName: 'X', birthYear: 2016 });
   p = addGuardian(p, { name: 'A', label: 'Baba', pinHash: 'h', pinSalt: 's' });
   assert.equal(validateProfile(p).valid, true);
-});
-
-test('kodda kisi adi sabit yazili degil', () => {
-  const src = readFileSync(new URL('../src/core/profile.js', import.meta.url), 'utf8');
-  for (const name of ['Deha', 'Feride', 'Sertaç', 'Sertac']) {
-    assert.ok(!src.includes(name), `profile.js icinde "${name}" gecmemeli`);
-  }
 });
 
 test('profiller schedule nesnesini paylasmaz', () => {

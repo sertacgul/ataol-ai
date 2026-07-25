@@ -1,5 +1,5 @@
 /**
- * Saf rutin motoru. Date.now() cagrilmaz, zaman disaridan gelir.
+ * Saf rutin motoru. Sistem saati dogrudan okunmaz, zaman disaridan gelir.
  *
  * Tasarim karari: bir blok, baslangic saati gectikten sonra gunun sonuna
  * kadar acik kalir. Kapanma yoktur. Sabah gorevini 10'da yapan bir cocuk

@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { approvalQueue, approvalSummary } from '../src/views/parent.js';
 import { seedProfile } from '../src/data/defaults.js';
 import { emptyDayProgress, completeCard } from '../src/engines/routine.js';
@@ -76,11 +75,4 @@ test('taninmayan guardianId ozeti bozmaz', () => {
 test('gorunum modeli duz veridir, HTML uretmez', () => {
   const dp = completeCard(profile, emptyDayProgress(), 'sabah-giyin', sabah);
   assert.ok(!JSON.stringify(approvalQueue(profile, dp)).includes('<'));
-});
-
-test('gorunum modulu DOM api si icermez', () => {
-  const src = readFileSync(new URL('../src/views/parent.js', import.meta.url), 'utf8');
-  for (const yasak of ['document', 'innerHTML', 'window.', 'addEventListener']) {
-    assert.ok(!src.includes(yasak), `parent.js icinde "${yasak}" olmamali`);
-  }
 });

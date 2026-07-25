@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { DIARY_TAGS, addEntry, summarize, emptyDiary } from '../src/engines/diary.js';
 
 test('etiket listesi spec ile ayni', () => {
@@ -53,11 +52,4 @@ test('summarize aralik disini saymaz', () => {
   d = addEntry(d, '2026-07-22', { tag: 'kasima' });
   const s = summarize(d, '2026-07-20', '2026-07-24');
   assert.equal(s.tagCounts.kasima, 1);
-});
-
-test('gunluk modulu ag cagrisi icermez', () => {
-  const src = readFileSync(new URL('../src/engines/diary.js', import.meta.url), 'utf8');
-  for (const forbidden of ['fetch(', 'XMLHttpRequest', 'navigator.sendBeacon', 'WebSocket']) {
-    assert.ok(!src.includes(forbidden), `diary.js icinde "${forbidden}" olmamali`);
-  }
 });

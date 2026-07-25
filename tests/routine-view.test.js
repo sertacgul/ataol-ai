@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { routineViewModel } from '../src/views/routine.js';
 import { seedProfile } from '../src/data/defaults.js';
 import { emptyDayProgress, completeCard } from '../src/engines/routine.js';
@@ -67,11 +66,4 @@ test('cocuk adi gorunum modelinde', () => {
 test('gorunum modeli duz veridir, HTML uretmez', () => {
   const vm = routineViewModel(profile, emptyDayProgress(), sabah);
   assert.ok(!JSON.stringify(vm).includes('<'), 'gorunum modelinde HTML var');
-});
-
-test('gorunum modulu DOM api si icermez', () => {
-  const src = readFileSync(new URL('../src/views/routine.js', import.meta.url), 'utf8');
-  for (const yasak of ['document', 'innerHTML', 'window.', 'addEventListener']) {
-    assert.ok(!src.includes(yasak), `routine.js icinde "${yasak}" olmamali`);
-  }
 });

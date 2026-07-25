@@ -79,7 +79,7 @@ node --test "tests/**/*.test.js"
 2. **Motorlar saftır:** `engines/` altındaki modüller `localStorage`, `Date.now()` veya `Math.random()` çağırmaz. Zaman ve rastgelelik dışarıdan enjekte edilir.
 3. **Kodda kişi adı sabit yazılmaz.** Tüm isimler profil verisinden gelir. Bu kural `tests/profile.test.js` ile korunur.
 4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunması testle engellenir.
-5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js`, `createElement` ve `textContent` ile kurar. Enjeksiyon böylece kaçış disiplinine değil yapıya bağlı olarak engellenir. `src/views/`, `src/core/` ve `src/engines/` altında `document` geçmesi testle engellenir.
+5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js` kurar. `el()` yardımcısı metni `textContent` ile yazar ve öznitelikleri beyaz listeden geçirir. Bu kuralların tamamı `tests/architecture.test.js` içindeki tek bir dizin taramasıyla `src/` ağacının tümü üzerinde denetlenir.
 
 ### Sürümler
 
