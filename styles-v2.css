@@ -260,7 +260,10 @@
   right: 0;
   bottom: 0;
   display: flex;
-  background: var(--card-bg);
+  /* Opak olmali. --card-bg yari saydam (beyaz, 0.9 alfa); bu bar sabit
+     konumlu ve altindan icerik kayiyor, yari saydam zeminde rutin
+     yazilari barin icinden gorunuyordu. */
+  background: #fff;
   border-top: 1px solid var(--card-border);
   padding-bottom: var(--safe-bottom);
   box-shadow: var(--shadow-lg);
