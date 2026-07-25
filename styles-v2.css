@@ -520,6 +520,16 @@
   margin: 4px 0 10px;
 }
 
+/* Sozel problem: rakam degil cumle. Daha kucuk punto, sola yasli,
+   satir araligi acik. 32px ortalanmis bir cumle okunmaz. */
+.drill__question--problem {
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 500;
+}
+
 .drill__input {
   min-height: 34px;
   font-family: var(--font-heading);
