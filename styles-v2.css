@@ -43,6 +43,15 @@
   margin: 0;
 }
 
+/* Biriken toplam. Gunun sayacindan ayirt edilsin diye vurgulu. */
+.routine-header__birikim {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 4px 0 0;
+}
+
 .routine-block {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -251,7 +260,10 @@
   right: 0;
   bottom: 0;
   display: flex;
-  background: var(--card-bg);
+  /* Opak olmali. --card-bg yari saydam (beyaz, 0.9 alfa); bu bar sabit
+     konumlu ve altindan icerik kayiyor, yari saydam zeminde rutin
+     yazilari barin icinden gorunuyordu. */
+  background: #fff;
   border-top: 1px solid var(--card-border);
   padding-bottom: var(--safe-bottom);
   box-shadow: var(--shadow-lg);
@@ -1068,4 +1080,44 @@
   border-radius: 12px;
   padding: 12px 20px;
   box-shadow: var(--shadow-md);
+}
+
+/* --- v1 tasima karsilamasi --- */
+
+/* .v2-modal display:flex, [hidden] o kurali ezemez; acik yaziliyor
+   (bkz. .drill__pad, .satranc__taslar). */
+#migrate-modal[hidden] {
+  display: none;
+}
+
+/* Kutu beyaz. --card-bg / --card-border beyaza cok yakin oldugu icin
+   burada kullanilmaz: metin de dugme de gorunmez kalirdi. */
+.migrate__box {
+  text-align: center;
+}
+
+.migrate__yildiz {
+  font-size: 48px;
+  line-height: 1;
+  margin: 4px 0 14px;
+}
+
+.migrate__metin {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--text-dark);
+  margin: 0 0 22px;
+}
+
+.migrate__dugme {
+  width: 100%;
+  min-height: 48px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 12px;
 }

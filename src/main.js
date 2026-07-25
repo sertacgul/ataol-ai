@@ -21,6 +21,7 @@ import { kareId, TAHTA_BOYU } from './engines/chess.js';
 
 let state;
 let profile;
+let tasimaSonucu = null;
 
 function showRecovery() {
   const app = document.getElementById('app');
@@ -49,6 +50,9 @@ try {
     profile = seedProfile({ childName: 'Deha', birthYear: 2016, guardians: [] });
     state.saveProfile(profile);
   }
+  // Tasima ilk cizimden once calisir: yildiz toplami rutin basligina
+  // yaziliyor, sonra calissa cocuk once eksik toplami gorurdu.
+  tasimaSonucu = state.migrateOnce((anahtar) => window.localStorage.getItem(anahtar));
 } catch (err) {
   profile = null;
   showRecovery();
@@ -101,7 +105,11 @@ function renderRoutine() {
     el('header', { className: 'routine-header' }, [
       el('p', { className: 'routine-header__greeting', text: `Merhaba ${vm.childName}` }),
       el('p', { className: 'routine-header__date', text: `${vm.today.dayName} · ${vm.today.dayOfMonth} ${vm.today.monthName} · ${vm.today.season}` }),
-      el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} dk` })
+      el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} dk` }),
+      // Gunun yildizi yukaridaki satirda; bu satir biriken toplam.
+      // v1'den tasinan yildizlar da buraya girer, yoksa karsilama
+      // ekrani kapandigi anda cocuk emeginin silindigini sanar.
+      el('p', { className: 'routine-header__birikim', text: `Toplam ${state.totalStars()}★` })
     ]),
     ...vm.blocks.map(blockNode)
   ]);
@@ -181,6 +189,45 @@ function render() {
   renderRoutine();
   renderParent();
   renderGames();
+}
+
+// v1'den tasinan emegin tek seferlik karsilamasi.
+//
+// Kosul bilerek "tasinacak bir sey var mi" degil, "yildiz var mi".
+// Yalniz API anahtari tasinan bir kullanicida ekran "0 yildizin burada"
+// derdi; bu hem anlamsiz hem moral bozucu. Tasima yine de calisir,
+// yalnizca ekran cikmaz.
+//
+// Ekran migrateOnce'in bu acilista gercekten calismis olmasina bagli:
+// sayfa yenilendiginde isaret konmus olur, plan bos doner, karsilama
+// bir daha cikmaz. Yildiz sayisi plandan degil kayitli mirastan
+// okunur, cunku ekranda yazan sayi ile toplamda sayilan sayi ayni
+// kaynaktan gelmelidir.
+function karsilamayiGosterGerekirse() {
+  if (!tasimaSonucu || tasimaSonucu.zatenTasinmis) return;
+
+  const yildiz = state.loadLegacy().stars;
+  if (!(yildiz > 0)) return;
+
+  mount(document.getElementById('migrate-box'), [
+    el('p', { className: 'migrate__yildiz', text: '⭐' }),
+    el('p', {
+      className: 'migrate__metin',
+      text: `Eski uygulamadaki ${yildiz} yıldızın burada. Hepsi duruyor.`
+    }),
+    el('button', {
+      className: 'migrate__dugme',
+      text: 'Başlayalım',
+      attrs: { type: 'button' },
+      dataset: { migrateOk: 'yes' }
+    })
+  ]);
+
+  document.getElementById('migrate-modal').hidden = false;
+}
+
+function karsilamayiKapat() {
+  document.getElementById('migrate-modal').hidden = true;
 }
 
 function renderIfStale() {
@@ -816,6 +863,12 @@ async function submitGuardian() {
 }
 
 document.getElementById('app').addEventListener('click', (e) => {
+  const karsilama = e.target.closest('[data-migrate-ok]');
+  if (karsilama) {
+    karsilamayiKapat();
+    return;
+  }
+
   const card = e.target.closest('[data-card-id]');
   if (card?.classList.contains('card--available')) {
     if (card.dataset.cardId === 'sabah-takvim') {
@@ -914,4 +967,5 @@ if (profile) {
   window.addEventListener('pageshow', renderIfStale);
   setInterval(renderIfStale, 30000);
   render();
+  karsilamayiGosterGerekirse();
 }
