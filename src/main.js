@@ -267,24 +267,34 @@ function drillNormalGorunum() {
   document.getElementById('drill-input').hidden = false;
   document.getElementById('drill-pad').hidden = false;
   document.getElementById('drill-feedback').hidden = true;
-  document.getElementById('drill-cancel').textContent = 'Kapat';
+  document.getElementById('drill-celebrate').hidden = true;
+
+  const kapat = document.getElementById('drill-cancel');
+  kapat.textContent = 'Kapat';
+  kapat.classList.remove('is-primary');
 }
 
 // Seviye atlandiginda ekran kendiliginden kapanmaz. Bir seviyeyi bitirmek
 // haftalar suruyor; cocuk bunu gormeden pencere kaybolursa emeginin tek
 // gorunur karsiligi da kaybolur. Kapatma karari cocugun olsun diye
 // zamanlayici degil dugme kullaniliyor.
+//
+// Kutlama .drill__feedback kutusunu kullanmaz: o kutu yanlis cevap
+// bildirimi, yani cocugun hata olarak tanidigi bicim ve renk.
 function drillKutlama() {
   document.getElementById('drill-question').hidden = true;
   document.getElementById('drill-input').hidden = true;
   document.getElementById('drill-pad').hidden = true;
-  document.getElementById('drill-progress').textContent = 'Bitti';
+  document.getElementById('drill-feedback').hidden = true;
+  document.getElementById('drill-progress').textContent = '';
 
-  const geri = document.getElementById('drill-feedback');
-  geri.textContent = `Yeni seviye: ${levelById(drillSession.drill.level)?.title ?? ''}`;
-  geri.hidden = false;
+  document.getElementById('drill-celebrate-level').textContent =
+    levelById(drillSession.drill.level)?.title ?? '';
+  document.getElementById('drill-celebrate').hidden = false;
 
-  document.getElementById('drill-cancel').textContent = 'Devam';
+  const kapat = document.getElementById('drill-cancel');
+  kapat.textContent = 'Devam';
+  kapat.classList.add('is-primary');
 }
 
 function drillOnayla() {

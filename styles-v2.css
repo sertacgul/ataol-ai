@@ -579,6 +579,47 @@
   text-align: center;
 }
 
+/* Seviye atlama kutlamasi. Kasten .drill__feedback'ten ayri:
+   o kutu yanlis cevap bildirimi icin kullaniliyor ve amber renkli.
+   Iki-dort haftalik emegin karsiligi hata diliyle konusmamali. */
+.drill__celebrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 18px 22px;
+  text-align: center;
+}
+
+/* display:flex tarayicinin [hidden] kuralini ezer, .drill__pad ile ayni tuzak. */
+.drill__celebrate[hidden] {
+  display: none;
+}
+
+.drill__celebrate-star {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.drill__celebrate-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+.drill__celebrate-level {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+  padding: 10px 16px;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+}
+
 #drill-cancel {
   width: 100%;
   min-height: 44px;
@@ -590,6 +631,12 @@
   border: none;
   border-radius: 10px;
   padding: 10px;
+}
+
+#drill-cancel.is-primary {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
 }
 
 /* --- Kurtarma ekrani --- */
