@@ -509,6 +509,136 @@
   padding: 10px;
 }
 
+/* --- Matematik alistirmasi --- */
+
+.drill__question {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+  margin: 4px 0 10px;
+}
+
+.drill__input {
+  min-height: 34px;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--primary-dark);
+  margin: 0 0 14px;
+  border-bottom: 3px solid var(--primary-light);
+}
+
+.drill__input:empty::before {
+  content: '\2014';
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.drill__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* display:grid tarayicinin [hidden] kuralini ezer; kutlama ekraninda
+   tus takimi gercekten gizlensin diye acikca yaziliyor. */
+.drill__pad[hidden] {
+  display: none;
+}
+
+.drill__key {
+  min-height: 56px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: transparent;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.drill__key:active {
+  transform: scale(0.95);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.drill__feedback {
+  font-size: 14px;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+/* Seviye atlama kutlamasi. Kasten .drill__feedback'ten ayri:
+   o kutu yanlis cevap bildirimi icin kullaniliyor ve amber renkli.
+   Iki-dort haftalik emegin karsiligi hata diliyle konusmamali. */
+.drill__celebrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 18px 22px;
+  text-align: center;
+}
+
+/* display:flex tarayicinin [hidden] kuralini ezer, .drill__pad ile ayni tuzak. */
+.drill__celebrate[hidden] {
+  display: none;
+}
+
+.drill__celebrate-star {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.drill__celebrate-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+.drill__celebrate-level {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+  padding: 10px 16px;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+}
+
+#drill-cancel {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  background: rgba(131, 149, 167, 0.15);
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+#drill-cancel.is-primary {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
 /* --- Kurtarma ekrani --- */
 
 .v2-recovery {

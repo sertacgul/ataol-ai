@@ -81,7 +81,7 @@ test('seedProfile cagrilari birbirini etkilemez', () => {
 });
 
 test('sadece uygulamanin olctugu kartlar measured olabilir', () => {
-  const olculebilir = new Set(['sabah-takvim']);
+  const olculebilir = new Set(['sabah-takvim', 'ogle-matematik']);
   for (const c of DEFAULT_CARDS) {
     if (olculebilir.has(c.id)) {
       assert.equal(c.type, 'measured', `${c.id} measured olmali`);

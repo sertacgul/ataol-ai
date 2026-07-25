@@ -55,17 +55,30 @@ test('toplam yildiz tum gunleri toplar', () => {
   assert.equal(state.totalStars(), 14);
 });
 
-test('matematik olgulari kaydedilip geri okunur', () => {
+test('alistirma ilk seviyeyle baslar', () => {
   const { state } = kur();
-  state.saveFacts({ '2x3': { table: 2, box: 3, seen: 1, correct: 1, wrong: 0, avgMs: 900, lastSeen: null } });
-  assert.equal(state.loadFacts()['2x3'].box, 3);
+  const d = state.loadDrill();
+  assert.equal(d.level, 'topla-10');
+  assert.ok(Object.keys(d.byLevel['topla-10']).length > 0);
 });
 
-test('olgu yoksa varsayilan tablolarla uretilir', () => {
+test('alistirma kaydedilip geri okunur', () => {
   const { state } = kur();
-  const facts = state.loadFacts();
-  assert.equal(Object.keys(facts).length, 90);
-  assert.equal(facts['7x8'].box, 1);
+  const d = state.loadDrill();
+  const k = Object.keys(d.byLevel[d.level])[0];
+  d.byLevel[d.level][k] = { ...d.byLevel[d.level][k], box: 4 };
+  state.saveDrill(d);
+  assert.equal(state.loadDrill().byLevel['topla-10'][k].box, 4);
+});
+
+test('seviye atlaninca onceki seviyenin kutulari korunur', () => {
+  const { state } = kur();
+  const d = state.loadDrill();
+  d.level = 'cikar-10';
+  state.saveDrill(d);
+  const yeni = state.loadDrill();
+  assert.ok(yeni.byLevel['topla-10'], 'eski seviye silinmis');
+  assert.ok(yeni.byLevel['cikar-10'], 'yeni seviye acilmamis');
 });
 
 test('gunluk kaydedilip geri okunur, varsayilani bostur', () => {
@@ -78,10 +91,10 @@ test('gunluk kaydedilip geri okunur, varsayilani bostur', () => {
 test('depolama sadece bilinen anahtarlari kullanir', () => {
   const { storage, state } = kur();
   state.saveDayProgress('2026-07-24', { cards: {}, approvals: [], stars: 1, minutes: 1 });
-  state.saveFacts({});
+  state.saveDrill({ level: 'topla-10', byLevel: {} });
   state.saveDiary({});
   for (const k of storage.keys()) {
-    assert.ok(['profile', 'days', 'facts', 'diary', 'timefacts'].includes(k), `beklenmeyen anahtar: ${k}`);
+    assert.ok(['profile', 'days', 'drill', 'diary', 'timefacts'].includes(k), `beklenmeyen anahtar: ${k}`);
   }
 });
 
