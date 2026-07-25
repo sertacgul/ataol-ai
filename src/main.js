@@ -530,6 +530,29 @@ const SATRANC_GOREV = {
   alma: (ad) => `${ad} hangi taşı alabilir? O taşın karesine dokun.`
 };
 
+// Geri bildirim ders tipine gore degisir, cunku yesilin anlami degisir.
+// serbest/engelli derste yesil "gidebilecegi kareler" demektir; alma
+// dersinde yalnizca "alabilecegi tas" demektir. Ayni cumleyi ucunde de
+// kullanmak cocuga yanlis kural ogretiyordu: alma dersinde tas yesil
+// degil diye oraya gidemeyecegini sanirdi. Kural ogreten bir ekranda
+// yanlis cumle, eksik cumleden kotudur.
+const SATRANC_GERI = {
+  serbest: (ad, dogru) =>
+    dogru
+      ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
+      : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`,
+  engelli: (ad, dogru) =>
+    dogru
+      ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
+      : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`,
+  alma: (ad, dogru, kareDolu) => {
+    if (dogru) return `Doğru! ${ad} o taşı alabilir.`;
+    return kareDolu
+      ? `${ad} o taşı alamaz. Alabileceği taş yeşil.`
+      : `Orada alınacak taş yok. Alabileceği taş yeşil.`;
+  }
+};
+
 let satrancKartlar = {};
 let satrancTas = null;
 let satrancSoru = null;
@@ -624,9 +647,11 @@ function satrancKareTikla(kare) {
   const vm = chessViewModel(satrancKartlar);
 
   const geri = document.getElementById('satranc-geribildirim');
-  geri.textContent = dogru
-    ? 'Doğru! Yeşil karelerin hepsine gidebilir.'
-    : 'Oraya gidemez. Doğru kareler yeşil.';
+  geri.textContent = SATRANC_GERI[satrancSoru.tip](
+    satrancTasBilgi(satrancSoru.tas).ad,
+    dogru,
+    Boolean(satrancSoru.tahta[kare])
+  );
   geri.className = dogru
     ? 'satranc__geribildirim satranc__geribildirim--dogru'
     : 'satranc__geribildirim satranc__geribildirim--yanlis';
