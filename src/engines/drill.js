@@ -39,18 +39,38 @@ function ekle(hedef, op, a, b, answer) {
 }
 
 function uret(levelId, hedef) {
-  if (levelId === 'topla-10' || levelId === 'topla-20') {
-    const tavan = levelId === 'topla-10' ? 10 : 20;
-    for (let a = 1; a <= tavan - 1; a++) {
-      for (let b = 1; a + b <= tavan; b++) ekle(hedef, '+', a, b, a + b);
+  // 20 seviyeleri sadece YENI olgulari icerir: 10 seviyesinde gecilenler
+  // burada tekrar sorulmaz. Boylece her seviye makul surede bitirilebilir
+  // ve cocuk zaten bildigi soruyu bastan ogrenmek zorunda kalmaz.
+  if (levelId === 'topla-10') {
+    for (let a = 1; a <= 9; a++) {
+      for (let b = 1; a + b <= 10; b++) ekle(hedef, '+', a, b, a + b);
     }
     return;
   }
 
-  if (levelId === 'cikar-10' || levelId === 'cikar-20') {
-    const tavan = levelId === 'cikar-10' ? 10 : 20;
-    for (let a = 1; a <= tavan; a++) {
+  if (levelId === 'topla-20') {
+    for (let a = 1; a <= 10; a++) {
+      for (let b = 1; b <= 10; b++) {
+        if (a + b >= 11 && a + b <= 20) ekle(hedef, '+', a, b, a + b);
+      }
+    }
+    return;
+  }
+
+  if (levelId === 'cikar-10') {
+    for (let a = 1; a <= 10; a++) {
       for (let b = 1; b <= a; b++) ekle(hedef, '-', a, b, a - b);
+    }
+    return;
+  }
+
+  if (levelId === 'cikar-20') {
+    for (let a = 11; a <= 20; a++) {
+      for (let b = 1; b <= 10; b++) {
+        const d = a - b;
+        if (d >= 1 && d <= 10) ekle(hedef, '-', a, b, d);
+      }
     }
     return;
   }

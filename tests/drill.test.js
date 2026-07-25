@@ -146,3 +146,39 @@ test('levelById baslik dondurur', () => {
   assert.ok(levelById('topla-10').title.length > 0);
   assert.equal(levelById('yok'), null);
 });
+
+test('20 seviyeleri 10 seviyesinin sorularini tekrarlamaz', () => {
+  const t10 = new Set(Object.keys(createDrill('topla-10')));
+  for (const k of Object.keys(createDrill('topla-20'))) {
+    assert.ok(!t10.has(k), `${k} topla-10 icinde de var`);
+  }
+  const c10 = new Set(Object.keys(createDrill('cikar-10')));
+  for (const k of Object.keys(createDrill('cikar-20'))) {
+    assert.ok(!c10.has(k), `${k} cikar-10 icinde de var`);
+  }
+});
+
+test('topla-20 sadece 11-20 arasi toplamlari icerir', () => {
+  for (const f of Object.values(createDrill('topla-20'))) {
+    assert.ok(f.answer >= 11 && f.answer <= 20, `${f.a}+${f.b} aralik disi`);
+    assert.ok(f.a <= 10 && f.b <= 10, `${f.a}+${f.b} tek basamakli degil`);
+  }
+});
+
+test('cikar-20 sadece 11-20 arasi eksilenleri icerir', () => {
+  for (const f of Object.values(createDrill('cikar-20'))) {
+    assert.ok(f.a >= 11 && f.a <= 20, `${f.a}-${f.b} aralik disi`);
+    assert.ok(f.answer >= 1 && f.answer <= 10, `${f.a}-${f.b} sonuc aralik disi`);
+  }
+});
+
+test('gecis seviyeleri makul surede bitirilebilir', () => {
+  // Gunde 10 soru, kutu 1'den 4'e 3 dogru-hizli cevap.
+  // Son seviye 'karisik' bir kapi degil, bakim seviyesi; o haric.
+  const GUNLUK = 10, TERFI = 3, TAVAN_GUN = 40;
+  for (const l of LEVELS.filter((x) => x.id !== 'karisik')) {
+    const n = Object.keys(createDrill(l.id)).length;
+    const gun = Math.ceil((n * TERFI) / GUNLUK);
+    assert.ok(gun <= TAVAN_GUN, `${l.id}: ${n} soru, ${gun} gun surer, cok uzun`);
+  }
+});
