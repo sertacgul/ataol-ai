@@ -8,6 +8,22 @@
  * karelere yonelir; parite optimizasyonu yok. Surekli kaybeden cocuk
  * oynamayi birakir, kazanabilmesi gerekir.
  *
+ * Rakip isabetten sonra HER ZAMAN degil BAZEN komsuya yonelir.
+ * Sebep: rastgele oynayan bir cocuga karsi tam takip yapan rakip
+ * oyunlarin %98'ini kazaniyordu. Boyle bir oyun ilk oturusta terk
+ * edilir. Seyrek takip ile rastgele oynayan cocuk basa bas olur,
+ * komsuyu takip etmeyi ogrenen cocuk kazanir; yani oyun kendi
+ * stratejisini ogretir.
+ *
+ * Takip orani sezgiden cok daha dusuk cikti, cunku takip eden taraf
+ * 12 kareyi ~40 atista, rastgele atan ~60 atista buluyor. Kucuk bir
+ * takip olasiligi bile bu farki acmaya yetiyor, o yuzden HUNT_CHANCE
+ * 0.5 degil 0.05. Deger degistirilecekse goz karariyla degil,
+ * kazanma orani olculerek degistirilmeli.
+ *
+ * Ilk atisi cocuk yapar. Bu arayuzun isi, ama denge bu varsayimla
+ * olculdu; sira degisirse oranlar yeniden olculmeli.
+ *
  * Durum JSON'a yazilabilir olmali (localStorage), o yuzden Set ve Map
  * kullanilmaz.
  *
@@ -16,6 +32,15 @@
 
 export const BOARD_SIZE = 8;
 export const SHIP_SIZES = [4, 3, 3, 2];
+
+// Isabetten sonra komsuyu takip etme olasiligi.
+// Olculen kazanma oranlari (cocuk once atar, 3000 oyun):
+//   1.00 -> rastgele oynayan cocuk %2   (oyun terk edilir)
+//   0.10 -> %34
+//   0.05 -> %45  (secilen: basa bas)
+//   0.00 -> %57  (rakip anlamsiz)
+// Komsuyu takip etmeyi ogrenen cocuk 0.05'te %96 kazanir.
+export const HUNT_CHANCE = 0.05;
 
 const HARFLER = 'ABCDEFGH';
 
@@ -103,7 +128,9 @@ export function aiChoose(board, rng = Math.random) {
     .flatMap((s) => s.hits);
 
   const hedefler = [...new Set(acikIsabetler.flatMap(komsular))].filter(atilmamis);
-  if (hedefler.length > 0) return hedefler[Math.floor(rng() * hedefler.length)];
+  if (hedefler.length > 0 && rng() < HUNT_CHANCE) {
+    return hedefler[Math.floor(rng() * hedefler.length)];
+  }
 
   const bos = [];
   for (let y = 0; y < BOARD_SIZE; y++) {

@@ -143,3 +143,22 @@ test('tahta JSON turuna dayanir', () => {
   const geri = JSON.parse(JSON.stringify(b));
   assert.deepEqual(geri, b, 'Set veya Map kullanilmis olabilir');
 });
+
+test('rakip isabetten sonra her zaman komsuya yonelmez', () => {
+  let b = createBoard(() => 0.3);
+  const gemi = b.ships.find((s) => s.cells.length >= 3);
+  b = fire(b, gemi.cells[1]).board;
+
+  const { x, y } = parseCell(gemi.cells[1]);
+  const komsular = [cellId(x - 1, y), cellId(x + 1, y), cellId(x, y - 1), cellId(x, y + 1)];
+
+  let komsu = 0;
+  let uzak = 0;
+  for (let i = 0; i < 400; i++) {
+    const c = aiChoose(b, () => (i * 0.0073 + 0.0011) % 1);
+    if (komsular.includes(c)) komsu++; else uzak++;
+  }
+
+  assert.ok(komsu > 0, 'hic komsuya yonelmedi, takip tamamen kapali');
+  assert.ok(uzak > 0, 'her zaman komsuya yoneldi, cocuk surekli kaybeder');
+});
