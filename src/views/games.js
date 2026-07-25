@@ -17,7 +17,8 @@ import { cardStates, availableBlocks } from '../engines/routine.js';
  */
 
 export const GAMES = [
-  { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' }
+  { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' },
+  { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' }
 ];
 
 const BITMIS = new Set(['done', 'awaiting_approval']);

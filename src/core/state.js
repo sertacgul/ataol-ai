@@ -72,6 +72,14 @@ export function createAppState(storage) {
       storage.set('timefacts', facts);
     },
 
+    loadChess() {
+      return storage.get('chess', null) ?? {};
+    },
+
+    saveChess(kartlar) {
+      storage.set('chess', kartlar);
+    },
+
     loadGame(id) {
       return storage.get(`game:${id}`, null);
     },

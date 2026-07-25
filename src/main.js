@@ -15,6 +15,9 @@ import { startSession, answerCurrent, SESSION_LENGTH } from './views/drill.js';
 import { levelById } from './engines/drill.js';
 import { gamesViewModel } from './views/games.js';
 import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiChoose } from './engines/battleship.js';
+import { chessViewModel, cevapla as satrancCevapla, sonrakiDers } from './views/chess.js';
+import { soruUret } from './engines/chesspuzzle.js';
+import { kareId, TAHTA_BOYU } from './engines/chess.js';
 
 let state;
 let profile;
@@ -186,6 +189,7 @@ function renderIfStale() {
   if (document.getElementById('timequiz-modal').hidden === false) return;
   if (document.getElementById('drill-modal').hidden === false) return;
   if (document.getElementById('amiral-modal').hidden === false) return;
+  if (document.getElementById('satranc-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -516,6 +520,162 @@ function amiralAtis(cell) {
   else amiralMesajGizle();
 }
 
+// Unicode satranc karakterleri. Resim dosyasi yok: tek bir yazi tipi
+// karakteri her ekranda keskin cikar ve indirilecek bir sey kalmaz.
+const SATRANC_GLIF = { K: '♜', F: '♝', V: '♛', S: '♚', A: '♞', P: '♟' };
+
+const SATRANC_GOREV = {
+  serbest: (ad) => `${ad} nereye gidebilir? Gidebileceği bir kareye dokun.`,
+  engelli: (ad) => `Yolda taşlar var. ${ad} şimdi nereye gidebilir? Bir kareye dokun.`,
+  alma: (ad) => `${ad} hangi taşı alabilir? O taşın karesine dokun.`
+};
+
+let satrancKartlar = {};
+let satrancTas = null;
+let satrancSoru = null;
+let satrancIsaret = {};
+let satrancCevaplandi = false;
+
+function satrancTasBilgi(kod) {
+  return chessViewModel(satrancKartlar).taslar.find((t) => t.kod === kod);
+}
+
+function satrancTasNode(t) {
+  const dersler = el('span', { className: 'satranc__tas-dersler' },
+    t.dersler.map((d) => el('span', {
+      className: d.ogrenildi ? 'satranc__nokta satranc__nokta--tamam' : 'satranc__nokta'
+    })));
+
+  return el('button', {
+    className: t.acik ? 'satranc__tas' : 'satranc__tas satranc__tas--kilitli',
+    attrs: { type: 'button', ...(t.acik ? {} : { disabled: 'disabled' }) },
+    dataset: { satrancTas: t.kod }
+  }, [
+    el('span', { className: 'satranc__glif', text: SATRANC_GLIF[t.kod] }),
+    el('span', { className: 'satranc__tas-ad', text: t.ad }),
+    t.acik
+      ? dersler
+      : el('span', { className: 'material-symbols-rounded satranc__kilit', text: 'lock' })
+  ]);
+}
+
+function cizSatrancTaslar() {
+  mount(document.getElementById('satranc-taslar'),
+    chessViewModel(satrancKartlar).taslar.map(satrancTasNode));
+}
+
+function satrancKareNode(x, y) {
+  const kare = kareId(x, y);
+  const kendi = kare === satrancSoru.kare;
+  const tasKod = kendi ? satrancSoru.tas : satrancSoru.tahta[kare];
+
+  // Damali tahta sart: filin dersi "basladigi karenin rengini
+  // degistirmez" ancak kareler gozle ayirt edilebilirse anlam tasir.
+  const siniflar = ['satranc__kare', (x + y) % 2 === 0 ? 'satranc__kare--koyu' : 'satranc__kare--acik'];
+  if (kendi) siniflar.push('satranc__kare--aktif');
+  else if (tasKod) siniflar.push('satranc__kare--hedef');
+  if (satrancIsaret[kare]) siniflar.push(`satranc__kare--${satrancIsaret[kare]}`);
+
+  return el('button', {
+    className: siniflar.join(' '),
+    text: tasKod ? SATRANC_GLIF[tasKod] : '',
+    attrs: { type: 'button', 'aria-label': kare },
+    dataset: { satrancKare: kare }
+  });
+}
+
+function cizSatrancTahta() {
+  const kareler = [];
+  for (let y = TAHTA_BOYU - 1; y >= 0; y--) {
+    for (let x = 0; x < TAHTA_BOYU; x++) kareler.push(satrancKareNode(x, y));
+  }
+  mount(document.getElementById('satranc-tahta'), kareler);
+}
+
+function satrancYeniSoru() {
+  const ders = sonrakiDers(satrancKartlar, satrancTas);
+  satrancSoru = soruUret(satrancTas, ders, Math.random);
+  satrancIsaret = {};
+  satrancCevaplandi = false;
+
+  document.getElementById('satranc-kural').textContent = satrancSoru.anlat;
+  document.getElementById('satranc-gorev').textContent =
+    SATRANC_GOREV[ders](satrancTasBilgi(satrancTas).ad);
+  document.getElementById('satranc-geribildirim').hidden = true;
+  cizSatrancTahta();
+}
+
+function satrancKareTikla(kare) {
+  if (!satrancSoru || satrancCevaplandi) return;
+  if (kare === satrancSoru.kare) return;
+
+  const dogru = satrancSoru.dogruKareler.includes(kare);
+  satrancCevaplandi = true;
+
+  // Dogru kareler her iki durumda da gosterilir: yanlis yapan cocuk
+  // cevabi gorur, dogru yapan da tasin gidebilecegi butun kareleri.
+  satrancIsaret = {};
+  for (const k of satrancSoru.dogruKareler) satrancIsaret[k] = 'cevap';
+  satrancIsaret[kare] = dogru ? 'dogru' : 'yanlis';
+
+  const oncekiAcik = chessViewModel(satrancKartlar).acikTaslar.length;
+  satrancKartlar = satrancCevapla(satrancKartlar, satrancSoru.tas, satrancSoru.tip, dogru);
+  state.saveChess(satrancKartlar);
+  const vm = chessViewModel(satrancKartlar);
+
+  const geri = document.getElementById('satranc-geribildirim');
+  geri.textContent = dogru
+    ? 'Doğru! Yeşil karelerin hepsine gidebilir.'
+    : 'Oraya gidemez. Doğru kareler yeşil.';
+  geri.className = dogru
+    ? 'satranc__geribildirim satranc__geribildirim--dogru'
+    : 'satranc__geribildirim satranc__geribildirim--yanlis';
+  geri.hidden = false;
+
+  if (vm.acikTaslar.length > oncekiAcik) {
+    const yeni = vm.taslar.find((t) => t.kod === vm.acikTaslar[vm.acikTaslar.length - 1]);
+    satrancMujde(`${satrancTasBilgi(satrancTas).ad} tamam! Yeni taş açıldı: ${yeni.ad}`);
+  }
+
+  cizSatrancTahta();
+  cizSatrancTaslar();
+}
+
+function satrancMujde(metin) {
+  const kutu = document.getElementById('satranc-mujde');
+  kutu.textContent = metin;
+  kutu.hidden = metin === '';
+}
+
+function satrancTasSec(kod) {
+  if (!chessViewModel(satrancKartlar).acikTaslar.includes(kod)) return;
+  satrancTas = kod;
+  document.getElementById('satranc-secim').hidden = true;
+  document.getElementById('satranc-soru').hidden = false;
+  satrancYeniSoru();
+}
+
+function satrancTaslaraDon() {
+  satrancTas = null;
+  satrancSoru = null;
+  document.getElementById('satranc-soru').hidden = true;
+  document.getElementById('satranc-secim').hidden = false;
+  cizSatrancTaslar();
+}
+
+function acSatranc() {
+  satrancKartlar = state.loadChess();
+  satrancMujde('');
+  satrancTaslaraDon();
+  document.getElementById('satranc-modal').hidden = false;
+}
+
+function kapatSatranc() {
+  document.getElementById('satranc-modal').hidden = true;
+  satrancTaslaraDon();
+  satrancMujde('');
+}
+
 function openPinModal(cardId) {
   pendingCardId = cardId;
 
@@ -677,12 +837,25 @@ document.getElementById('app').addEventListener('click', (e) => {
   const oyunKart = e.target.closest('[data-game]');
   if (oyunKart) {
     if (oyunKart.dataset.game === 'amiral') acAmiral();
+    if (oyunKart.dataset.game === 'satranc') acSatranc();
     return;
   }
 
   const amiralKare = e.target.closest('[data-amiral-cell]');
   if (amiralKare) {
     amiralAtis(amiralKare.dataset.amiralCell);
+    return;
+  }
+
+  const satrancTasDugme = e.target.closest('[data-satranc-tas]');
+  if (satrancTasDugme) {
+    satrancTasSec(satrancTasDugme.dataset.satrancTas);
+    return;
+  }
+
+  const satrancKare = e.target.closest('[data-satranc-kare]');
+  if (satrancKare) {
+    satrancKareTikla(satrancKare.dataset.satrancKare);
     return;
   }
 
@@ -703,6 +876,9 @@ document.getElementById('timequiz-cancel').addEventListener('click', kapatQuiz);
 document.getElementById('drill-cancel').addEventListener('click', kapatDrill);
 document.getElementById('amiral-yeni').addEventListener('click', yeniAmiralOyunu);
 document.getElementById('amiral-kapat').addEventListener('click', kapatAmiral);
+document.getElementById('satranc-devam').addEventListener('click', satrancYeniSoru);
+document.getElementById('satranc-taslara').addEventListener('click', satrancTaslaraDon);
+document.getElementById('satranc-kapat').addEventListener('click', kapatSatranc);
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {

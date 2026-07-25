@@ -95,7 +95,8 @@ test('depolama sadece bilinen anahtarlari kullanir', () => {
   state.saveDiary({});
   state.saveTimeFacts({});
   state.saveGame('amiral', { x: 1 });
-  const bilinen = ['profile', 'days', 'drill', 'diary', 'timefacts'];
+  state.saveChess({});
+  const bilinen = ['profile', 'days', 'drill', 'diary', 'timefacts', 'chess'];
   for (const k of storage.keys()) {
     assert.ok(bilinen.includes(k) || k.startsWith('game:'), `beklenmeyen anahtar: ${k}`);
   }
@@ -113,6 +114,13 @@ test('takvim olgulari kaydedilip geri okunur', () => {
   assert.equal(Object.keys(state.loadTimeFacts()).length, 4);
   state.saveTimeFacts({ ay: { kind: 'ay', box: 3, seen: 1, correct: 1, wrong: 0, avgMs: 0, lastSeen: null } });
   assert.equal(state.loadTimeFacts().ay.box, 3);
+});
+
+test('satranc ilerlemesi kaydedilip geri okunur, varsayilani bostur', () => {
+  const { state } = kur();
+  assert.deepEqual(state.loadChess(), {});
+  state.saveChess({ 'K:serbest': { box: 2, seen: 1, correct: 1, wrong: 0 } });
+  assert.equal(state.loadChess()['K:serbest'].box, 2);
 });
 
 test('bozuk profil null olarak okunur', () => {
