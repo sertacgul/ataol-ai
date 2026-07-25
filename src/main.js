@@ -536,15 +536,17 @@ const SATRANC_GOREV = {
 // kullanmak cocuga yanlis kural ogretiyordu: alma dersinde tas yesil
 // degil diye oraya gidemeyecegini sanirdi. Kural ogreten bir ekranda
 // yanlis cumle, eksik cumleden kotudur.
+// serbest ve engelli derste yesil ayni seyi anlatir: gidebilecegi
+// karelerin tamami. Bu yuzden ayni cumleyi paylasirlar. alma dersinde
+// yesilin anlami degistigi icin o ayri yazilir.
+const gidebilirGeri = (ad, dogru) =>
+  dogru
+    ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
+    : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`;
+
 const SATRANC_GERI = {
-  serbest: (ad, dogru) =>
-    dogru
-      ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
-      : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`,
-  engelli: (ad, dogru) =>
-    dogru
-      ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
-      : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`,
+  serbest: gidebilirGeri,
+  engelli: gidebilirGeri,
   alma: (ad, dogru, kareDolu) => {
     if (dogru) return `Doğru! ${ad} o taşı alabilir.`;
     return kareDolu
