@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>İkon Stüdyosu</title>
+<style>
+  :root {
+    --mor: #6C5CE7;
+    --zemin: #f4f4f8;
+    --kart: #fff;
+    --metin: #23233a;
+    --soluk: #6b6b85;
+    --cizgi: #d8d8e4;
+    --uyari: #c62828;
+    --iyi: #12874a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--zemin); color: var(--metin);
+  }
+  .sarmal { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .alt { color: var(--soluk); margin: 0 0 24px; font-size: 15px; }
+  .kart {
+    background: var(--kart); border: 1px solid var(--cizgi);
+    border-radius: 14px; padding: 20px; margin-bottom: 20px;
+  }
+  .kart h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--soluk); margin: 0 0 16px; }
+  input[type=file] { font: inherit; }
+  label.kaydir { display: block; margin: 16px 0 4px; font-size: 14px; color: var(--soluk); }
+  input[type=range] { width: 100%; accent-color: var(--mor); }
+  #tuval-sarmal { position: relative; width: 320px; height: 320px; margin: 0 auto;
+                  touch-action: none; cursor: grab; }
+  #tuval-sarmal:active { cursor: grabbing; }
+  #tuval { width: 320px; height: 320px; border-radius: 8px; display: block;
+           background: var(--mor); }
+  #kaplama { position: absolute; inset: 0; pointer-events: none; }
+  .onizlemeler { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .onizleme { text-align: center; }
+  .onizleme canvas { display: block; margin: 0 auto 8px; background: var(--mor); }
+  .onizleme span { font-size: 13px; color: var(--soluk); display: block; }
+  .squircle { border-radius: 22.5%; }
+  .daire { border-radius: 50%; }
+  button {
+    font: 600 16px/1 inherit; padding: 14px 22px; border: 0; border-radius: 10px;
+    background: var(--mor); color: #fff; cursor: pointer; width: 100%;
+  }
+  button:disabled { background: #b9b4e8; cursor: not-allowed; }
+  .not { font-size: 14px; color: var(--soluk); margin-top: 12px; }
+  .durum { margin-top: 14px; font-size: 14px; }
+  .durum.iyi { color: var(--iyi); }
+  .durum.uyari { color: var(--uyari); }
+  ul { margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: var(--soluk); }
+  li { margin-bottom: 4px; }
+  [hidden] { display: none !important; }
+  /* 320 piksellik tuval dar telefonlarda ekrandan tasmasin. */
+  @media (max-width: 400px) { body { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="sarmal">
+
+  <h1>İkon Stüdyosu</h1>
+  <p class="alt">Fotoğraf bu sayfadan çıkmaz. Seçtiğin görsel tarayıcının içinde işlenir, hiçbir yere yüklenmez.</p>
+
+  <div class="kart">
+    <h2>1. Fotoğrafı seç</h2>
+    <input type="file" id="dosya" accept="image/*">
+    <div class="durum" id="dosya-durum"></div>
+    <p class="not">Kare olması gerekmiyor, çerçeveyi aşağıda ayarlarsın.</p>
+  </div>
+
+  <div class="kart" id="duzenle" hidden>
+    <h2>2. Yüzü çemberin içine getir</h2>
+    <div id="tuval-sarmal">
+      <canvas id="tuval" width="320" height="320"></canvas>
+      <svg id="kaplama" viewBox="0 0 320 320">
+        <circle cx="160" cy="160" r="128" fill="none" stroke="#fff" stroke-width="2"
+                stroke-dasharray="6 5" opacity="0.95"/>
+        <circle cx="160" cy="160" r="128" fill="none" stroke="#000" stroke-width="2"
+                stroke-dasharray="6 5" stroke-dashoffset="5.5" opacity="0.35"/>
+      </svg>
+    </div>
+    <label class="kaydir" for="yakinlik">Yakınlaştırma</label>
+    <input type="range" id="yakinlik" min="100" max="400" value="100">
+    <p class="not">
+      Görseli sürükleyerek kaydır. <strong>Kesikli çember Android'in kırptığı yerdir</strong>:
+      dışında kalan her şey telefonda görünmez. Deha'nın yüzü çemberin içinde kalsın.
+    </p>
+  </div>
+
+  <div class="kart" id="onizleme-kart" hidden>
+    <h2>3. Telefonda böyle görünecek</h2>
+    <div class="onizlemeler">
+      <div class="onizleme">
+        <canvas class="squircle" width="120" height="120" data-on="ios"></canvas>
+        <span>iPhone<br>ana ekran</span>
+      </div>
+      <div class="onizleme">
+        <canvas class="daire" width="120" height="120" data-on="android"></canvas>
+        <span>Samsung<br>ana ekran</span>
+      </div>
+      <div class="onizleme">
+        <canvas class="squircle" width="60" height="60" data-on="kucuk"></canvas>
+        <span>Gerçek boyut<br>(60 piksel)</span>
+      </div>
+    </div>
+    <p class="not">
+      Sağdaki, ikonun telefonda gerçekte kaplayacağı alandır. Deha orada tanınmıyorsa
+      daha çok yakınlaştır: uzaktan çekilmiş bir fotoğraf ana ekranda leke gibi durur.
+    </p>
+  </div>
+
+  <div class="kart" id="indir-kart" hidden>
+    <h2>4. İkon dosyalarını indir</h2>
+    <button id="indir">Dört ikon dosyasını indir</button>
+    <div class="durum" id="durum"></div>
+    <ul>
+      <li><code>apple-touch-icon.png</code> — 180×180, iPhone için, opak</li>
+      <li><code>icon-192.png</code> ve <code>icon-512.png</code> — Android için</li>
+      <li><code>icon-maskable-512.png</code> — Android ana ekran, daireye kırpılan</li>
+    </ul>
+    <p class="not">
+      Dosyalar indirme klasörüne iner. Bana haber ver, depodaki <code>icons/</code>
+      klasörüne koyup yayına alayım.
+    </p>
+  </div>
+
+</div>
+
+<script>
+const MOR = '#6C5CE7';
+const tuval = document.getElementById('tuval');
+const yakinlik = document.getElementById('yakinlik');
+const durum = document.getElementById('durum');
+const dosyaDurum = document.getElementById('dosya-durum');
+
+let gorsel = null;
+let kaydirX = 0, kaydirY = 0;
+let suruklu = false, baslaX = 0, baslaY = 0;
+
+document.getElementById('dosya').addEventListener('change', (e) => {
+  const dosya = e.target.files[0];
+  if (!dosya) return;
+  const url = URL.createObjectURL(dosya);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    gorsel = img;
+    dosyaDurum.textContent = '';
+    dosyaDurum.className = 'durum';
+    kaydirX = 0; kaydirY = 0; yakinlik.value = 100;
+    for (const id of ['duzenle', 'onizleme-kart', 'indir-kart']) {
+      document.getElementById(id).hidden = false;
+    }
+    ciz();
+  };
+  // Hata mesaji bu ilk kartta durmali: asagidaki kartlar henuz gizli
+  // oldugu icin oraya yazilan uyariyi kimse goremez.
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    dosyaDurum.textContent = 'Bu dosya görsel olarak açılamadı. iPhone fotoğrafıysa HEIC olabilir; '
+      + 'telefondan JPEG olarak paylaşıp tekrar dene.';
+    dosyaDurum.className = 'durum uyari';
+  };
+  img.src = url;
+});
+
+// Fotografi kareye "cover" mantigiyla oturtur: bosluk birakmaz, tasan
+// kismi kirpar. Ikon zemininde beyaz serit kalmasin diye boyle.
+function yerlesim(boyut) {
+  const olcek = yakinlik.value / 100;
+  const temel = Math.max(boyut / gorsel.width, boyut / gorsel.height);
+  const o = temel * olcek;
+  const en = gorsel.width * o;
+  const boy = gorsel.height * o;
+  const oran = boyut / 320;
+  return {
+    x: (boyut - en) / 2 + kaydirX * oran,
+    y: (boyut - boy) / 2 + kaydirY * oran,
+    en, boy
+  };
+}
+
+// Kaydirma, gorselin kenarini cerceve icine sokacak kadar ilerlemesin.
+// Kelepce olmazsa 800x600 bir fotograf %100 yakinlikta dikeyde hic bosluk
+// birakmadigi icin en ufak asagi surukleme bile ustte mor serit aciyor ve
+// o serit indirilen ikona da giriyor. Yarim piksel pay: yuvarlama payi.
+function kelepcele() {
+  const o = Math.max(320 / gorsel.width, 320 / gorsel.height) * (yakinlik.value / 100);
+  const enPay = Math.max(0, (gorsel.width * o - 320) / 2 - 0.5);
+  const boyPay = Math.max(0, (gorsel.height * o - 320) / 2 - 0.5);
+  kaydirX = Math.min(enPay, Math.max(-enPay, kaydirX));
+  kaydirY = Math.min(boyPay, Math.max(-boyPay, kaydirY));
+}
+
+function ciz() {
+  if (!gorsel) return;
+  kelepcele();
+  boya(tuval, 320);
+  for (const c of document.querySelectorAll('[data-on]')) {
+    boya(c, c.width);
+  }
+  durumGuncelle();
+}
+
+function boya(hedef, boyut) {
+  const c = hedef.getContext('2d');
+  // Opak zemin: iOS seffaf ikonun arkasina siyah koyar, Android
+  // maskable ikonda da seffaflik istemiyoruz.
+  c.fillStyle = MOR;
+  c.fillRect(0, 0, boyut, boyut);
+  const p = yerlesim(boyut);
+  c.imageSmoothingEnabled = true;
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(gorsel, p.x, p.y, p.en, p.boy);
+}
+
+function durumGuncelle() {
+  // 60 pikselde tanınırlık kaba bir olcut: yuz cerceveye gore cok
+  // kucukse uyar. Yakinlik %100 iken fotograf kareyi tam kapliyor.
+  if (yakinlik.value < 110) {
+    durum.textContent = 'Fotoğraf tam kadraj. Yüz küçük kalıyorsa yakınlaştır.';
+    durum.className = 'durum';
+  } else {
+    durum.textContent = 'Hazır. Yüzün kesikli çemberin içinde olduğundan emin ol.';
+    durum.className = 'durum iyi';
+  }
+}
+
+yakinlik.addEventListener('input', ciz);
+
+const sarmal = document.getElementById('tuval-sarmal');
+sarmal.addEventListener('pointerdown', (e) => {
+  suruklu = true; baslaX = e.clientX - kaydirX; baslaY = e.clientY - kaydirY;
+  sarmal.setPointerCapture(e.pointerId);
+});
+sarmal.addEventListener('pointermove', (e) => {
+  if (!suruklu) return;
+  kaydirX = e.clientX - baslaX; kaydirY = e.clientY - baslaY;
+  ciz();
+});
+sarmal.addEventListener('pointerup', () => { suruklu = false; });
+sarmal.addEventListener('pointercancel', () => { suruklu = false; });
+
+const CIKTILAR = [
+  { ad: 'apple-touch-icon.png', boyut: 180 },
+  { ad: 'icon-192.png', boyut: 192 },
+  { ad: 'icon-512.png', boyut: 512 },
+  { ad: 'icon-maskable-512.png', boyut: 512 }
+];
+
+document.getElementById('indir').addEventListener('click', async () => {
+  if (!gorsel) return;
+  const dugme = document.getElementById('indir');
+  dugme.disabled = true;
+  for (const c of CIKTILAR) {
+    const gecici = document.createElement('canvas');
+    gecici.width = gecici.height = c.boyut;
+    boya(gecici, c.boyut);
+    await indirTuval(gecici, c.ad);
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  dugme.disabled = false;
+  durum.textContent = 'Dört dosya da indirildi. İndirme klasörüne bak.';
+  durum.className = 'durum iyi';
+});
+
+function indirTuval(c, ad) {
+  return new Promise((coz) => {
+    c.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = ad;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      coz();
+    }, 'image/png');
+  });
+}
+</script>
+</body>
+</html>
