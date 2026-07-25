@@ -73,3 +73,28 @@ test('recordTimeAnswer bilinmeyen anahtari yok sayar', () => {
   const f = createTimeFacts();
   assert.deepEqual(recordTimeAnswer(f, 'yok', true), f);
 });
+
+test('dogru cevap her zaman ilk sirada degil', () => {
+  const yerler = new Set();
+  for (let i = 0; i < 200; i++) {
+    const q = buildQuestion('ay', gun, () => (i * 0.37 + 0.11) % 1);
+    yerler.add(q.options.indexOf(q.answer));
+  }
+  assert.ok(yerler.size > 1, `dogru cevap hep ayni yerde cikti: ${[...yerler]}`);
+});
+
+test('karistirma dogru cevabi kaybetmez', () => {
+  for (let i = 0; i < 200; i++) {
+    for (const kind of QUESTION_KINDS) {
+      const q = buildQuestion(kind, gun, () => (i * 0.37 + 0.11) % 1);
+      assert.ok(q.options.includes(q.answer), `${kind}: dogru cevap kayboldu`);
+      assert.equal(q.options.length, new Set(q.options).size, `${kind}: tekrar olustu`);
+    }
+  }
+});
+
+test('ayni rng ayni siralamayi verir', () => {
+  const a = buildQuestion('ay', gun, () => 0.42);
+  const b = buildQuestion('ay', gun, () => 0.42);
+  assert.deepEqual(a.options, b.options);
+});

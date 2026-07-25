@@ -37,7 +37,16 @@ function secenekler(dogru, havuz, adet) {
   return secilen;
 }
 
-export function buildQuestion(kind, date) {
+function karistir(liste, rng) {
+  const c = [...liste];
+  for (let i = c.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [c[i], c[j]] = [c[j], c[i]];
+  }
+  return c;
+}
+
+export function buildQuestion(kind, date, rng = Math.random) {
   if (!QUESTION_KINDS.includes(kind)) return null;
 
   let answer;
@@ -61,7 +70,7 @@ export function buildQuestion(kind, date) {
     kind,
     prompt: PROMPTS[kind],
     answer,
-    options: secenekler(answer, havuz, Math.min(4, havuz.length))
+    options: karistir(secenekler(answer, havuz, Math.min(4, havuz.length)), rng)
   };
 }
 
