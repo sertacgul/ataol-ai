@@ -1,40 +1,23 @@
-import { cardStates, availableBlocks } from '../engines/routine.js';
-
 /**
- * Oyun sekmesinin kilit kurali.
+ * Oyun listesi.
  *
- * Oyunlar kazanilir, bedava acilmaz. Cocugun asil sorunu ekran
- * bagimliligi; sinirsiz oynanabilir bir oyun, rutin kartlariyla
- * rekabet eder ve uygulamanin kendi amacini baltalar.
+ * Oyunlar serbesttir, rutine bagli degildir. Once kilitliydi: o an
+ * acik olan blogun kartlari bitmeden oyun sekmesi acilmiyordu.
  *
- * Kilit gun boyu degil blok basina: tum gunun kartlari sart kosulsa
- * aksam blogu acilana kadar oyun olmaz, yani sabahi bitirmenin odulu
- * gelmez. O an acik olan bloklarin kartlari bitince acilir.
+ * Kilit babanin karariyla kaldirildi ve karar savunulabilir.
+ * Sinirlamak istedigimiz sey YouTube Shorts'tur; satranc ve Amiral
+ * Batti degil. Ikisi de sira bekleyen, kural ogreten, biten oyunlar.
+ * Onlari goreve baglamak, cocugun gozunde onlari da goreve cevirme
+ * riski tasiyordu.
  *
- * Onay bekleyen kart tamamlanmis sayilir: cocuk ustune duseni
- * yaptiysa, ebeveyn onaylayana kadar oyunsuz kalmasi onu baskasinin
- * gecikmesiyle cezalandirmak olur.
+ * Rutinin odulu tumden kalkmiyor: yildiz ve sure ekonomisi duruyor.
+ * Yalnizca bu iki oyun o ekonominin disinda.
+ *
+ * Oyun oynamak yildiz veya sure KAZANDIRMAZ. Oyun zaten kendi
+ * odulu; puanlamak onu ikinci bir goreve cevirirdi.
  */
 
 export const GAMES = [
   { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' },
   { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' }
 ];
-
-const BITMIS = new Set(['done', 'awaiting_approval']);
-
-export function gamesViewModel(profile, dayProgress, date) {
-  const resetHour = profile.settings?.dayResetHour ?? 4;
-  const acikBloklar = new Set(availableBlocks(date, profile.schedule, resetHour));
-
-  const acikKartlar = cardStates(profile, dayProgress, date)
-    .filter((s) => acikBloklar.has(s.block));
-
-  const kalan = acikKartlar.filter((s) => !BITMIS.has(s.state)).length;
-
-  return {
-    unlocked: acikBloklar.size > 0 && kalan === 0,
-    remaining: kalan,
-    games: GAMES
-  };
-}

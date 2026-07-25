@@ -663,13 +663,6 @@
 
 /* --- Oyun ekrani --- */
 
-.games-locked {
-  text-align: center;
-  color: var(--text-muted);
-  margin: 40px 0 20px;
-  font-size: 15px;
-}
-
 .games-card {
   display: flex;
   align-items: center;
@@ -708,13 +701,6 @@
 
 .games-card--available:active {
   transform: scale(0.97);
-}
-
-/* Locked: rutinin card--locked ile ayni dil, dokunulamaz oldugu acik. */
-.games-card--locked {
-  opacity: 0.45;
-  background: transparent;
-  filter: grayscale(60%);
 }
 
 /* --- Amiral Batti --- */

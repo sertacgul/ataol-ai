@@ -13,7 +13,7 @@ import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timeq
 import { selectWeighted } from './engines/leitner.js';
 import { startSession, answerCurrent, SESSION_LENGTH } from './views/drill.js';
 import { levelById } from './engines/drill.js';
-import { gamesViewModel } from './views/games.js';
+import { GAMES } from './views/games.js';
 import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiChoose } from './engines/battleship.js';
 import { chessViewModel, cevapla as satrancCevapla, sonrakiDers } from './views/chess.js';
 import { soruUret } from './engines/chesspuzzle.js';
@@ -156,23 +156,9 @@ function renderParent() {
 }
 
 function renderGames() {
-  const vm = gamesViewModel(profile, state.loadDayProgress(today()), now());
   const target = document.getElementById('view-games');
 
-  if (!vm.unlocked) {
-    mount(target, [
-      el('p', { className: 'games-locked', text: `Önce bugünün görevlerini bitir. ${vm.remaining} görev kaldı.` }),
-      ...vm.games.map((g) =>
-        el('div', { className: 'games-card games-card--locked' }, [
-          el('span', { className: 'material-symbols-rounded games-card__icon', text: g.icon }),
-          el('span', { className: 'games-card__title', text: g.title })
-        ])
-      )
-    ]);
-    return;
-  }
-
-  mount(target, vm.games.map((g) =>
+  mount(target, GAMES.map((g) =>
     el('button', {
       className: 'games-card games-card--available',
       attrs: { type: 'button' },
