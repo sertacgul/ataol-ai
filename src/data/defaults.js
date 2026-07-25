@@ -8,13 +8,14 @@ import { createProfile, addGuardian } from '../core/profile.js';
  * Dakika: mukemmel gun tam 60'a denk gelir, yani tavan mukemmel gunde
  * devreye girer ve "her sey bitti, sinirsiz ekran" durumu olusmaz.
  *
- * 1B'de tum kartlar 'approved'. measured (uygulama olcer) ve inapp
- * (uygulama icinde tamamlanir) tipleri motorda hazir ama akislari
- * 1C'de gelecek. O zamana kadar kullanilirlarsa tek dokunusla puan
- * odenir, cunku dogrulanacak bir aktivite yok.
+ * measured (uygulama olcer) ve inapp (uygulama icinde tamamlanir)
+ * tipleri sadece uygulamanin gercekten dogruladigi kartlarda kullanilir
+ * (1C'den itibaren: sabah-takvim). Digerleri 'approved' kalir, cunku
+ * tek dokunusla dogrulanacak bir aktivite yok.
  */
 
 export const DEFAULT_CARDS = [
+  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', icon: 'calendar_month', stars: 2, minutes: 4 },
   { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve yatağını topla', icon: 'bed', stars: 2, minutes: 4 },
   { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', icon: 'restaurant', stars: 2, minutes: 4 },
   { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı kontrol et', icon: 'backpack', stars: 2, minutes: 4 },
@@ -30,7 +31,7 @@ export const DEFAULT_CARDS = [
 ];
 
 export const DEFAULT_ROUTINE = {
-  morning: ['sabah-giyin', 'sabah-kahvalti', 'sabah-canta'],
+  morning: ['sabah-takvim', 'sabah-giyin', 'sabah-kahvalti', 'sabah-canta'],
   afternoon: ['ogle-ust', 'ogle-odev', 'ogle-matematik'],
   evening: ['aksam-sofra', 'aksam-dus', 'aksam-kitap', 'aksam-canta']
 };

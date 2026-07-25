@@ -81,8 +81,15 @@ test('depolama sadece bilinen anahtarlari kullanir', () => {
   state.saveFacts({});
   state.saveDiary({});
   for (const k of storage.keys()) {
-    assert.ok(['profile', 'days', 'facts', 'diary'].includes(k), `beklenmeyen anahtar: ${k}`);
+    assert.ok(['profile', 'days', 'facts', 'diary', 'timefacts'].includes(k), `beklenmeyen anahtar: ${k}`);
   }
+});
+
+test('takvim olgulari kaydedilip geri okunur', () => {
+  const { state } = kur();
+  assert.equal(Object.keys(state.loadTimeFacts()).length, 4);
+  state.saveTimeFacts({ ay: { kind: 'ay', box: 3, seen: 1, correct: 1, wrong: 0, avgMs: 0, lastSeen: null } });
+  assert.equal(state.loadTimeFacts().ay.box, 3);
 });
 
 test('bozuk profil null olarak okunur', () => {

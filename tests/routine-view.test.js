@@ -28,7 +28,7 @@ test('sabah 07:00de sadece ilk kart acik', () => {
 
 test('kart alanlari gorunum modeline tasinir', () => {
   const vm = routineViewModel(profile, emptyDayProgress(), sabah);
-  const kart = vm.blocks[0].cards[0];
+  const kart = vm.blocks[0].cards[1];
   assert.equal(kart.id, 'sabah-giyin');
   assert.equal(kart.title, 'Giyin ve yatağını topla');
   assert.equal(kart.stars, 2);
@@ -37,8 +37,9 @@ test('kart alanlari gorunum modeline tasinir', () => {
 });
 
 test('onay bekleyen kart puan gostermez ama sayilir', () => {
-  const dp = completeCard(profile, emptyDayProgress(), 'sabah-giyin', sabah);
-  const vm = routineViewModel(profile, dp, sabah);
+  const ogleden = new Date('2026-07-24T16:00:00');
+  const dp = completeCard(profile, emptyDayProgress(), 'ogle-ust', ogleden);
+  const vm = routineViewModel(profile, dp, ogleden);
   assert.equal(vm.stars, 0);
   assert.equal(vm.awaitingApproval, 1);
 });
@@ -66,4 +67,12 @@ test('cocuk adi gorunum modelinde', () => {
 test('gorunum modeli duz veridir, HTML uretmez', () => {
   const vm = routineViewModel(profile, emptyDayProgress(), sabah);
   assert.ok(!JSON.stringify(vm).includes('<'), 'gorunum modelinde HTML var');
+});
+
+test('gorunum modeli bugunun tarihini tasir', () => {
+  const vm = routineViewModel(profile, emptyDayProgress(), new Date('2026-07-25T07:00:00'));
+  assert.equal(vm.today.dayName, 'Cumartesi');
+  assert.equal(vm.today.monthName, 'Temmuz');
+  assert.equal(vm.today.season, 'Yaz');
+  assert.equal(vm.today.dayOfMonth, 25);
 });

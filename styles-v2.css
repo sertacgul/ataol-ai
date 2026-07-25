@@ -31,6 +31,12 @@
   margin: 0 0 4px;
 }
 
+.routine-header__date {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
 .routine-header__totals {
   font-size: 15px;
   color: var(--text-muted);
@@ -435,6 +441,64 @@
   background: rgba(131, 149, 167, 0.15);
   color: var(--text-dark);
   margin-bottom: 0;
+}
+
+/* --- Takvim quizi --- */
+
+.timequiz__prompt {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.timequiz__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.timequiz__option {
+  min-height: 44px;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-dark);
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.timequiz__option:active {
+  transform: scale(0.97);
+  border-color: var(--primary);
+}
+
+.timequiz__feedback {
+  font-size: 14px;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+}
+
+#timequiz-cancel {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  background: rgba(131, 149, 167, 0.15);
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
 }
 
 /* --- Kurtarma ekrani --- */
