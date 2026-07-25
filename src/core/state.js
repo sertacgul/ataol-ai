@@ -1,7 +1,8 @@
 import { createFactSet } from '../engines/math.js';
-import { emptyDayProgress } from '../engines/routine.js';
+import { normalizeDayProgress } from '../engines/routine.js';
 import { emptyDiary } from '../engines/diary.js';
 import { DEFAULT_MATH_TABLES } from '../data/defaults.js';
+import { SCHEMA_VERSION, validateProfile } from './profile.js';
 
 /**
  * Motorlar ile depolama arasindaki tek kopru.
@@ -13,7 +14,11 @@ import { DEFAULT_MATH_TABLES } from '../data/defaults.js';
 export function createAppState(storage) {
   return {
     loadProfile() {
-      return storage.get('profile', null);
+      const raw = storage.get('profile', null);
+      if (!raw || typeof raw !== 'object') return null;
+      if (raw.schemaVersion !== SCHEMA_VERSION) return null;
+      if (!validateProfile(raw).valid) return null;
+      return raw;
     },
 
     saveProfile(profile) {
@@ -21,7 +26,7 @@ export function createAppState(storage) {
     },
 
     loadDayProgress(dayKey) {
-      return storage.get('days', {})[dayKey] ?? emptyDayProgress();
+      return normalizeDayProgress(storage.get('days', {})[dayKey]);
     },
 
     saveDayProgress(dayKey, dayProgress) {

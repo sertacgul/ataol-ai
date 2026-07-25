@@ -6,7 +6,8 @@ import {
   cardStates,
   completeCard,
   approveCard,
-  emptyDayProgress
+  emptyDayProgress,
+  normalizeDayProgress
 } from '../src/engines/routine.js';
 
 const schedule = {
@@ -192,4 +193,32 @@ test('routine icinde karsiligi olmayan id puan vermez', () => {
   };
   const dp = completeCard(hayalet, emptyDayProgress(), 'yok', new Date('2026-07-24T07:00:00'));
   assert.equal(dp.stars, 0);
+});
+
+test('eksik alanli gun ilerlemesi tamamlanir', () => {
+  const dp = normalizeDayProgress({});
+  assert.deepEqual(dp.cards, {});
+  assert.deepEqual(dp.approvals, []);
+  assert.equal(dp.stars, 0);
+  assert.equal(dp.minutes, 0);
+});
+
+test('normalizeDayProgress gecerli veriyi korur', () => {
+  const dp = normalizeDayProgress({ cards: { a: { state: 'done' } }, approvals: [{ guardianId: 'g' }], stars: 5, minutes: 3 });
+  assert.equal(dp.stars, 5);
+  assert.equal(dp.cards.a.state, 'done');
+  assert.equal(dp.approvals.length, 1);
+});
+
+test('normalizeDayProgress yanlis tipleri varsayilana cevirir', () => {
+  const dp = normalizeDayProgress({ cards: 'bozuk', approvals: 42, stars: 'x', minutes: null });
+  assert.deepEqual(dp.cards, {});
+  assert.deepEqual(dp.approvals, []);
+  assert.equal(dp.stars, 0);
+  assert.equal(dp.minutes, 0);
+});
+
+test('normalizeDayProgress null ve undefined kabul eder', () => {
+  assert.deepEqual(normalizeDayProgress(null), emptyDayProgress());
+  assert.deepEqual(normalizeDayProgress(undefined), emptyDayProgress());
 });

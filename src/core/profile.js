@@ -46,9 +46,7 @@ export function validateProfile(profile) {
 
   if (!profile.child?.name?.trim()) errors.push('child.name bos olamaz');
   if (!Number.isInteger(profile.child?.birthYear)) errors.push('child.birthYear tam sayi olmali');
-  if (!Array.isArray(profile.guardians) || profile.guardians.length === 0) {
-    errors.push('en az bir bakim veren gerekli');
-  }
+  if (!Array.isArray(profile.guardians)) errors.push('guardians dizi olmali');
   if (profile.schemaVersion !== SCHEMA_VERSION) {
     errors.push(`schemaVersion ${SCHEMA_VERSION} olmali`);
   }

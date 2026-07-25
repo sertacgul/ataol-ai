@@ -84,3 +84,33 @@ test('depolama sadece bilinen anahtarlari kullanir', () => {
     assert.ok(['profile', 'days', 'facts', 'diary'].includes(k), `beklenmeyen anahtar: ${k}`);
   }
 });
+
+test('bozuk profil null olarak okunur', () => {
+  const backend = memoryBackend();
+  backend.setItem('ataol2:profile', '{}');
+  const state = createAppState(createStorage(backend, 'ataol2'));
+  assert.equal(state.loadProfile(), null);
+});
+
+test('yanlis sema surumlu profil null olarak okunur', () => {
+  const backend = memoryBackend();
+  backend.setItem('ataol2:profile', JSON.stringify({ schemaVersion: 99, child: { name: 'X', birthYear: 2016 } }));
+  const state = createAppState(createStorage(backend, 'ataol2'));
+  assert.equal(state.loadProfile(), null);
+});
+
+test('bozuk gun kaydi normalize edilerek okunur', () => {
+  const backend = memoryBackend();
+  backend.setItem('ataol2:days', JSON.stringify({ '2026-07-24': {} }));
+  const state = createAppState(createStorage(backend, 'ataol2'));
+  const dp = state.loadDayProgress('2026-07-24');
+  assert.deepEqual(dp.cards, {});
+  assert.equal(dp.stars, 0);
+});
+
+test('bakim vereni olmayan tohum profil gecerli sayilir', () => {
+  const backend = memoryBackend();
+  const s = createAppState(createStorage(backend, 'ataol2'));
+  s.saveProfile(seedProfile({ childName: 'X', birthYear: 2016, guardians: [] }));
+  assert.ok(s.loadProfile(), 'bakim veren yoklugu profili gecersiz yapmamali');
+});

@@ -8,12 +8,39 @@ import { approvalQueue } from './views/parent.js';
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 
-const state = createAppState(createStorage(window.localStorage, 'ataol2'));
+let state;
+let profile;
 
-let profile = state.loadProfile();
-if (!profile) {
-  profile = seedProfile({ childName: 'Deha', birthYear: 2016, guardians: [] });
-  state.saveProfile(profile);
+function showRecovery() {
+  const app = document.getElementById('app');
+  mount(app, [
+    el('div', { className: 'v2-recovery' }, [
+      el('p', { text: 'Uygulama açılamadı.' }),
+      el('button', {
+        text: 'Sıfırla ve yeniden başla',
+        attrs: { type: 'button' },
+        dataset: { recover: 'reset' }
+      })
+    ])
+  ]);
+  app.addEventListener('click', (e) => {
+    if (e.target.closest('[data-recover]')) {
+      window.localStorage.clear();
+      window.location.reload();
+    }
+  });
+}
+
+try {
+  state = createAppState(createStorage(window.localStorage, 'ataol2'));
+  profile = state.loadProfile();
+  if (!profile) {
+    profile = seedProfile({ childName: 'Deha', birthYear: 2016, guardians: [] });
+    state.saveProfile(profile);
+  }
+} catch (err) {
+  profile = null;
+  showRecovery();
 }
 
 const now = () => new Date();
@@ -160,10 +187,11 @@ document.getElementById('app').addEventListener('click', (e) => {
 document.getElementById('pin-submit').addEventListener('click', submitPin);
 document.getElementById('pin-cancel').addEventListener('click', closePinModal);
 
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) renderIfStale();
-});
-window.addEventListener('pageshow', renderIfStale);
-setInterval(renderIfStale, 30000);
-
-render();
+if (profile) {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) renderIfStale();
+  });
+  window.addEventListener('pageshow', renderIfStale);
+  setInterval(renderIfStale, 30000);
+  render();
+}

@@ -308,3 +308,36 @@
   background: var(--primary);
   color: #fff;
 }
+
+/* --- Kurtarma ekrani --- */
+
+.v2-recovery {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.v2-recovery p {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.v2-recovery button {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  box-shadow: var(--shadow-md);
+}

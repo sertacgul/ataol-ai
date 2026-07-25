@@ -15,6 +15,18 @@ export function emptyDayProgress() {
   return { cards: {}, approvals: [], stars: 0, minutes: 0 };
 }
 
+export function normalizeDayProgress(raw) {
+  const base = emptyDayProgress();
+  if (!raw || typeof raw !== 'object') return base;
+
+  return {
+    cards: raw.cards && typeof raw.cards === 'object' && !Array.isArray(raw.cards) ? raw.cards : base.cards,
+    approvals: Array.isArray(raw.approvals) ? raw.approvals : base.approvals,
+    stars: Number.isFinite(raw.stars) ? raw.stars : base.stars,
+    minutes: Number.isFinite(raw.minutes) ? raw.minutes : base.minutes
+  };
+}
+
 export function dayKey(date, resetHour = 4) {
   const shifted = new Date(date.getTime() - resetHour * 3600 * 1000);
   const y = shifted.getFullYear();
