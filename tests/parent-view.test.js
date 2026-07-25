@@ -15,7 +15,8 @@ const profile = seedProfile({
 const sabah = new Date('2026-07-24T07:00:00');
 
 test('onay bekleyen kart kuyruga girer', () => {
-  const dp = completeCard(profile, emptyDayProgress(), 'sabah-giyin', sabah);
+  let dp = completeCard(profile, emptyDayProgress(), 'sabah-takvim', sabah);
+  dp = completeCard(profile, dp, 'sabah-giyin', sabah);
   const q = approvalQueue(profile, dp);
   assert.equal(q.length, 1);
   assert.equal(q[0].id, 'sabah-giyin');
@@ -73,6 +74,7 @@ test('taninmayan guardianId ozeti bozmaz', () => {
 });
 
 test('gorunum modeli duz veridir, HTML uretmez', () => {
-  const dp = completeCard(profile, emptyDayProgress(), 'sabah-giyin', sabah);
+  let dp = completeCard(profile, emptyDayProgress(), 'sabah-takvim', sabah);
+  dp = completeCard(profile, dp, 'sabah-giyin', sabah);
   assert.ok(!JSON.stringify(approvalQueue(profile, dp)).includes('<'));
 });

@@ -1,6 +1,7 @@
 import { createFactSet } from '../engines/math.js';
 import { normalizeDayProgress } from '../engines/routine.js';
 import { emptyDiary } from '../engines/diary.js';
+import { createTimeFacts } from '../engines/timequiz.js';
 import { DEFAULT_MATH_TABLES } from '../data/defaults.js';
 import { SCHEMA_VERSION, validateProfile } from './profile.js';
 
@@ -56,6 +57,14 @@ export function createAppState(storage) {
 
     saveDiary(diary) {
       storage.set('diary', diary);
+    },
+
+    loadTimeFacts() {
+      return storage.get('timefacts', null) ?? createTimeFacts();
+    },
+
+    saveTimeFacts(facts) {
+      storage.set('timefacts', facts);
     }
   };
 }

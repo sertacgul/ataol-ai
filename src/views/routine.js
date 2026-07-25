@@ -1,5 +1,6 @@
 import { BLOCKS, cardStates } from '../engines/routine.js';
 import { cappedMinutes } from '../engines/rewards.js';
+import { describeDate } from '../engines/calendar.js';
 
 /**
  * Rutin gorunum modeli.
@@ -36,6 +37,7 @@ export function routineViewModel(profile, dayProgress, date) {
 
   return {
     childName: profile.child.name,
+    today: describeDate(date),
     blocks,
     stars: dayProgress.stars,
     minutes: cappedMinutes(dayProgress.minutes, profile.settings.dailyMinuteCap),

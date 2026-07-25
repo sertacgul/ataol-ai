@@ -9,6 +9,8 @@ import { approvalQueue } from './views/parent.js';
 import { guardianSummary, validateGuardianInput, requiresExistingPin } from './views/settings.js';
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
+import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timequiz.js';
+import { selectWeighted } from './engines/leitner.js';
 
 let state;
 let profile;
@@ -51,6 +53,11 @@ const today = () => dayKey(now(), profile.settings.dayResetHour);
 let pendingCardId = null;
 let lastSignature = null;
 
+const QUIZ_SORU_SAYISI = 3;
+let quizKalan = 0;
+let aktifSoru = null;
+let quizSonuclari = [];
+
 function cardNode(card) {
   return el('li', {
     className: `routine-card card--${card.state}`,
@@ -77,6 +84,7 @@ function renderRoutine() {
   mount(document.getElementById('view-routine'), [
     el('header', { className: 'routine-header' }, [
       el('p', { className: 'routine-header__greeting', text: `Merhaba ${vm.childName}` }),
+      el('p', { className: 'routine-header__date', text: `${vm.today.dayName} · ${vm.today.dayOfMonth} ${vm.today.monthName} · ${vm.today.season}` }),
       el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} dk` })
     ]),
     ...vm.blocks.map(blockNode)
@@ -132,7 +140,77 @@ function render() {
 function renderIfStale() {
   if (document.getElementById('pin-modal').hidden === false) return;
   if (document.getElementById('guardian-modal').hidden === false) return;
+  if (document.getElementById('timequiz-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
+}
+
+function sonrakiSoru() {
+  const facts = state.loadTimeFacts();
+  const secilebilir = Object.fromEntries(
+    Object.entries(facts).filter(([k]) => k !== aktifSoru?.kind || QUESTION_KINDS.length === 1)
+  );
+  const kind = selectWeighted(secilebilir) ?? QUESTION_KINDS[0];
+
+  aktifSoru = buildQuestion(kind, now());
+  cizQuiz();
+}
+
+function cizQuiz() {
+  document.getElementById('timequiz-progress').textContent =
+    `${QUIZ_SORU_SAYISI - quizKalan + 1} / ${QUIZ_SORU_SAYISI}`;
+  document.getElementById('timequiz-prompt').textContent = aktifSoru.prompt;
+  document.getElementById('timequiz-feedback').hidden = true;
+
+  mount(document.getElementById('timequiz-options'), aktifSoru.options.map((o) =>
+    el('button', {
+      className: 'timequiz__option',
+      text: o,
+      attrs: { type: 'button' },
+      dataset: { quizOption: o }
+    })
+  ));
+}
+
+function cevapla(secim) {
+  const dogru = secim === aktifSoru.answer;
+  quizSonuclari.push({ kind: aktifSoru.kind, correct: dogru });
+
+  if (!dogru) {
+    const geri = document.getElementById('timequiz-feedback');
+    geri.textContent = `Doğrusu: ${aktifSoru.answer}. Bir daha deneyelim.`;
+    geri.hidden = false;
+    return;
+  }
+
+  quizKalan -= 1;
+
+  if (quizKalan > 0) {
+    sonrakiSoru();
+    return;
+  }
+
+  let facts = state.loadTimeFacts();
+  for (const s of quizSonuclari) facts = recordTimeAnswer(facts, s.kind, s.correct);
+  state.saveTimeFacts(facts);
+
+  const dp = state.loadDayProgress(today());
+  state.saveDayProgress(today(), completeCard(profile, dp, 'sabah-takvim', now()));
+
+  kapatQuiz();
+  render();
+}
+
+function acQuiz() {
+  quizKalan = QUIZ_SORU_SAYISI;
+  quizSonuclari = [];
+  document.getElementById('timequiz-modal').hidden = false;
+  sonrakiSoru();
+}
+
+function kapatQuiz() {
+  document.getElementById('timequiz-modal').hidden = true;
+  aktifSoru = null;
+  quizSonuclari = [];
 }
 
 function openPinModal(cardId) {
@@ -250,12 +328,23 @@ async function submitGuardian() {
 document.getElementById('app').addEventListener('click', (e) => {
   const card = e.target.closest('[data-card-id]');
   if (card?.classList.contains('card--available')) {
+    if (card.dataset.cardId === 'sabah-takvim') {
+      acQuiz();
+      return;
+    }
+
     const dp = state.loadDayProgress(today());
     const next = completeCard(profile, dp, card.dataset.cardId, now());
     if (next !== dp) {
       state.saveDayProgress(today(), next);
       render();
     }
+    return;
+  }
+
+  const secenek = e.target.closest('[data-quiz-option]');
+  if (secenek) {
+    cevapla(secenek.dataset.quizOption);
     return;
   }
 
@@ -284,6 +373,7 @@ document.getElementById('pin-submit').addEventListener('click', submitPin);
 document.getElementById('pin-cancel').addEventListener('click', closePinModal);
 document.getElementById('guardian-submit').addEventListener('click', submitGuardian);
 document.getElementById('guardian-cancel').addEventListener('click', closeGuardianModal);
+document.getElementById('timequiz-cancel').addEventListener('click', kapatQuiz);
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {

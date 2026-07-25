@@ -6,24 +6,15 @@
  * ogrenilmis sayilmaz.
  */
 
-export const MAX_BOX = 5;
-export const MASTERY_BOX = 4;
+import { newBox, promote, demote, selectWeighted, isMastered, MAX_BOX, MASTERY_BOX } from './leitner.js';
 
-const BOX_WEIGHTS = { 1: 16, 2: 8, 3: 4, 4: 2, 5: 1 };
+export { MAX_BOX, MASTERY_BOX };
 
 export function createFactSet(tables) {
   const facts = {};
   for (const t of tables) {
     for (let i = 1; i <= 10; i++) {
-      facts[`${t}x${i}`] = {
-        table: t,
-        box: 1,
-        seen: 0,
-        correct: 0,
-        wrong: 0,
-        avgMs: 0,
-        lastSeen: null
-      };
+      facts[`${t}x${i}`] = newBox({ table: t });
     }
   }
   return facts;
@@ -33,20 +24,16 @@ export function recordAnswer(facts, key, { correct, ms, thresholdMs, timestamp =
   const fact = facts[key];
   if (!fact) return facts;
 
-  let box = fact.box;
-  if (!correct) {
-    box = 1;
-  } else if (ms <= thresholdMs) {
-    box = Math.min(MAX_BOX, box + 1);
-  }
+  let guncel = fact;
+  if (!correct) guncel = demote(fact);
+  else if (ms <= thresholdMs) guncel = promote(fact);
 
   const seen = fact.seen + 1;
 
   return {
     ...facts,
     [key]: {
-      ...fact,
-      box,
+      ...guncel,
       seen,
       correct: fact.correct + (correct ? 1 : 0),
       wrong: fact.wrong + (correct ? 0 : 1),
@@ -57,24 +44,13 @@ export function recordAnswer(facts, key, { correct, ms, thresholdMs, timestamp =
 }
 
 export function selectFact(facts, rng = Math.random) {
-  const keys = Object.keys(facts);
-  if (keys.length === 0) return null;
-
-  const weights = keys.map((k) => BOX_WEIGHTS[facts[k].box] ?? 1);
-  const total = weights.reduce((a, b) => a + b, 0);
-
-  let ticket = rng() * total;
-  for (let i = 0; i < keys.length; i++) {
-    ticket -= weights[i];
-    if (ticket < 0) return keys[i];
-  }
-  return keys[keys.length - 1];
+  return selectWeighted(facts, rng);
 }
 
 export function isTableMastered(facts, table) {
   const keys = Object.keys(facts).filter((k) => facts[k].table === table);
   if (keys.length === 0) return false;
-  return keys.every((k) => facts[k].box >= MASTERY_BOX);
+  return keys.every((k) => isMastered(facts[k]));
 }
 
 export function nextTable(facts, tables) {

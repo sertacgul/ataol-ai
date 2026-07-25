@@ -80,11 +80,13 @@ test('seedProfile cagrilari birbirini etkilemez', () => {
   assert.equal(b.rewards[0].target, DEFAULT_REWARDS[0].target);
 });
 
-test('1B de hicbir kart dogrulamasiz odeme yapmaz', () => {
-  // measured ve inapp kartlar tamamlaninca dogrudan puan verir.
-  // Bu tiplerin gercek akislari 1C'de gelecek; o zamana kadar tohum
-  // veride kullanilmazlar, yoksa cocuk tek dokunusla puan alir.
+test('sadece uygulamanin olctugu kartlar measured olabilir', () => {
+  const olculebilir = new Set(['sabah-takvim']);
   for (const c of DEFAULT_CARDS) {
-    assert.equal(c.type, 'approved', `${c.id} onaya bagli olmali (1C'ye kadar)`);
+    if (olculebilir.has(c.id)) {
+      assert.equal(c.type, 'measured', `${c.id} measured olmali`);
+    } else {
+      assert.equal(c.type, 'approved', `${c.id} onaya bagli olmali (1D'ye kadar)`);
+    }
   }
 });
