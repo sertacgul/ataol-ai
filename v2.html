@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ATAOL v2</title>
+
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@300..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-v2.css">
+</head>
+<body>
+    <div id="app">
+        <main id="view-routine" class="v2-view active"></main>
+        <main id="view-parent" class="v2-view"></main>
+
+        <nav class="v2-nav">
+            <button type="button" class="active" data-nav="routine">
+                <span class="material-symbols-rounded">checklist</span>
+                <span>Rutin</span>
+            </button>
+            <button type="button" data-nav="parent">
+                <span class="material-symbols-rounded">family_restroom</span>
+                <span>Ebeveyn</span>
+            </button>
+        </nav>
+
+        <div id="pin-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box">
+                <h2>Ebeveyn Onayı</h2>
+                <div id="pin-guardians"></div>
+                <input type="password" inputmode="numeric" maxlength="8" id="pin-input" placeholder="PIN">
+                <p id="pin-error" class="v2-modal__error" hidden>PIN yanlış, tekrar dene.</p>
+                <div class="v2-modal__actions">
+                    <button type="button" id="pin-cancel">Vazgeç</button>
+                    <button type="button" id="pin-submit">Onayla</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="guardian-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box">
+                <p id="guardian-modal__title">Bakım veren ekle</p>
+                <input type="text" id="guardian-name" placeholder="İsim" autocomplete="off">
+                <input type="text" id="guardian-label" placeholder="Nasıl görünsün (örn. Feride mama)" autocomplete="off">
+                <input type="password" id="guardian-pin" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off">
+                <input type="password" id="guardian-pin2" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" autocomplete="off">
+                <div id="guardian-gate" hidden>
+                    <p class="v2-modal__note">Yeni bakım veren eklemek için mevcut bir PIN gerekiyor.</p>
+                    <div id="guardian-gate-list"></div>
+                    <input type="password" id="guardian-gate-pin" inputmode="numeric" maxlength="8" placeholder="Mevcut PIN" autocomplete="off">
+                </div>
+                <p id="guardian-error" class="v2-modal__error" hidden></p>
+                <button type="button" id="guardian-submit">Ekle</button>
+                <button type="button" id="guardian-cancel">Vazgeç</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

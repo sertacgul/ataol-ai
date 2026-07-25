@@ -60,3 +60,27 @@ git push -u origin main
 3. Anahtarınızı girip kaydettiğinizde, bu anahtar yalnızca telefonunuzun tarayıcı hafızasında (`localStorage`) saklanır. GitHub kodlarınızda asla görünmez, bu sayede API anahtarınız **100% güvendedir**.
 4. Sol üstteki **ATAOL** logosuna **5 kez tıkladığınızda** veya sağ üstteki **Ayarlar** çarkına dokunduğunuzda bir **Ebeveyn Doğrulama Sorusu** açılır.
 5. Soruyu doğru yanıtlayarak ebeveyn paneline girebilir; gelişim haftasını değiştirebilir, API anahtarını güncelleyebilir veya ilerlemeyi sıfırlayabilirsiniz. Deha bu panele şifreyi çözmeden erişemez.
+
+---
+
+## Geliştirme
+
+Bu proje bağımlılık kullanmaz. `node_modules` yoktur, build adımı yoktur.
+
+Testler Node 22 yerleşik test runner'ı ile çalışır:
+
+```bash
+node --test "tests/**/*.test.js"
+```
+
+### Mimari kuralları
+
+1. **Bağımlılık yönü tek taraflı:** `views` → `engines` → `core`. Ters import yasak.
+2. **Motorlar saftır:** `engines/` altındaki modüller `localStorage`, `Date.now()` veya `Math.random()` çağırmaz. Zaman ve rastgelelik dışarıdan enjekte edilir.
+3. **Kodda kişi adı sabit yazılmaz.** Tüm isimler profil verisinden gelir. İstisna `src/data/` altıdır; orası veri dosyasıdır.
+4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunamaz.
+5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js` kurar. `el()` yardımcısı metni `textContent` ile yazar ve öznitelikleri beyaz listeden geçirir. Bu kuralların tamamı `tests/architecture.test.js` içindeki tek bir dizin taramasıyla `src/` ağacının tümü üzerinde denetlenir.
+
+### Sürümler
+
+`index.html` v1'dir ve çalışır durumdadır. v2 `v2.html` olarak yanına kurulmuştur; devir teslim Faz 1D'de yapılacaktır.
