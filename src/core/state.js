@@ -70,6 +70,14 @@ export function createAppState(storage) {
 
     saveTimeFacts(facts) {
       storage.set('timefacts', facts);
+    },
+
+    loadGame(id) {
+      return storage.get(`game:${id}`, null);
+    },
+
+    saveGame(id, durum) {
+      storage.set(`game:${id}`, durum);
     }
   };
 }

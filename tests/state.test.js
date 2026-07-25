@@ -91,11 +91,21 @@ test('gunluk kaydedilip geri okunur, varsayilani bostur', () => {
 test('depolama sadece bilinen anahtarlari kullanir', () => {
   const { storage, state } = kur();
   state.saveDayProgress('2026-07-24', { cards: {}, approvals: [], stars: 1, minutes: 1 });
-  state.saveDrill({ level: 'topla-10', byLevel: {} });
+  state.saveDrill(state.loadDrill());
   state.saveDiary({});
+  state.saveTimeFacts({});
+  state.saveGame('amiral', { x: 1 });
+  const bilinen = ['profile', 'days', 'drill', 'diary', 'timefacts'];
   for (const k of storage.keys()) {
-    assert.ok(['profile', 'days', 'drill', 'diary', 'timefacts'].includes(k), `beklenmeyen anahtar: ${k}`);
+    assert.ok(bilinen.includes(k) || k.startsWith('game:'), `beklenmeyen anahtar: ${k}`);
   }
+});
+
+test('oyun durumu kaydedilip geri okunur', () => {
+  const { state } = kur();
+  assert.equal(state.loadGame('amiral'), null);
+  state.saveGame('amiral', { tur: 3 });
+  assert.equal(state.loadGame('amiral').tur, 3);
 });
 
 test('takvim olgulari kaydedilip geri okunur', () => {

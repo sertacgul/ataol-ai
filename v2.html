@@ -19,6 +19,7 @@
     <div id="app">
         <main id="view-routine" class="v2-view active"></main>
         <main id="view-parent" class="v2-view"></main>
+        <main id="view-games" class="v2-view"></main>
 
         <nav class="v2-nav">
             <button type="button" class="active" data-nav="routine">
@@ -28,6 +29,10 @@
             <button type="button" data-nav="parent">
                 <span class="material-symbols-rounded">family_restroom</span>
                 <span>Ebeveyn</span>
+            </button>
+            <button type="button" data-nav="games">
+                <span class="material-symbols-rounded">sports_esports</span>
+                <span>Oyun</span>
             </button>
         </nav>
 
@@ -85,6 +90,16 @@
                     <p id="drill-celebrate-level" class="drill__celebrate-level"></p>
                 </div>
                 <button type="button" id="drill-cancel">Kapat</button>
+            </div>
+        </div>
+
+        <div id="amiral-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box v2-modal__box--wide">
+                <p id="amiral-durum" class="v2-modal__note"></p>
+                <div id="amiral-tahta" class="amiral__tahta"></div>
+                <p id="amiral-mesaj" class="amiral__mesaj" hidden></p>
+                <button type="button" id="amiral-yeni">Yeni oyun</button>
+                <button type="button" id="amiral-kapat">Kapat</button>
             </div>
         </div>
     </div>
