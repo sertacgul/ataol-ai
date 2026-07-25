@@ -2,8 +2,13 @@
  * Ebeveyn gorunum modelleri.
  *
  * approvalSummary spec 3.3'un amacini tasir: cocuk haftalik ozette
- * kimin kac kez onay verdigini gorur. Annenin kisitlayan taraftan
- * cikip iyi seylerin kaynagi olmasi bu ekrana bagli.
+ * kimin kac kez onay verdigini gorur. Her bakim verenin kisitlayan
+ * taraftan cikip iyi seylerin kaynagi olmasi bu ekrana bagli.
+ *
+ * Bakim verenler rol degil kisi olarak tutulur; bir cocugun evinde
+ * anne, uvey anne, babaanne, herhangi bir bilesim olabilir. Bu yuzden
+ * kodda akrabalik varsayimi yapilmaz, yalnizca profildeki etiket
+ * kullanilir.
  *
  * Bu modul de HTML uretmez, duz veri dondurur.
  */

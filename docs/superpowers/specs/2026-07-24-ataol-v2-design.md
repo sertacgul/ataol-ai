@@ -103,7 +103,9 @@ approval = { cardId, guardianId, timestamp }
 Bu kayıt iki işe yarar:
 
 1. Görev gerçekten yapıldı mı sorusunu beyandan çıkarır.
-2. **Haftalık özet ekranında** çocuğa "bu hafta Feride mama sana 8 kez onay verdi" denebilmesini sağlar. Anne, kısıtlayan taraftan çıkıp iyi şeylerin kaynağına geçer. Davranış tarafında yapılabilecek en güçlü tek müdahale bu.
+2. **Haftalık özet ekranında** çocuğa "bu hafta Feride Mama sana 8 kez onay verdi" denebilmesini sağlar. Onay veren kişi, kısıtlayan taraftan çıkıp iyi şeylerin kaynağına geçer. Davranış tarafında yapılabilecek en güçlü tek müdahale bu.
+
+**Aile gerçeği, koda ve metinlere yansır.** Feride Mama, babanın eşidir ve **Deha'nın annesi değildir**. Uygulamanın hiçbir yerinde "annen" veya "annesi" denmez, yalnızca "Feride Mama" denir. Daha genel kural: kod akrabalık varsayımı yapmaz. Bakım verenler rol değil kişi olarak tutulur, ekranda yalnızca profildeki serbest etiket görünür. Bu hem bu aile için doğru olanı verir hem de App Store sürümünde her aile bileşimi (tek ebeveyn, üvey ebeveyn, babaanne, koruyucu aile) için sorunsuz çalışır.
 
 PIN saklama: düz metin **kullanılmaz**. WebCrypto `SubtleCrypto` ile PBKDF2, bakım veren başına rastgele salt, 100.000 iterasyon. Bu, kararlı bir saldırganı durdurmaz ama devtools açmayı öğrenen bir çocuğu durdurur, hedeflenen tehdit modeli de budur.
 
