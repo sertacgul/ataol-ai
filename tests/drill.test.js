@@ -5,6 +5,7 @@ import {
   isLevelMastered, nextLevel, levelById, formatQuestion
 } from '../src/engines/drill.js';
 import { MASTERY_BOX } from '../src/engines/leitner.js';
+import { SESSION_LENGTH } from '../src/views/drill.js';
 
 test('seviyeler sirali ve benzersiz', () => {
   const ids = LEVELS.map((l) => l.id);
@@ -175,10 +176,10 @@ test('cikar-20 sadece 11-20 arasi eksilenleri icerir', () => {
 test('gecis seviyeleri makul surede bitirilebilir', () => {
   // Gunde 10 soru, kutu 1'den 4'e 3 dogru-hizli cevap.
   // Son seviye 'karisik' bir kapi degil, bakim seviyesi; o haric.
-  const GUNLUK = 10, TERFI = 3, TAVAN_GUN = 40;
+  const TERFI = 3, TAVAN_GUN = 40;
   for (const l of LEVELS.filter((x) => x.id !== 'karisik')) {
     const n = Object.keys(createDrill(l.id)).length;
-    const gun = Math.ceil((n * TERFI) / GUNLUK);
+    const gun = Math.ceil((n * TERFI) / SESSION_LENGTH);
     assert.ok(gun <= TAVAN_GUN, `${l.id}: ${n} soru, ${gun} gun surer, cok uzun`);
   }
 });
