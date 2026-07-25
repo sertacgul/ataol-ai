@@ -509,6 +509,83 @@
   padding: 10px;
 }
 
+/* --- Matematik alistirmasi --- */
+
+.drill__question {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+  margin: 4px 0 10px;
+}
+
+.drill__input {
+  min-height: 34px;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--primary-dark);
+  margin: 0 0 14px;
+  border-bottom: 3px solid var(--primary-light);
+}
+
+.drill__input:empty::before {
+  content: '\2014';
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.drill__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.drill__key {
+  min-height: 56px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: transparent;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.drill__key:active {
+  transform: scale(0.95);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.drill__feedback {
+  font-size: 14px;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+#drill-cancel {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  background: rgba(131, 149, 167, 0.15);
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+}
+
 /* --- Kurtarma ekrani --- */
 
 .v2-recovery {

@@ -11,6 +11,8 @@ import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timequiz.js';
 import { selectWeighted } from './engines/leitner.js';
+import { startSession, answerCurrent, SESSION_LENGTH } from './views/drill.js';
+import { levelById } from './engines/drill.js';
 
 let state;
 let profile;
@@ -57,6 +59,10 @@ const QUIZ_SORU_SAYISI = 3;
 let quizKalan = 0;
 let aktifSoru = null;
 let quizSonuclari = [];
+
+let drillSession = null;
+let drillTyped = '';
+let drillShownAt = 0;
 
 function cardNode(card) {
   return el('li', {
@@ -141,6 +147,7 @@ function renderIfStale() {
   if (document.getElementById('pin-modal').hidden === false) return;
   if (document.getElementById('guardian-modal').hidden === false) return;
   if (document.getElementById('timequiz-modal').hidden === false) return;
+  if (document.getElementById('drill-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -211,6 +218,96 @@ function kapatQuiz() {
   document.getElementById('timequiz-modal').hidden = true;
   aktifSoru = null;
   quizSonuclari = [];
+}
+
+const DRILL_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'sil', '0', 'tamam'];
+
+function cizDrillPad() {
+  mount(document.getElementById('drill-pad'), DRILL_KEYS.map((k) =>
+    el('button', {
+      className: 'drill__key',
+      text: k === 'sil' ? 'Sil' : k === 'tamam' ? 'Tamam' : k,
+      attrs: { type: 'button' },
+      dataset: { drillKey: k }
+    })
+  ));
+}
+
+function cizDrill() {
+  const s = drillSession;
+  document.getElementById('drill-progress').textContent =
+    `${SESSION_LENGTH - s.remaining + 1} / ${SESSION_LENGTH}`;
+  document.getElementById('drill-question').textContent = s.current ? s.current.text : '';
+  document.getElementById('drill-input').textContent = drillTyped;
+}
+
+function drillTusla(tus) {
+  if (!drillSession || drillSession.finished) return;
+
+  if (tus === 'sil') {
+    drillTyped = drillTyped.slice(0, -1);
+    document.getElementById('drill-input').textContent = drillTyped;
+    return;
+  }
+
+  if (tus === 'tamam') {
+    drillOnayla();
+    return;
+  }
+
+  if (drillTyped.length >= 3) return;
+  drillTyped += tus;
+  document.getElementById('drill-input').textContent = drillTyped;
+}
+
+function drillOnayla() {
+  if (drillTyped === '') return;
+
+  const gecenMs = performance.now() - drillShownAt;
+  const sonraki = answerCurrent(drillSession, drillTyped, gecenMs);
+  const dogru = sonraki.lastCorrect;
+  const dogruCevap = sonraki.lastAnswer;
+  const seviyeAtladi = sonraki.levelUp;
+  const bitti = sonraki.finished;
+  drillSession = sonraki;
+  drillTyped = '';
+  drillShownAt = performance.now();
+
+  const geri = document.getElementById('drill-feedback');
+  geri.textContent = dogru ? 'Doğru!' : `Doğrusu: ${dogruCevap}`;
+  geri.hidden = false;
+
+  if (bitti) {
+    state.saveDrill(sonraki.drill);
+    const dp = state.loadDayProgress(today());
+    state.saveDayProgress(today(), completeCard(profile, dp, 'ogle-matematik', now()));
+
+    if (seviyeAtladi) {
+      geri.textContent = `Harika! Yeni seviye: ${levelById(sonraki.drill.level)?.title ?? ''}`;
+    }
+
+    kapatDrill();
+    render();
+    return;
+  }
+
+  cizDrill();
+}
+
+function acDrill() {
+  drillSession = startSession(state.loadDrill());
+  drillTyped = '';
+  drillShownAt = performance.now();
+  cizDrillPad();
+  cizDrill();
+  document.getElementById('drill-feedback').hidden = true;
+  document.getElementById('drill-modal').hidden = false;
+}
+
+function kapatDrill() {
+  document.getElementById('drill-modal').hidden = true;
+  drillSession = null;
+  drillTyped = '';
 }
 
 function openPinModal(cardId) {
@@ -333,6 +430,11 @@ document.getElementById('app').addEventListener('click', (e) => {
       return;
     }
 
+    if (card.dataset.cardId === 'ogle-matematik') {
+      acDrill();
+      return;
+    }
+
     const dp = state.loadDayProgress(today());
     const next = completeCard(profile, dp, card.dataset.cardId, now());
     if (next !== dp) {
@@ -345,6 +447,12 @@ document.getElementById('app').addEventListener('click', (e) => {
   const secenek = e.target.closest('[data-quiz-option]');
   if (secenek) {
     cevapla(secenek.dataset.quizOption);
+    return;
+  }
+
+  const tus = e.target.closest('[data-drill-key]');
+  if (tus) {
+    drillTusla(tus.dataset.drillKey);
     return;
   }
 
@@ -374,6 +482,7 @@ document.getElementById('pin-cancel').addEventListener('click', closePinModal);
 document.getElementById('guardian-submit').addEventListener('click', submitGuardian);
 document.getElementById('guardian-cancel').addEventListener('click', closeGuardianModal);
 document.getElementById('timequiz-cancel').addEventListener('click', kapatQuiz);
+document.getElementById('drill-cancel').addEventListener('click', kapatDrill);
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {
