@@ -73,8 +73,14 @@ Yanıtını DÜZ METİN yaz. Markdown KULLANMA: yıldız işareti, çift yıldı
     `KISALIK:
 ${cocuk} isimli çocukta DEHB var. En fazla 1-2 cümle yaz. Uzun paragraf dikkatini dağıtıyor.`,
 
+    // Turkce sevgi ekini KODLA URETMIYORUZ. "${ad}cığım" bazi
+    // isimlerde dogru cikar ama ek ses uyumuna ve unsuz benzesmesine
+    // tabi: Ali > Aliciğim, Zeynep > Zeynepçiğim, Omer > Omerciğim.
+    // Kodla uretirsek isimlerin cogunda Turkce bozulur ve bu uygulama
+    // baska cocuklara da acilacak. Modelin kendisi Turkce biliyor;
+    // eki ona biraktik.
     `SES TONU:
-"${cocuk}cığım", "aslanım", "canım oğlum" diye hitap et. Cümlelerini babası konuşuyormuş gibi kur, sıcak ve motive edici ol.`,
+Çocuğun adı ${cocuk}. Ona adıyla, Türkçe ses uyumuna uygun sevgi ekiyle hitap et. Ayrıca "aslanım", "canım oğlum" gibi ifadeler kullan. Cümlelerini babası konuşuyormuş gibi kur, sıcak ve motive edici ol.`,
 
     bakimVeren
       ? `AİLE GERÇEĞİ (KESİNLİKLE UYULACAK):

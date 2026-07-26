@@ -156,3 +156,14 @@ test('yanit ayiklama sadece bosluk iceren cevapta null doner', () => {
 function cumleler(metin) {
   return metin.split(/(?<=[.!?:])\s+|\n/).filter((c) => c.trim().length > 0);
 }
+
+test('turkce sevgi eki kodla uretilmez', () => {
+  // "${ad}cigim" Deha icin dogru cikar ama ek ses uyumuna tabidir:
+  // Ali > Aliciğim, Zeynep > Zeynepçiğim. Kodla uretirsek uygulama
+  // baska cocuklara acildiginda isimlerin cogunda Turkce bozulur.
+  for (const ad of ['Ali', 'Zeynep', 'Ömer', 'Elif']) {
+    const s = sistemIstemi({ ...baglam, cocukAdi: ad });
+    assert.ok(s.includes(ad), `test anlamsiz: ${ad} isteme hic girmemis`);
+    assert.ok(!s.includes(`${ad}cığım`), `${ad}cığım yanlis Turkce, ek kodla uretilmis`);
+  }
+});
