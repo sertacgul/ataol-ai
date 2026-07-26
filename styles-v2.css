@@ -832,7 +832,9 @@
    renkleri kasten klasik satranc tahtasi renkleri: acik ve koyu kare
    bir bakista ayrilmali, yoksa filin "rengini degistirmez" dersi
    dogrulanamaz. */
-#satranc-modal {
+/* Ayni tahta renkleri gercek oyun modalinda da kullanilir. */
+#satranc-modal,
+#satranc-oyun-modal {
   --sat-acik: #F0DCBB;
   --sat-koyu: #B58863;
   --sat-cerceve: #6B4A2F;
@@ -1297,4 +1299,108 @@
 
 .sohbet__gonder:disabled {
   opacity: 0.5;
+}
+
+/* --- Satranc oyunu (gercek oyun) --- */
+
+/* Tahta renkleri ogretme modundaki --sat-* degiskenlerinden gelir, yeni
+   renk tanimlanmaz. */
+.soyun__tahta {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  box-sizing: border-box;
+  border: 3px solid var(--sat-cerceve);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 6px 0 12px;
+}
+
+.soyun__kare {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.soyun__kare--acik {
+  background: var(--sat-acik);
+}
+
+.soyun__kare--koyu {
+  background: var(--sat-koyu);
+}
+
+/* Sectigin tas: mor cerceve. Gidilebilecek bos kare: yesil nokta.
+   Alinabilecek dusman: yesil cerceve. */
+.soyun__kare--secili {
+  box-shadow: inset 0 0 0 3px var(--primary-dark);
+}
+
+.soyun__kare--gidilebilir::after {
+  content: '';
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: var(--sat-cevap);
+}
+
+.soyun__kare--alinabilir {
+  box-shadow: inset 0 0 0 3px var(--sat-dogru);
+}
+
+/* Beyaz/siyah ayrimi glifle degil renkle: ikisi de dolu glif; beyaz acik
+   boyanip koyu golge ile cerceveleniyor ki acik karede de okunsun. */
+.soyun__tas {
+  font-size: 30px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.soyun__tas--beyaz {
+  color: #FFFFFF;
+  text-shadow: 0 0 1px #000, 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.soyun__tas--siyah {
+  color: #1B1B1B;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+.soyun__mesaj {
+  font-size: 14px;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+#satranc-oyun-yeni,
+#satranc-oyun-kapat {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+#satranc-oyun-yeni {
+  background: var(--primary);
+  color: #fff;
+}
+
+#satranc-oyun-kapat {
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+  margin-bottom: 0;
 }

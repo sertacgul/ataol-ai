@@ -6,9 +6,9 @@ import { GAMES } from '../src/views/games.js';
 
 const kaynak = readFileSync(new URL('../src/views/games.js', import.meta.url), 'utf8');
 
-test('iki oyun da listede ve kimlikleri sabit', () => {
+test('oyunlar listede ve kimlikleri sabit', () => {
   // main.js oyunu id ile aciyor; id degisirse dugme calismaz.
-  assert.deepEqual(GAMES.map((g) => g.id).sort(), ['amiral', 'satranc']);
+  assert.deepEqual(GAMES.map((g) => g.id).sort(), ['amiral', 'satranc', 'satranc-oyun']);
   assert.ok(GAMES.every((g) => g.title && g.icon));
 });
 

@@ -19,5 +19,6 @@
 
 export const GAMES = [
   { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' },
-  { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' }
+  { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' },
+  { id: 'satranc-oyun', title: 'Satranç', icon: 'castle' }
 ];

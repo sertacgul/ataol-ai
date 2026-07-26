@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ataol-ai-v10';
+const CACHE_NAME = 'ataol-ai-v11';
 const ASSETS = [
   // v1 varliklari (gunluk kullanilan surum)
   './',
@@ -20,6 +20,7 @@ const ASSETS = [
   './src/data/themes.js',
   './src/engines/ai.js',
   './src/engines/battleship.js',
+  './src/engines/chessgame.js',
   './src/engines/calendar.js',
   './src/engines/chess.js',
   './src/engines/chesspuzzle.js',

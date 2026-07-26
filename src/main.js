@@ -17,8 +17,18 @@ import { GAMES } from './views/games.js';
 import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiChoose } from './engines/battleship.js';
 import { chessViewModel, cevapla as satrancCevapla, sonrakiDers } from './views/chess.js';
 import { soruUret } from './engines/chesspuzzle.js';
-import { kareId, TAHTA_BOYU } from './engines/chess.js';
+import { kareId, kareCoz, TAHTA_BOYU } from './engines/chess.js';
 import { sistemIstemi, istekGovdesi, yanitAyikla } from './engines/ai.js';
+import {
+  baslangicTahtasi,
+  yasalHamleler as satrancYasalHamleler,
+  hamleUygula as satrancHamleUygula,
+  oyunDurumu as satrancOyunDurumu,
+  sahTehditAltinda,
+  enIyiHamle,
+  renkOf,
+  tipOf
+} from './engines/chessgame.js';
 
 let state;
 let profile;
@@ -289,6 +299,7 @@ function renderIfStale() {
   if (document.getElementById('drill-modal').hidden === false) return;
   if (document.getElementById('amiral-modal').hidden === false) return;
   if (document.getElementById('satranc-modal').hidden === false) return;
+  if (document.getElementById('satranc-oyun-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -822,6 +833,165 @@ function kapatSatranc() {
   satrancMujde('');
 }
 
+// --- Satranc oyunu (gercek oyun, AI'ya karsi) ---
+//
+// Cocuk beyaz oynar (altta), AI siyah. Ogretme modundan (yukaridaki
+// satranc*) ayridir: o alti tasin hareketini ogretir, bu gercek oyunu
+// oynatir. Kurallar engines/chessgame.js'te; burada yalniz ekran ve sira.
+//
+// Taslar Unicode ile cizilir (resim yok). Beyaz/siyah ayrimini glif degil
+// RENK yapar: ikisi de dolu glif, CSS beyazi acik, siyahi koyu boyar.
+const SOYUN_GLIF = { K: '♜', A: '♞', F: '♝', V: '♛', S: '♚', P: '♟' };
+
+let soyunDurum = null;
+let soyunSecili = null;       // secili karenin adi, ya da null
+let soyunYasal = [];          // secili tasin gidebilecegi kareler (to listesi)
+
+function soyunKareNode(kare, tasKod) {
+  const { x, y } = kareCoz(kare);
+  const siniflar = ['soyun__kare', (x + y) % 2 === 0 ? 'soyun__kare--koyu' : 'soyun__kare--acik'];
+  if (kare === soyunSecili) siniflar.push('soyun__kare--secili');
+  if (soyunYasal.includes(kare)) {
+    siniflar.push(tasKod ? 'soyun__kare--alinabilir' : 'soyun__kare--gidilebilir');
+  }
+
+  const cocuklar = tasKod
+    ? [el('span', {
+        className: renkOf(tasKod) === 'b' ? 'soyun__tas soyun__tas--beyaz' : 'soyun__tas soyun__tas--siyah',
+        text: SOYUN_GLIF[tipOf(tasKod)]
+      })]
+    : [];
+
+  return el('button', {
+    className: siniflar.join(' '),
+    attrs: { type: 'button', 'aria-label': kare },
+    dataset: { soyunKare: kare }
+  }, cocuklar);
+}
+
+function cizSoyunDurum() {
+  const dEl = document.getElementById('satranc-oyun-durum');
+  if (soyunDurum.sira === 'b') {
+    dEl.textContent = sahTehditAltinda(soyunDurum.tahta, 'b')
+      ? 'Şahın tehdit altında! Onu kurtar.'
+      : 'Sıra sende';
+  } else {
+    dEl.textContent = 'Rakip düşünüyor...';
+  }
+}
+
+function cizSoyun() {
+  const kareler = [];
+  for (let y = TAHTA_BOYU - 1; y >= 0; y--) {
+    for (let x = 0; x < TAHTA_BOYU; x++) {
+      const kare = kareId(x, y);
+      kareler.push(soyunKareNode(kare, soyunDurum.tahta[kare]));
+    }
+  }
+  mount(document.getElementById('satranc-oyun-tahta'), kareler);
+  cizSoyunDurum();
+}
+
+// mat/pat ekrani. durumu 'mat' ise sira kimdeyse o kaybetti: sira siyahsa
+// (AI) cocuk kazandi.
+function soyunBitir(durumu) {
+  const mesaj = document.getElementById('satranc-oyun-mesaj');
+  if (durumu === 'pat') {
+    mesaj.textContent = 'Pat! Kimse kazanmadı, berabere.';
+  } else {
+    mesaj.textContent = soyunDurum.sira === 's'
+      ? 'Şah mat! Kazandın, rakibin şahını kıstırdın.'
+      : 'Şah mat! Bu sefer rakip kazandı. Yeni oyunla tekrar dene.';
+  }
+  mesaj.hidden = false;
+  document.getElementById('satranc-oyun-durum').textContent = '';
+}
+
+function soyunAiOyna() {
+  if (!soyunDurum || soyunDurum.sira !== 's') return;
+
+  const hamle = enIyiHamle(soyunDurum, 2);
+  if (!hamle) return;
+
+  soyunDurum = satrancHamleUygula(soyunDurum, hamle);
+  state.saveGame('satranc-oyun', soyunDurum);
+  cizSoyun();
+
+  const durumu = satrancOyunDurumu(soyunDurum);
+  if (durumu !== 'devam') soyunBitir(durumu);
+}
+
+function soyunOyna(hamle) {
+  soyunDurum = satrancHamleUygula(soyunDurum, hamle);
+  soyunSecili = null;
+  soyunYasal = [];
+  state.saveGame('satranc-oyun', soyunDurum);
+  cizSoyun();
+
+  const durumu = satrancOyunDurumu(soyunDurum);
+  if (durumu !== 'devam') {
+    soyunBitir(durumu);
+    return;
+  }
+
+  // Kisa gecikme: cocuk once kendi hamlesini oturmus gorsun, sonra rakip.
+  setTimeout(soyunAiOyna, 300);
+}
+
+function soyunKareTikla(kare) {
+  if (!soyunDurum || soyunDurum.sira !== 'b') return;
+  if (satrancOyunDurumu(soyunDurum) !== 'devam') return;
+
+  // Secili tasin yasal hedefi: oyna.
+  if (soyunSecili && soyunYasal.includes(kare)) {
+    soyunOyna({ from: soyunSecili, to: kare });
+    return;
+  }
+
+  // Kendi tasina dokundu: sec ve gidebilecegi kareleri goster.
+  const tas = soyunDurum.tahta[kare];
+  if (tas && renkOf(tas) === 'b') {
+    soyunSecili = kare;
+    soyunYasal = satrancYasalHamleler(soyunDurum)
+      .filter((h) => h.from === kare)
+      .map((h) => h.to);
+    cizSoyun();
+    return;
+  }
+
+  // Bosluga ya da rakibe dokundu: secimi birak.
+  soyunSecili = null;
+  soyunYasal = [];
+  cizSoyun();
+}
+
+function acSoyun() {
+  soyunDurum = state.loadGame('satranc-oyun') || baslangicTahtasi();
+  soyunSecili = null;
+  soyunYasal = [];
+  document.getElementById('satranc-oyun-mesaj').hidden = true;
+  cizSoyun();
+
+  const durumu = satrancOyunDurumu(soyunDurum);
+  if (durumu !== 'devam') soyunBitir(durumu);
+  else if (soyunDurum.sira === 's') setTimeout(soyunAiOyna, 300);
+
+  document.getElementById('satranc-oyun-modal').hidden = false;
+}
+
+function kapatSoyun() {
+  document.getElementById('satranc-oyun-modal').hidden = true;
+}
+
+function yeniSoyun() {
+  soyunDurum = baslangicTahtasi();
+  soyunSecili = null;
+  soyunYasal = [];
+  state.saveGame('satranc-oyun', soyunDurum);
+  document.getElementById('satranc-oyun-mesaj').hidden = true;
+  cizSoyun();
+}
+
 // --- Sohbet ---
 
 // Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
@@ -1102,6 +1272,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (oyunKart) {
     if (oyunKart.dataset.game === 'amiral') acAmiral();
     if (oyunKart.dataset.game === 'satranc') acSatranc();
+    if (oyunKart.dataset.game === 'satranc-oyun') acSoyun();
     return;
   }
 
@@ -1120,6 +1291,12 @@ document.getElementById('app').addEventListener('click', (e) => {
   const satrancKare = e.target.closest('[data-satranc-kare]');
   if (satrancKare) {
     satrancKareTikla(satrancKare.dataset.satrancKare);
+    return;
+  }
+
+  const soyunKare = e.target.closest('[data-soyun-kare]');
+  if (soyunKare) {
+    soyunKareTikla(soyunKare.dataset.soyunKare);
     return;
   }
 
@@ -1155,6 +1332,8 @@ document.getElementById('amiral-kapat').addEventListener('click', kapatAmiral);
 document.getElementById('satranc-devam').addEventListener('click', satrancYeniSoru);
 document.getElementById('satranc-taslara').addEventListener('click', satrancTaslaraDon);
 document.getElementById('satranc-kapat').addEventListener('click', kapatSatranc);
+document.getElementById('satranc-oyun-yeni').addEventListener('click', yeniSoyun);
+document.getElementById('satranc-oyun-kapat').addEventListener('click', kapatSoyun);
 
 document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   e.preventDefault();
