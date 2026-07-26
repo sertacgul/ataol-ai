@@ -27,6 +27,7 @@ export const GAMES = [
   { id: 'atolye', title: 'Çizim Atölyesi', icon: 'draw' },
   { id: 'muhendislik', title: 'Mühendislik', icon: 'engineering' },
   { id: 'geometri', title: 'Geometri', icon: 'category' },
+  { id: 'kelime', title: 'Türkçe & Kelime', icon: 'spellcheck' },
   { id: 'kahramanlar', title: 'Kahramanlar', icon: 'auto_stories' },
   { id: 'kurucu', title: 'Makine Kur', icon: 'construction' }
 ];

@@ -9,6 +9,7 @@ import { rewardProgress } from './engines/rewards.js';
 import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
 import { SORULAR as MUH_SORULAR, soruMetni as muhSoruMetni } from './data/muhendislik.js';
 import { GEOMETRI_SORULAR } from './data/geometri.js';
+import { KELIME_SORULAR } from './data/kelime.js';
 import { KAHRAMANLAR } from './data/kahramanlar.js';
 import { MAKINELER, makineById } from './views/kurucu.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
@@ -595,7 +596,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', kodlama: 'games.kodlama', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
+  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', kodlama: 'games.kodlama', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kelime: 'games.kelime', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -1953,6 +1954,10 @@ function acGeometri() {
   quizBaslat(GEOMETRI_SORULAR, 'geo.cat.');
 }
 
+function acKelime() {
+  quizBaslat(KELIME_SORULAR, 'kelime.cat.');
+}
+
 function kapatMuhendislik() {
   document.getElementById('muh-modal').hidden = true;
 }
@@ -2630,6 +2635,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (oyunKart.dataset.game === 'atolye') acAtolye();
     if (oyunKart.dataset.game === 'muhendislik') acMuhendislik();
     if (oyunKart.dataset.game === 'geometri') acGeometri();
+    if (oyunKart.dataset.game === 'kelime') acKelime();
     if (oyunKart.dataset.game === 'kahramanlar') acKahraman();
     if (oyunKart.dataset.game === 'kurucu') acKurucu();
     return;

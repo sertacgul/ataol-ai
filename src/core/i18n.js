@@ -93,6 +93,10 @@ const STRINGS = {
     'kod.crash': 'Çarptın! Tekrar dene',
     'kod.miss': 'Bayrağa ulaşamadın, tekrar dene',
 
+    'games.kelime': 'Türkçe & Kelime',
+    'kelime.cat.zit': 'Zıt Anlam', 'kelime.cat.esanlam': 'Eş Anlam',
+    'kelime.cat.okuma': 'Okuma-Anlama', 'kelime.cat.bilgi': 'Kelime Bilgisi',
+
     'kur.hint': 'Parçaları seç, makineyi kur',
     'kur.done': '{ad} hazır! 🎉',
     'kur.m.ekskavator': 'Ekskavatör', 'kur.m.vinc': 'Vinç', 'kur.m.kamyon': 'Kamyon',
@@ -346,6 +350,10 @@ const STRINGS = {
     'kod.win': 'Great! The robot reached the flag 🎉',
     'kod.crash': 'You crashed! Try again',
     'kod.miss': 'You did not reach the flag, try again',
+
+    'games.kelime': 'Words & Language',
+    'kelime.cat.zit': 'Opposites', 'kelime.cat.esanlam': 'Synonyms',
+    'kelime.cat.okuma': 'Reading', 'kelime.cat.bilgi': 'Word Knowledge',
 
     'kur.hint': 'Tap the parts to build the machine',
     'kur.done': '{ad} is ready! 🎉',
