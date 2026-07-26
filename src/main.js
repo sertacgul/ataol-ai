@@ -556,7 +556,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc' };
+  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -689,6 +689,7 @@ function renderIfStale() {
   if (document.getElementById('satranc-oyun-modal').hidden === false) return;
   if (document.getElementById('gorev-modal').hidden === false) return;
   if (document.getElementById('odul-modal').hidden === false) return;
+  if (document.getElementById('atolye').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -1413,6 +1414,194 @@ function yeniSoyun() {
   cizSoyun();
 }
 
+// --- Cizim Atolyesi ---
+//
+// Iki katmanli canvas: alt katman izgara (teknik resim kagidi), ust katman
+// cizim. Silgi ust katmani destination-out ile temizler, altindaki izgara
+// gorunur. Kaydetme ikisini birlestirip PNG uretir. Bagimlilik yok.
+let atolyeArac = 'kalem';
+let atolyeCtx = null;
+let atolyeCiziyor = false;
+let atolyeBaslaNoktasi = null;   // cetvel: cizginin baslangici
+let atolyeAnlik = null;          // cetvel onizlemesi icin canvas kopyasi
+let atolyeBildirimTimer = null;
+
+function atolyeIzgaraCiz(grid, w, h, dpr) {
+  const g = grid.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(108, 92, 231, 0.13)';
+  g.lineWidth = 1;
+  const adim = 24;
+  for (let x = adim; x < w; x += adim) {
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
+  }
+  for (let y = adim; y < h; y += adim) {
+    g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+  }
+}
+
+function atolyeBoyutlandir() {
+  const grid = document.getElementById('atolye-grid');
+  const cvs = document.getElementById('atolye-canvas');
+  const r = cvs.getBoundingClientRect();
+  // dpr 2 ile sinirli: cok yuksek dpr'da onizleme kopyasi agirlasir.
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+  for (const c of [grid, cvs]) {
+    c.width = Math.round(r.width * dpr);
+    c.height = Math.round(r.height * dpr);
+  }
+
+  atolyeCtx = cvs.getContext('2d');
+  atolyeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  atolyeCtx.lineCap = 'round';
+  atolyeCtx.lineJoin = 'round';
+  atolyeIzgaraCiz(grid, r.width, r.height, dpr);
+}
+
+function atolyeNokta(e) {
+  const r = document.getElementById('atolye-canvas').getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function atolyeAyarla() {
+  if (atolyeArac === 'silgi') {
+    atolyeCtx.globalCompositeOperation = 'destination-out';
+    atolyeCtx.lineWidth = 20;
+    atolyeCtx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    atolyeCtx.globalCompositeOperation = 'source-over';
+    atolyeCtx.lineWidth = atolyeArac === 'cetvel' ? 2.5 : 3;
+    atolyeCtx.strokeStyle = '#2D3436';
+  }
+}
+
+function atolyeBasladi(e) {
+  if (!atolyeCtx) return;
+  const cvs = document.getElementById('atolye-canvas');
+  cvs.setPointerCapture(e.pointerId);
+  atolyeCiziyor = true;
+  atolyeAyarla();
+  const p = atolyeNokta(e);
+
+  if (atolyeArac === 'cetvel') {
+    atolyeBaslaNoktasi = p;
+    atolyeAnlik = atolyeCtx.getImageData(0, 0, cvs.width, cvs.height);
+  } else {
+    atolyeCtx.beginPath();
+    atolyeCtx.moveTo(p.x, p.y);
+    // Tek dokunus bir nokta biraksin.
+    atolyeCtx.lineTo(p.x + 0.1, p.y + 0.1);
+    atolyeCtx.stroke();
+  }
+}
+
+function atolyeHareket(e) {
+  if (!atolyeCiziyor) return;
+  const p = atolyeNokta(e);
+  if (atolyeArac === 'cetvel') {
+    atolyeCtx.putImageData(atolyeAnlik, 0, 0);
+    atolyeCtx.beginPath();
+    atolyeCtx.moveTo(atolyeBaslaNoktasi.x, atolyeBaslaNoktasi.y);
+    atolyeCtx.lineTo(p.x, p.y);
+    atolyeCtx.stroke();
+  } else {
+    atolyeCtx.lineTo(p.x, p.y);
+    atolyeCtx.stroke();
+  }
+}
+
+function atolyeBitti() {
+  atolyeCiziyor = false;
+  atolyeBaslaNoktasi = null;
+  atolyeAnlik = null;
+}
+
+function atolyeAracSec(arac) {
+  atolyeArac = arac;
+  for (const b of document.querySelectorAll('[data-atolye-arac]')) {
+    b.classList.toggle('atolye__arac--secili', b.dataset.atolyeArac === arac);
+  }
+}
+
+function atolyeTemizle() {
+  const cvs = document.getElementById('atolye-canvas');
+  if (atolyeCtx) atolyeCtx.clearRect(0, 0, cvs.width, cvs.height);
+}
+
+function atolyeBildirimGoster() {
+  const b = document.getElementById('atolye-bildirim');
+  b.hidden = false;
+  clearTimeout(atolyeBildirimTimer);
+  atolyeBildirimTimer = setTimeout(() => { b.hidden = true; }, 1500);
+}
+
+function atolyeKaydet() {
+  const grid = document.getElementById('atolye-grid');
+  const cvs = document.getElementById('atolye-canvas');
+
+  // Izgara + cizim birlestir, sonra galeri icin makul boyuta kucult
+  // (depolama sismesin, en fazla 12 cizim).
+  const olcek = Math.min(1, 480 / cvs.width);
+  const hedef = document.createElement('canvas');
+  hedef.width = Math.round(cvs.width * olcek);
+  hedef.height = Math.round(cvs.height * olcek);
+  const h = hedef.getContext('2d');
+  h.drawImage(grid, 0, 0, hedef.width, hedef.height);
+  h.drawImage(cvs, 0, 0, hedef.width, hedef.height);
+
+  const galeri = [hedef.toDataURL('image/png'), ...state.loadCizimGaleri()].slice(0, 12);
+  state.saveCizimGaleri(galeri);
+  cizAtolyeGaleri();
+  atolyeBildirimGoster();
+}
+
+function cizAtolyeGaleri() {
+  const galeri = state.loadCizimGaleri();
+  const hedef = document.getElementById('atolye-galeri');
+
+  if (galeri.length === 0) {
+    mount(hedef, [el('p', { className: 'atolye__galeri-bos', text: ceviri('atolye.emptyGallery') })]);
+    return;
+  }
+
+  mount(hedef, galeri.map((veri, i) => {
+    const img = el('img', { className: 'atolye__galeri-resim' });
+    img.src = veri;
+    const sil = el('button', {
+      className: 'atolye__galeri-sil',
+      text: '×',
+      attrs: { type: 'button', 'aria-label': ceviri('parent.delete') },
+      dataset: { atolyeSil: String(i) }
+    });
+    return el('div', { className: 'atolye__galeri-oge' }, [img, sil]);
+  }));
+}
+
+function atolyeCizimSil(i) {
+  const galeri = state.loadCizimGaleri();
+  galeri.splice(i, 1);
+  state.saveCizimGaleri(galeri);
+  cizAtolyeGaleri();
+}
+
+function acAtolye() {
+  document.getElementById('atolye').hidden = false;
+  atolyeAracSec('kalem');
+  document.getElementById('atolye-bildirim').hidden = true;
+  // Olculer overlay gorunur olduktan sonra dogru gelir.
+  requestAnimationFrame(() => {
+    atolyeBoyutlandir();
+    cizAtolyeGaleri();
+  });
+}
+
+function kapatAtolye() {
+  document.getElementById('atolye').hidden = true;
+}
+
 // --- Sohbet ---
 
 // Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
@@ -1735,6 +1924,19 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (oyunKart.dataset.game === 'amiral') acAmiral();
     if (oyunKart.dataset.game === 'satranc') acSatranc();
     if (oyunKart.dataset.game === 'satranc-oyun') acSoyun();
+    if (oyunKart.dataset.game === 'atolye') acAtolye();
+    return;
+  }
+
+  const atolyeAracDugme = e.target.closest('[data-atolye-arac]');
+  if (atolyeAracDugme) {
+    atolyeAracSec(atolyeAracDugme.dataset.atolyeArac);
+    return;
+  }
+
+  const atolyeSilDugme = e.target.closest('[data-atolye-sil]');
+  if (atolyeSilDugme) {
+    atolyeCizimSil(Number(atolyeSilDugme.dataset.atolyeSil));
     return;
   }
 
@@ -1812,6 +2014,16 @@ document.getElementById('satranc-taslara').addEventListener('click', satrancTasl
 document.getElementById('satranc-kapat').addEventListener('click', kapatSatranc);
 document.getElementById('satranc-oyun-yeni').addEventListener('click', yeniSoyun);
 document.getElementById('satranc-oyun-kapat').addEventListener('click', kapatSoyun);
+
+const atolyeCanvas = document.getElementById('atolye-canvas');
+atolyeCanvas.addEventListener('pointerdown', atolyeBasladi);
+atolyeCanvas.addEventListener('pointermove', atolyeHareket);
+atolyeCanvas.addEventListener('pointerup', atolyeBitti);
+atolyeCanvas.addEventListener('pointercancel', atolyeBitti);
+document.getElementById('atolye-temizle').addEventListener('click', atolyeTemizle);
+document.getElementById('atolye-yeni').addEventListener('click', atolyeTemizle);
+document.getElementById('atolye-kaydet').addEventListener('click', atolyeKaydet);
+document.getElementById('atolye-kapat').addEventListener('click', kapatAtolye);
 
 document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   e.preventDefault();

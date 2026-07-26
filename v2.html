@@ -224,6 +224,42 @@
                 <button type="button" id="ob-basla" class="onboarding__basla" data-i18n="onboarding.start">Başla</button>
             </div>
         </div>
+
+        <div id="atolye" class="atolye" hidden>
+            <div class="atolye__araclar">
+                <button type="button" class="atolye__arac atolye__arac--secili" data-atolye-arac="kalem">
+                    <span class="material-symbols-rounded">edit</span>
+                    <span data-i18n="atolye.pen">Kalem</span>
+                </button>
+                <button type="button" class="atolye__arac" data-atolye-arac="cetvel">
+                    <span class="material-symbols-rounded">straighten</span>
+                    <span data-i18n="atolye.ruler">Cetvel</span>
+                </button>
+                <button type="button" class="atolye__arac" data-atolye-arac="silgi">
+                    <span class="material-symbols-rounded">ink_eraser</span>
+                    <span data-i18n="atolye.eraser">Silgi</span>
+                </button>
+                <button type="button" class="atolye__arac" id="atolye-temizle">
+                    <span class="material-symbols-rounded">delete</span>
+                    <span data-i18n="atolye.clear">Temizle</span>
+                </button>
+            </div>
+
+            <div class="atolye__tuval">
+                <canvas id="atolye-grid" class="atolye__canvas"></canvas>
+                <canvas id="atolye-canvas" class="atolye__canvas"></canvas>
+                <p id="atolye-bildirim" class="atolye__bildirim" hidden data-i18n="atolye.saved">Kaydedildi!</p>
+            </div>
+
+            <div class="atolye__alt">
+                <button type="button" id="atolye-yeni" class="atolye__dugme" data-i18n="atolye.new">Yeni</button>
+                <button type="button" id="atolye-kaydet" class="atolye__dugme atolye__dugme--vurgu" data-i18n="atolye.save">Kaydet</button>
+                <button type="button" id="atolye-kapat" class="atolye__dugme" data-i18n="game.close">Kapat</button>
+            </div>
+
+            <p class="atolye__galeri-baslik" data-i18n="atolye.gallery">Galerim</p>
+            <div id="atolye-galeri" class="atolye__galeri"></div>
+        </div>
     </div>
 
     <script type="module" src="src/main.js"></script>

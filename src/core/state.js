@@ -187,6 +187,19 @@ export function createAppState(storage) {
 
     saveSohbetEs(ad) {
       storage.set('sohbet-es', String(ad ?? '').trim());
+    },
+
+    /**
+     * Cizim atolyesi galerisi: PNG data-URL dizisi. En yeni basta.
+     * Depolama sinirli oldugu icin cagiran taraf sayiyi kirpar.
+     */
+    loadCizimGaleri() {
+      const kayit = storage.get('cizim-galeri', null);
+      return Array.isArray(kayit) ? kayit.filter((x) => typeof x === 'string') : [];
+    },
+
+    saveCizimGaleri(liste) {
+      storage.set('cizim-galeri', liste);
     }
   };
 }
