@@ -80,6 +80,7 @@ const STRINGS = {
     'muh.cat.parca': 'Parça',
     'muh.cat.gorunus': 'Görünüş',
     'muh.cat.kavram': 'Kavram',
+    'muh.cat.makine': 'Basit Makine',
 
     'atolye.pen': 'Kalem',
     'atolye.ruler': 'Cetvel',
@@ -304,6 +305,7 @@ const STRINGS = {
     'muh.cat.parca': 'Part',
     'muh.cat.gorunus': 'View',
     'muh.cat.kavram': 'Concept',
+    'muh.cat.makine': 'Simple machine',
 
     'atolye.pen': 'Pen',
     'atolye.ruler': 'Ruler',

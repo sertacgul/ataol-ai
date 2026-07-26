@@ -20,7 +20,7 @@ test('soru idleri benzersiz', () => {
 });
 
 test('kategoriler beklenen kumede', () => {
-  const gecerli = new Set(['parca', 'gorunus', 'kavram']);
+  const gecerli = new Set(['parca', 'gorunus', 'kavram', 'makine']);
   for (const s of SORULAR) assert.ok(gecerli.has(s.kategori), `${s.id} gecersiz kategori`);
 });
 
