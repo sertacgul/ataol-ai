@@ -96,6 +96,7 @@ const STRINGS = {
     'atolye.undo': 'Geri al',
     'atolye.template': 'Kalıp',
     'atolye.tpl.none': 'Yok', 'atolye.tpl.car': 'Araba', 'atolye.tpl.truck': 'Kamyon', 'atolye.tpl.rocket': 'Roket', 'atolye.tpl.house': 'Ev',
+    'atolye.tpl.helicopter': 'Helikopter', 'atolye.tpl.plane': 'Uçak', 'atolye.tpl.ship': 'Gemi', 'atolye.tpl.train': 'Tren', 'atolye.tpl.robot': 'Robot', 'atolye.tpl.star': 'Yıldız',
 
     'onboarding.title': "ATAOL'a hoş geldin",
     'onboarding.subtitle': 'Başlamak için birkaç bilgi. Bunu bir yetişkin doldursun.',
@@ -323,6 +324,7 @@ const STRINGS = {
     'atolye.undo': 'Undo',
     'atolye.template': 'Template',
     'atolye.tpl.none': 'None', 'atolye.tpl.car': 'Car', 'atolye.tpl.truck': 'Truck', 'atolye.tpl.rocket': 'Rocket', 'atolye.tpl.house': 'House',
+    'atolye.tpl.helicopter': 'Helicopter', 'atolye.tpl.plane': 'Plane', 'atolye.tpl.ship': 'Ship', 'atolye.tpl.train': 'Train', 'atolye.tpl.robot': 'Robot', 'atolye.tpl.star': 'Star',
 
     'onboarding.title': 'Welcome to ATAOL',
     'onboarding.subtitle': 'A few details to get started. An adult should fill this in.',

@@ -2224,16 +2224,51 @@
   font-size: 22px;
 }
 
+.atolye__kalinliklar {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.atolye__kalinlik {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary-light);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0;
+}
+
+.atolye__kalinlik-nokta {
+  border-radius: 50%;
+  background: var(--text-dark);
+  display: block;
+}
+
+.atolye__kalinlik--secili {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.atolye__kalinlik--secili .atolye__kalinlik-nokta {
+  background: #fff;
+}
+
 .atolye__renkler {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   flex: 1;
-  justify-content: space-around;
+  overflow-x: auto;
+  padding: 2px 0;
 }
 
 .atolye__swatch {
-  width: 30px;
-  height: 30px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 0 1px var(--card-border);

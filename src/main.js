@@ -1443,7 +1443,12 @@ let atolyeRenk = '#2D3436';
 let atolyeGecmis = [];           // geri al icin canvas anlik goruntuleri
 let atolyeSablon = 'yok';
 
-const ATOLYE_RENKLER = ['#2D3436', '#5F27CD', '#00CEC9', '#FF7675', '#FFD25E', '#12874A'];
+const ATOLYE_RENKLER = [
+  '#2D3436', '#636E72', '#5F27CD', '#0984E3', '#00CEC9', '#12874A',
+  '#FFD25E', '#E17055', '#FF7675', '#E84393', '#A0522D', '#74B9FF'
+];
+const ATOLYE_KALINLIKLAR = [2, 4, 7];
+let atolyeKalinlik = 4;
 
 // Kaliplar: uzerinden gecerek cizmek icin silik dis hatlar. Mantiksal
 // 300x200 alanda cizilir; izgara katmaninda durur (cizim degil, rehber).
@@ -1477,6 +1482,57 @@ const ATOLYE_SABLONLAR = [
     g.strokeRect(70, 100, 160, 80);
     g.beginPath(); g.moveTo(55, 100); g.lineTo(150, 45); g.lineTo(245, 100); g.stroke();
     g.strokeRect(130, 135, 45, 45);
+  } },
+  { id: 'helikopter', key: 'atolye.tpl.helicopter', ciz: (g) => {
+    g.beginPath(); g.ellipse(130, 120, 68, 32, 0, 0, 6.29); g.stroke();
+    g.beginPath(); g.moveTo(196, 112); g.lineTo(272, 118); g.lineTo(272, 128); g.lineTo(196, 126); g.stroke();
+    g.beginPath(); g.moveTo(266, 106); g.lineTo(278, 132); g.stroke();
+    g.beginPath(); g.moveTo(60, 80); g.lineTo(200, 80); g.stroke();
+    g.beginPath(); g.moveTo(130, 88); g.lineTo(130, 80); g.stroke();
+    g.beginPath(); g.moveTo(88, 156); g.lineTo(178, 156); g.stroke();
+    g.beginPath(); g.moveTo(110, 152); g.lineTo(110, 140); g.moveTo(150, 152); g.lineTo(150, 140); g.stroke();
+  } },
+  { id: 'ucak', key: 'atolye.tpl.plane', ciz: (g) => {
+    g.beginPath(); g.ellipse(150, 110, 110, 26, 0, 0, 6.29); g.stroke();
+    g.beginPath(); g.moveTo(130, 120); g.lineTo(195, 120); g.lineTo(170, 160); g.lineTo(118, 160); g.closePath(); g.stroke();
+    g.beginPath(); g.moveTo(48, 108); g.lineTo(72, 72); g.lineTo(82, 74); g.lineTo(68, 108); g.closePath(); g.stroke();
+  } },
+  { id: 'gemi', key: 'atolye.tpl.ship', ciz: (g) => {
+    g.beginPath(); g.moveTo(40, 138); g.lineTo(262, 138); g.lineTo(232, 178); g.lineTo(70, 178); g.closePath(); g.stroke();
+    g.strokeRect(95, 93, 90, 45);
+    g.strokeRect(195, 98, 26, 40);
+    g.beginPath(); g.moveTo(118, 50); g.lineTo(118, 93); g.stroke();
+  } },
+  { id: 'tren', key: 'atolye.tpl.train', ciz: (g) => {
+    g.strokeRect(55, 100, 120, 70);
+    g.strokeRect(80, 74, 20, 26);
+    g.strokeRect(190, 116, 72, 54);
+    g.beginPath(); g.arc(82, 178, 12, 0, 6.29); g.stroke();
+    g.beginPath(); g.arc(148, 178, 12, 0, 6.29); g.stroke();
+    g.beginPath(); g.arc(220, 178, 12, 0, 6.29); g.stroke();
+  } },
+  { id: 'robot', key: 'atolye.tpl.robot', ciz: (g) => {
+    g.strokeRect(115, 42, 70, 55);
+    g.beginPath(); g.arc(135, 66, 6, 0, 6.29); g.stroke();
+    g.beginPath(); g.arc(165, 66, 6, 0, 6.29); g.stroke();
+    g.strokeRect(100, 100, 100, 68);
+    g.strokeRect(70, 110, 24, 54);
+    g.strokeRect(206, 110, 24, 54);
+    g.strokeRect(120, 170, 24, 25);
+    g.strokeRect(156, 170, 24, 25);
+    g.beginPath(); g.moveTo(150, 42); g.lineTo(150, 26); g.stroke();
+    g.beginPath(); g.arc(150, 21, 5, 0, 6.29); g.stroke();
+  } },
+  { id: 'yildiz', key: 'atolye.tpl.star', ciz: (g) => {
+    const cx = 150, cy = 105, R = 78, r = 32;
+    g.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const ang = -Math.PI / 2 + i * Math.PI / 5;
+      const rad = i % 2 === 0 ? R : r;
+      const x = cx + rad * Math.cos(ang), y = cy + rad * Math.sin(ang);
+      if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.closePath(); g.stroke();
   } }
 ];
 
@@ -1552,9 +1608,28 @@ function atolyeAyarla() {
     atolyeCtx.strokeStyle = 'rgba(0,0,0,1)';
   } else {
     atolyeCtx.globalCompositeOperation = 'source-over';
-    atolyeCtx.lineWidth = atolyeArac === 'cetvel' ? 2.5 : 3;
+    atolyeCtx.lineWidth = atolyeKalinlik;
     atolyeCtx.strokeStyle = atolyeRenk;
   }
+}
+
+function cizAtolyeKalinliklar() {
+  mount(document.getElementById('atolye-kalinliklar'), ATOLYE_KALINLIKLAR.map((k) => {
+    const nokta = el('span', { className: 'atolye__kalinlik-nokta' });
+    nokta.style.width = `${k + 3}px`;
+    nokta.style.height = `${k + 3}px`;
+    return el('button', {
+      className: k === atolyeKalinlik ? 'atolye__kalinlik atolye__kalinlik--secili' : 'atolye__kalinlik',
+      attrs: { type: 'button' },
+      dataset: { atolyeKalinlik: String(k) }
+    }, [nokta]);
+  }));
+}
+
+function atolyeKalinlikSec(k) {
+  atolyeKalinlik = k;
+  if (atolyeArac === 'silgi') atolyeAracSec('kalem');
+  cizAtolyeKalinliklar();
 }
 
 // Geri al icin canvasin o anki halini yigina koyar (en fazla 8).
@@ -1721,10 +1796,12 @@ function acAtolye() {
   document.getElementById('atolye').hidden = false;
   atolyeArac = 'kalem';
   atolyeRenk = ATOLYE_RENKLER[0];
+  atolyeKalinlik = 4;
   atolyeSablon = 'yok';
   atolyeGecmis = [];
   atolyeAracSec('kalem');
   cizAtolyeRenkler();
+  cizAtolyeKalinliklar();
   cizAtolyeSablonlar();
   document.getElementById('atolye-bildirim').hidden = true;
   // Olculer overlay gorunur olduktan sonra dogru gelir.
@@ -2299,6 +2376,12 @@ document.getElementById('app').addEventListener('click', (e) => {
   const atolyeSablonDugme = e.target.closest('[data-atolye-sablon]');
   if (atolyeSablonDugme) {
     atolyeSablonSec(atolyeSablonDugme.dataset.atolyeSablon);
+    return;
+  }
+
+  const atolyeKalinlikDugme = e.target.closest('[data-atolye-kalinlik]');
+  if (atolyeKalinlikDugme) {
+    atolyeKalinlikSec(Number(atolyeKalinlikDugme.dataset.atolyeKalinlik));
     return;
   }
 
