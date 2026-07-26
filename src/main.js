@@ -522,6 +522,16 @@ function sohbetAyarBolumu() {
       text: ceviri('parent.partnerNote')
     }),
 
+    el('label', { className: 'parent-sohbet__label', text: ceviri('parent.interest') }),
+    el('input', {
+      className: 'parent-sohbet__input',
+      attrs: { type: 'text', id: 'sohbet-ilgi', value: state.loadCocukIlgi(), placeholder: ceviri('parent.interestPh') }
+    }),
+    el('p', {
+      className: 'parent-sohbet__not',
+      text: ceviri('parent.interestNote')
+    }),
+
     el('button', {
       className: 'parent-sohbet__kaydet',
       text: ceviri('parent.save'),
@@ -1886,6 +1896,7 @@ async function sohbetGonder(metin) {
       dil: dil(),
       cocukAdi: vm.childName,
       bakimVerenAdi: state.loadSohbetEs(),
+      ilgi: state.loadCocukIlgi(),
       seviyeAdi: levelById(state.loadDrill().level)?.title ?? '',
       // Takvim baglami da aktif dilde: EN sohbette "Sunday, July" gecsin.
       gun: ceviri('cal.day.' + vm.today.dayIndex),
@@ -1910,6 +1921,7 @@ function kaydetSohbetAyar() {
   // Bos birakilan anahtar mevcut (tasinan ya da kayitli) anahtari SILMEZ.
   if (anahtar) state.saveApiKey(anahtar);
   state.saveSohbetEs(document.getElementById('sohbet-esadi').value.trim());
+  state.saveCocukIlgi(document.getElementById('sohbet-ilgi').value.trim());
   renderParent();
 }
 

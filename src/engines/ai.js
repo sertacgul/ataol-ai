@@ -58,6 +58,7 @@ export function sistemIstemi(baglam = {}) {
 
   const cocuk = (baglam.cocukAdi ?? '').trim() || vars.cocuk;
   const bakimVeren = (baglam.bakimVerenAdi ?? '').trim();
+  const ilgi = (baglam.ilgi ?? '').trim();
   const seviye = (baglam.seviyeAdi ?? '').trim() || vars.seviye;
   const gun = (baglam.gun ?? '').trim() || vars.bilinmiyor;
   const ay = (baglam.ay ?? '').trim() || vars.bilinmiyor;
@@ -104,6 +105,9 @@ NEVER ask for personal information such as address, school name, phone number or
 Do not ask math every message, it bores and tires this child. Once in a while ask a short and fun math, science or English question.
 When you ask math, match the child's current practice level: ${seviye}
 If they get it right, congratulate them enthusiastically. If they are wrong, do not get angry, tell the correct answer in one sentence.`,
+
+    ...(ilgi ? [`INTEREST:
+The child is very interested in: ${ilgi}. Now and then, warmly steer the conversation there, ask curious questions and feed this interest. Do not turn every message into it.`] : []),
 
     `BEHAVIOR GUIDANCE:
 1. If they write curse words or nonsense, NEVER get angry or scold; gently steer them the right way.
@@ -158,6 +162,9 @@ Soru sorabilirsin ve doğru cevabı yürekten övebilirsin, ama ödül dağıtam
 Her mesajda matematik sorma, bu çocuğu sıkar ve yorar. Ara sıra kısa ve eğlenceli bir matematik, fen ya da İngilizce sorusu sor.
 Matematik sorarken çocuğun şu anki alıştırma seviyesine uy: ${seviye}
 Doğru bilirse coşkuyla tebrik et. Yanlış bilirse kızma, doğrusunu tek cümlede söyle.`,
+
+    ...(ilgi ? [`İLGİ:
+Çocuğun çok ilgilendiği şey: ${ilgi}. Ara sıra sohbeti sıcak bir şekilde oraya yönlendir, meraklı sorular sor ve bu ilgiyi besle. Her mesajı buna çevirme.`] : []),
 
     `DAVRANIŞ REHBERLİĞİ:
 1. Küfür ya da anlamsız sözler yazarsa ASLA kızma, azarlama; sevgiyle doğru yöne çevir.

@@ -200,6 +200,20 @@ export function createAppState(storage) {
 
     saveCizimGaleri(liste) {
       storage.set('cizim-galeri', liste);
+    },
+
+    /**
+     * Cocugun ilgi alani (orn. "araclar, is makineleri, teknik resim").
+     * Sohbet AI'i sohbeti ara sira buraya yonlendirir, merakini besler.
+     * Ebeveyn girer; bos ise istem ilgi bolumunu hic eklemez.
+     */
+    loadCocukIlgi() {
+      const kayit = storage.get('cocuk-ilgi', '');
+      return typeof kayit === 'string' ? kayit.trim() : '';
+    },
+
+    saveCocukIlgi(metin) {
+      storage.set('cocuk-ilgi', String(metin ?? '').trim());
     }
   };
 }

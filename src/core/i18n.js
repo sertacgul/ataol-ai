@@ -55,6 +55,9 @@ const STRINGS = {
     'parent.apiKeyEmpty': 'Anahtarı buraya yapıştır',
     'parent.partnerName': 'Sohbette eş / bakım veren adı',
     'parent.partnerNote': 'Bu kişi çocuğun annesi ya da babası olarak değil, yalnızca adıyla anılır. Boş bırakırsanız aile bağı hiç konuşulmaz.',
+    'parent.interest': 'Çocuğun ilgi alanı',
+    'parent.interestPh': 'örn. araçlar, iş makineleri, teknik resim',
+    'parent.interestNote': 'Sohbet arkadaşı sohbeti ara sıra bu ilgiye yönlendirir ve merakını besler.',
     'parent.language': 'Dil',
     'parent.save': 'Kaydet',
 
@@ -273,6 +276,9 @@ const STRINGS = {
     'parent.apiKeyEmpty': 'Paste the key here',
     'parent.partnerName': "Partner / caregiver name in chat",
     'parent.partnerNote': 'This person is referred to only by name, not as the child’s mother or father. Leave blank to never mention family ties.',
+    'parent.interest': "Child's interests",
+    'parent.interestPh': 'e.g. vehicles, machines, technical drawing',
+    'parent.interestNote': 'The chat friend will steer conversations toward this interest now and then and feed the child’s curiosity.',
     'parent.language': 'Language',
     'parent.save': 'Save',
 

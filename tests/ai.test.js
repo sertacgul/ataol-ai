@@ -69,6 +69,18 @@ test('istem cocugun GERCEK seviyesini tasir', () => {
   assert.ok(s.includes('2-5 arası çarpım'), 'uydurma mufredat degil gercek seviye');
 });
 
+test('ilgi verilince istem ilgi bolumu ekler, verilmeyince eklemez', () => {
+  const ilgili = sistemIstemi({ ...baglam, ilgi: 'araçlar ve iş makineleri' });
+  assert.ok(ilgili.includes('araçlar ve iş makineleri'), 'ilgi metni istemde olmali');
+  assert.ok(/İLGİ|yönlendir/i.test(ilgili), 'ilgi bolumu TR');
+
+  const ilgisiz = sistemIstemi(baglam);
+  assert.ok(!ilgisiz.includes('İLGİ:'), 'ilgi yokken bolum eklenmemeli');
+
+  const en = sistemIstemi({ ...baglam, dil: 'en', ilgi: 'vehicles and machines' });
+  assert.ok(en.includes('vehicles and machines') && /INTEREST/.test(en), 'ilgi bolumu EN');
+});
+
 test('EN istem ayni sert kurallari tasir', () => {
   const s = sistemIstemi({ ...baglam, dil: 'en' });
   // Ingilizce uretilmeli ama kurallar korunmali.
