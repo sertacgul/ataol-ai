@@ -214,6 +214,26 @@ export function createAppState(storage) {
 
     saveCocukIlgi(metin) {
       storage.set('cocuk-ilgi', String(metin ?? '').trim());
+    },
+
+    /**
+     * Basarim (rozet) sayaclari. Oyunlar bunlari besler; rozet ekrani
+     * okur. Yildizdan ayridir: bunlar tanima, para degil.
+     */
+    loadIstatistik() {
+      const kayit = storage.get('istatistik', null);
+      const bos = { okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0 };
+      if (!kayit || typeof kayit !== 'object') return bos;
+      return {
+        okunanKahramanlar: Array.isArray(kayit.okunanKahramanlar) ? kayit.okunanKahramanlar : [],
+        matematikDogru: Number.isFinite(kayit.matematikDogru) ? kayit.matematikDogru : 0,
+        kurulanMakineler: Array.isArray(kayit.kurulanMakineler) ? kayit.kurulanMakineler : [],
+        satrancGalibiyet: Number.isFinite(kayit.satrancGalibiyet) ? kayit.satrancGalibiyet : 0
+      };
+    },
+
+    saveIstatistik(ist) {
+      storage.set('istatistik', ist);
     }
   };
 }

@@ -18,6 +18,7 @@
  */
 
 export const GAMES = [
+  { id: 'rozetler', title: 'Rozetlerim', icon: 'emoji_events' },
   { id: 'matematik', title: 'Matematik', icon: 'calculate' },
   { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' },
   { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' },

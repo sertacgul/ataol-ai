@@ -2386,3 +2386,81 @@
   color: var(--text-dark);
   margin-bottom: 0;
 }
+
+/* Basarim rozetleri */
+.rozet__baslik {
+  font-family: var(--font-head);
+  font-size: 20px;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.rozet__ozet {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+.rozet__liste {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.rozet-kart {
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  background: rgba(131, 149, 167, 0.12);
+  border: 1.5px solid transparent;
+  opacity: 0.65;
+}
+
+.rozet-kart--acik {
+  background: rgba(0, 206, 201, 0.12);
+  border-color: var(--primary);
+  opacity: 1;
+}
+
+.rozet-kart__emoji {
+  font-size: 32px;
+  line-height: 1;
+  filter: grayscale(1);
+}
+
+.rozet-kart--acik .rozet-kart__emoji { filter: none; }
+
+.rozet-kart__ad {
+  font-family: var(--font-head);
+  font-size: 14px;
+  margin: 6px 0 2px;
+}
+
+.rozet-kart__desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.rozet-kart__ilerleme {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+.rozet-kart:not(.rozet-kart--acik) .rozet-kart__ilerleme { color: var(--text-muted); }
+
+#rozet-kapat {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+}

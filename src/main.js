@@ -38,6 +38,7 @@ import {
   renkOf,
   tipOf
 } from './engines/chessgame.js';
+import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 
 let state;
 let profile;
@@ -97,6 +98,28 @@ try {
 
 const now = () => new Date();
 const today = () => dayKey(now(), profile.settings.dayResetHour);
+
+// Rozet sayaclarini yukle, degistir, kaydet. Oyun akislarinin icinden
+// cagrilir; her cagri kucuk ve gorunmez, cocuk rozet ekranini acinca gorur.
+function istArtir(fn) {
+  const ist = state.loadIstatistik();
+  fn(ist);
+  state.saveIstatistik(ist);
+}
+
+// Bugunden geriye gunluk seri. dayKey rutin gunune gore anahtar uretir;
+// aktif gun = o gun en az bir yildiz kazanilmis.
+function guncelSeri() {
+  const gunler = state.allDays();
+  const reset = profile.settings.dayResetHour;
+  const bugun = now();
+  const aktif = [];
+  for (let i = 0; i < 60; i++) {
+    const k = dayKey(new Date(bugun.getTime() - i * 86400000), reset);
+    aktif.push((gunler[k]?.stars ?? 0) > 0);
+  }
+  return seriHesapla(aktif);
+}
 
 // Aktif dil. Profil yoksa (onboarding) TR.
 const dil = () => profile?.settings?.language ?? 'tr';
@@ -571,7 +594,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
+  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -869,6 +892,8 @@ function drillOnayla() {
   drillSession = sonraki;
   drillTyped = '';
   drillShownAt = performance.now();
+
+  if (dogru) istArtir((ist) => { ist.matematikDogru += 1; });
 
   const geri = document.getElementById('drill-feedback');
   geri.textContent = dogru ? ceviri('drill.correct') : ceviri('drill.answer', { x: dogruCevap });
@@ -1342,9 +1367,9 @@ function soyunBitir(durumu) {
   if (durumu === 'pat') {
     mesaj.textContent = ceviri('chessGame.stalemate');
   } else {
-    mesaj.textContent = soyunDurum.sira === 's'
-      ? ceviri('chessGame.youMate')
-      : ceviri('chessGame.youLose');
+    const kazandi = soyunDurum.sira === 's';
+    mesaj.textContent = kazandi ? ceviri('chessGame.youMate') : ceviri('chessGame.youLose');
+    if (kazandi) istArtir((ist) => { ist.satrancGalibiyet += 1; });
   }
   mesaj.hidden = false;
   document.getElementById('satranc-oyun-durum').textContent = '';
@@ -1939,6 +1964,9 @@ let kahramanIndex = 0;
 
 function kahramanGoster() {
   const k = KAHRAMANLAR[kahramanSira[kahramanIndex]];
+  istArtir((ist) => {
+    if (!ist.okunanKahramanlar.includes(k.name)) ist.okunanKahramanlar.push(k.name);
+  });
   document.getElementById('kahraman-emoji').textContent = k.emoji || '⭐';
   document.getElementById('kahraman-ad').textContent = k.name;
   document.getElementById('kahraman-unvan').textContent = k.title;
@@ -1968,6 +1996,36 @@ function kahramanBaska() {
 
 function kapatKahraman() {
   document.getElementById('kahraman-modal').hidden = true;
+}
+
+// --- Basarim rozetleri ---
+//
+// Oyunlarin arasini baglayan tanima ekrani. Sayaclar oyun akislari icinde
+// artar (istArtir); burada yalniz gosterilir. Kazanilan rozet renkli, henuz
+// kazanilmayan gri + ilerleme (n / hedef).
+function acRozetler() {
+  const durum = rozetDurumu(state.loadIstatistik(), guncelSeri(), state.loadCizimGaleri().length);
+  const kazanilan = durum.filter((r) => r.kazanildi).length;
+  document.getElementById('rozet-ozet').textContent =
+    ceviri('rozet.summary', { n: kazanilan, toplam: durum.length });
+
+  const liste = document.getElementById('rozet-liste');
+  mount(liste, durum.map((r) => el('div', {
+    className: r.kazanildi ? 'rozet-kart rozet-kart--acik' : 'rozet-kart'
+  }, [
+    el('span', { className: 'rozet-kart__emoji', text: r.emoji }),
+    el('p', { className: 'rozet-kart__ad', text: ceviri(`rozet.${r.id}.ad`) }),
+    el('p', { className: 'rozet-kart__desc', text: ceviri(`rozet.${r.id}.desc`) }),
+    el('p', {
+      className: 'rozet-kart__ilerleme',
+      text: r.kazanildi ? ceviri('rozet.done') : `${r.n} / ${r.hedef}`
+    })
+  ])));
+  document.getElementById('rozet-modal').hidden = false;
+}
+
+function kapatRozetler() {
+  document.getElementById('rozet-modal').hidden = true;
 }
 
 // --- Is makinesi kurucu ---
@@ -2051,6 +2109,9 @@ function kurucuParcaSec(id) {
   cizKurucuParcalar();
   if (kurucuYerlesen.size === kurucuMakine.parcalar.length) {
     kurucuMesaj(ceviri('kur.done', { ad: ceviri(kurucuMakine.adKey) }));
+    istArtir((ist) => {
+      if (!ist.kurulanMakineler.includes(kurucuMakine.id)) ist.kurulanMakineler.push(kurucuMakine.id);
+    });
   }
 }
 
@@ -2391,6 +2452,7 @@ document.getElementById('app').addEventListener('click', (e) => {
 
   const oyunKart = e.target.closest('[data-game]');
   if (oyunKart) {
+    if (oyunKart.dataset.game === 'rozetler') acRozetler();
     if (oyunKart.dataset.game === 'matematik') acDrill(true);
     if (oyunKart.dataset.game === 'amiral') acAmiral();
     if (oyunKart.dataset.game === 'satranc') acSatranc();
@@ -2540,6 +2602,7 @@ document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
 document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
 document.getElementById('kahraman-baska').addEventListener('click', kahramanBaska);
 document.getElementById('kahraman-kapat').addEventListener('click', kapatKahraman);
+document.getElementById('rozet-kapat').addEventListener('click', kapatRozetler);
 document.getElementById('kurucu-yeni').addEventListener('click', kurucuYeni);
 document.getElementById('kurucu-kapat').addEventListener('click', kapatKurucu);
 
