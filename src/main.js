@@ -7,6 +7,7 @@ import { t, DILLER } from './core/i18n.js';
 import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
 import { rewardProgress } from './engines/rewards.js';
 import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
+import { SORULAR as MUH_SORULAR, soruMetni as muhSoruMetni } from './data/muhendislik.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -556,7 +557,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye' };
+  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -690,6 +691,7 @@ function renderIfStale() {
   if (document.getElementById('gorev-modal').hidden === false) return;
   if (document.getElementById('odul-modal').hidden === false) return;
   if (document.getElementById('atolye').hidden === false) return;
+  if (document.getElementById('muh-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -1602,6 +1604,98 @@ function kapatAtolye() {
   document.getElementById('atolye').hidden = true;
 }
 
+// --- Muhendislik dersleri (quiz) ---
+//
+// Parca adlari, gorunusler (izdusum) ve temel kavramlar. Saat quizi gibi
+// coktan secmeli. Icerik data/muhendislik.js'te iki dilli; burada yalniz
+// akis ve karistirma.
+const MUH_OTURUM = 6;
+let muhKalan = [];
+let muhSoru = null;
+let muhSecenekler = [];
+let muhDogruDeger = '';
+let muhCevaplandi = false;
+
+function muhKaristir(dizi) {
+  const c = [...dizi];
+  for (let i = c.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [c[i], c[j]] = [c[j], c[i]];
+  }
+  return c;
+}
+
+function cizMuh() {
+  const m = muhSoruMetni(muhSoru, dil());
+  document.getElementById('muh-kategori').textContent = ceviri('muh.cat.' + muhSoru.kategori);
+  document.getElementById('muh-progress').textContent =
+    `${MUH_OTURUM - muhKalan.length} / ${MUH_OTURUM}`;
+  document.getElementById('muh-soru').textContent = m.soru;
+  document.getElementById('muh-geri').hidden = true;
+  document.getElementById('muh-sonraki').hidden = true;
+
+  mount(document.getElementById('muh-secenekler'), muhSecenekler.map((o) =>
+    el('button', {
+      className: 'muh__secenek',
+      text: o,
+      attrs: { type: 'button' },
+      dataset: { muhSecenek: o }
+    })
+  ));
+}
+
+function muhSonrakiSoru() {
+  muhSoru = muhKalan.shift();
+  muhCevaplandi = false;
+  const m = muhSoruMetni(muhSoru, dil());
+  muhDogruDeger = m.secenekler[muhSoru.dogru];
+  muhSecenekler = muhKaristir(m.secenekler);
+  cizMuh();
+}
+
+function muhCevapla(secim) {
+  if (muhCevaplandi) return;
+  muhCevaplandi = true;
+
+  const dogru = secim === muhDogruDeger;
+  const geri = document.getElementById('muh-geri');
+  geri.textContent = dogru ? ceviri('drill.correct') : ceviri('drill.answer', { x: muhDogruDeger });
+  geri.className = dogru ? 'muh__geri muh__geri--dogru' : 'muh__geri muh__geri--yanlis';
+  geri.hidden = false;
+
+  // Secenekleri isaretle.
+  for (const b of document.querySelectorAll('[data-muh-secenek]')) {
+    if (b.dataset.muhSecenek === muhDogruDeger) b.classList.add('muh__secenek--dogru');
+    else if (b.dataset.muhSecenek === secim) b.classList.add('muh__secenek--yanlis');
+    b.setAttribute('disabled', 'disabled');
+  }
+
+  document.getElementById('muh-sonraki').hidden = false;
+}
+
+function muhSonraki() {
+  if (muhKalan.length === 0) {
+    document.getElementById('muh-soru').textContent = ceviri('muh.done');
+    document.getElementById('muh-kategori').textContent = '';
+    mount(document.getElementById('muh-secenekler'), []);
+    document.getElementById('muh-geri').hidden = true;
+    document.getElementById('muh-sonraki').hidden = true;
+    document.getElementById('muh-progress').textContent = '';
+    return;
+  }
+  muhSonrakiSoru();
+}
+
+function acMuhendislik() {
+  muhKalan = muhKaristir(MUH_SORULAR).slice(0, MUH_OTURUM);
+  document.getElementById('muh-modal').hidden = false;
+  muhSonrakiSoru();
+}
+
+function kapatMuhendislik() {
+  document.getElementById('muh-modal').hidden = true;
+}
+
 // --- Sohbet ---
 
 // Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
@@ -1925,6 +2019,13 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (oyunKart.dataset.game === 'satranc') acSatranc();
     if (oyunKart.dataset.game === 'satranc-oyun') acSoyun();
     if (oyunKart.dataset.game === 'atolye') acAtolye();
+    if (oyunKart.dataset.game === 'muhendislik') acMuhendislik();
+    return;
+  }
+
+  const muhSecenek = e.target.closest('[data-muh-secenek]');
+  if (muhSecenek) {
+    muhCevapla(muhSecenek.dataset.muhSecenek);
     return;
   }
 
@@ -2024,6 +2125,8 @@ document.getElementById('atolye-temizle').addEventListener('click', atolyeTemizl
 document.getElementById('atolye-yeni').addEventListener('click', atolyeTemizle);
 document.getElementById('atolye-kaydet').addEventListener('click', atolyeKaydet);
 document.getElementById('atolye-kapat').addEventListener('click', kapatAtolye);
+document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
+document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
 
 document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   e.preventDefault();

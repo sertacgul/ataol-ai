@@ -62,6 +62,13 @@ const STRINGS = {
     'games.satrancLearn': 'Satranç Taşları',
     'games.satranc': 'Satranç',
     'games.atolye': 'Çizim Atölyesi',
+    'games.muhendislik': 'Mühendislik',
+
+    'muh.next': 'Sonraki',
+    'muh.done': 'Harika! Hepsini bitirdin. 🛠️',
+    'muh.cat.parca': 'Parça',
+    'muh.cat.gorunus': 'Görünüş',
+    'muh.cat.kavram': 'Kavram',
 
     'atolye.pen': 'Kalem',
     'atolye.ruler': 'Cetvel',
@@ -265,6 +272,13 @@ const STRINGS = {
     'games.satrancLearn': 'Chess Pieces',
     'games.satranc': 'Chess',
     'games.atolye': 'Drawing Studio',
+    'games.muhendislik': 'Engineering',
+
+    'muh.next': 'Next',
+    'muh.done': 'Great! You finished them all. 🛠️',
+    'muh.cat.parca': 'Part',
+    'muh.cat.gorunus': 'View',
+    'muh.cat.kavram': 'Concept',
 
     'atolye.pen': 'Pen',
     'atolye.ruler': 'Ruler',
