@@ -143,7 +143,12 @@ const STRINGS = {
     'card.homeworkStudy': 'Ödev ve çalışma',
     'card.reviseRead': 'Ders tekrarı ve okuma',
     'card.read30': '30 dakika kitap',
-    'card.planTomorrow': 'Yarını planla, çantanı hazırla'
+    'card.planTomorrow': 'Yarını planla, çantanı hazırla',
+
+    'unit.min': 'dk',
+    'cal.day.0': 'Pazartesi', 'cal.day.1': 'Salı', 'cal.day.2': 'Çarşamba', 'cal.day.3': 'Perşembe', 'cal.day.4': 'Cuma', 'cal.day.5': 'Cumartesi', 'cal.day.6': 'Pazar',
+    'cal.month.0': 'Ocak', 'cal.month.1': 'Şubat', 'cal.month.2': 'Mart', 'cal.month.3': 'Nisan', 'cal.month.4': 'Mayıs', 'cal.month.5': 'Haziran', 'cal.month.6': 'Temmuz', 'cal.month.7': 'Ağustos', 'cal.month.8': 'Eylül', 'cal.month.9': 'Ekim', 'cal.month.10': 'Kasım', 'cal.month.11': 'Aralık',
+    'cal.season.0': 'Kış', 'cal.season.1': 'İlkbahar', 'cal.season.2': 'Yaz', 'cal.season.3': 'Sonbahar'
   },
   en: {
     'nav.routine': 'Routine',
@@ -272,7 +277,12 @@ const STRINGS = {
     'card.homeworkStudy': 'Homework and study',
     'card.reviseRead': 'Revision and reading',
     'card.read30': '30 minutes of reading',
-    'card.planTomorrow': 'Plan tomorrow, pack your bag'
+    'card.planTomorrow': 'Plan tomorrow, pack your bag',
+
+    'unit.min': 'min',
+    'cal.day.0': 'Monday', 'cal.day.1': 'Tuesday', 'cal.day.2': 'Wednesday', 'cal.day.3': 'Thursday', 'cal.day.4': 'Friday', 'cal.day.5': 'Saturday', 'cal.day.6': 'Sunday',
+    'cal.month.0': 'January', 'cal.month.1': 'February', 'cal.month.2': 'March', 'cal.month.3': 'April', 'cal.month.4': 'May', 'cal.month.5': 'June', 'cal.month.6': 'July', 'cal.month.7': 'August', 'cal.month.8': 'September', 'cal.month.9': 'October', 'cal.month.10': 'November', 'cal.month.11': 'December',
+    'cal.season.0': 'Winter', 'cal.season.1': 'Spring', 'cal.season.2': 'Summer', 'cal.season.3': 'Autumn'
   }
 };
 

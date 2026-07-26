@@ -69,6 +69,28 @@ test('istem cocugun GERCEK seviyesini tasir', () => {
   assert.ok(s.includes('2-5 arası çarpım'), 'uydurma mufredat degil gercek seviye');
 });
 
+test('EN istem ayni sert kurallari tasir', () => {
+  const s = sistemIstemi({ ...baglam, dil: 'en' });
+  // Ingilizce uretilmeli ama kurallar korunmali.
+  assert.ok(s.includes('ATAOL AI Techs'), 'kimlik kurali EN de durmali');
+  assert.ok(/FORBIDDEN/.test(s), 'yildiz yasagi EN de sert olmali');
+  assert.ok(/PLAIN TEXT/i.test(s), 'duz metin kurali EN');
+  assert.ok(/friend/i.test(s) && /NOT their parent/i.test(s), 'arkadas personasi EN');
+  // Aile gercegi: bakim veren adi gecer, "NOT the mother" der.
+  assert.ok(s.includes('Feride Mama'));
+  assert.ok(/NOT the mother/i.test(s), 'aile gercegi EN de acik');
+  // Marka adlari yalniz yasak baglaminda.
+  for (const marka of ['Gemini', 'OpenAI', 'ChatGPT']) {
+    if (s.includes(marka)) assert.ok(/EVER appear|no other|ALWAYS/i.test(s), `${marka} yalniz yasakta`);
+  }
+});
+
+test('EN istem cocuk adini ve seviyeyi baglamdan alir', () => {
+  const s = sistemIstemi({ ...baglam, dil: 'en', cocukAdi: 'Zeynep' });
+  assert.ok(s.includes('Zeynep'));
+  assert.ok(s.includes('2-5 arası çarpım'), 'gercek seviye EN istemde de');
+});
+
 test('istek govdesi gecmisi sirasiyla tasir', () => {
   const g = istekGovdesi('SISTEM', [{ rol: 'cocuk', metin: 'merhaba' }], 'nasilsin');
   const json = JSON.stringify(g);

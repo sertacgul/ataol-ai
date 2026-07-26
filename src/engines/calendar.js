@@ -55,13 +55,16 @@ export function season(date) {
 }
 
 export function describeDate(date) {
+  const mevsim = season(date);
   return {
     dayName: dayName(date),
     dayIndex: dayIndex(date),
     dayOfMonth: date.getDate(),
     monthName: monthName(date),
     monthIndex: date.getMonth(),
-    season: season(date),
+    season: mevsim,
+    // Cok dillilik icin: UI mevsimi indeksten cevirir (SEASONS sirasi).
+    seasonIndex: SEASONS.indexOf(mevsim),
     year: date.getFullYear()
   };
 }

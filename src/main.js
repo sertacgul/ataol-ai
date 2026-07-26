@@ -147,7 +147,7 @@ function cardNode(card) {
   }, [
     el('span', { className: 'material-symbols-rounded routine-card__icon', text: card.icon }),
     el('span', { className: 'routine-card__title', text: kartBaslik(card) }),
-    el('span', { className: 'routine-card__reward', text: `${card.stars}★ · ${card.minutes}dk` })
+    el('span', { className: 'routine-card__reward', text: `${card.stars}★ · ${card.minutes} ${ceviri('unit.min')}` })
   ]);
 }
 
@@ -166,8 +166,8 @@ function renderRoutine() {
   mount(document.getElementById('view-routine'), [
     el('header', { className: 'routine-header' }, [
       el('p', { className: 'routine-header__greeting', text: ceviri('routine.greeting', { ad: vm.childName }) }),
-      el('p', { className: 'routine-header__date', text: `${vm.today.dayName} · ${vm.today.dayOfMonth} ${vm.today.monthName} · ${vm.today.season}` }),
-      el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} dk` }),
+      el('p', { className: 'routine-header__date', text: `${ceviri('cal.day.' + vm.today.dayIndex)} · ${vm.today.dayOfMonth} ${ceviri('cal.month.' + vm.today.monthIndex)} · ${ceviri('cal.season.' + vm.today.seasonIndex)}` }),
+      el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} ${ceviri('unit.min')}` }),
       // Gunun yildizi yukaridaki satirda; bu satir biriken toplam.
       // v1'den tasinan yildizlar da buraya girer, yoksa karsilama
       // ekrani kapandigi anda cocuk emeginin silindigini sanar.
@@ -234,7 +234,7 @@ function gorevlerBolumu() {
         return el('li', { className: 'parent-gorev' }, [
           el('span', { className: 'material-symbols-rounded parent-gorev__ikon', text: c.icon }),
           el('span', { className: 'parent-gorev__ad', text: kartBaslik(c) }),
-          el('span', { className: 'parent-gorev__odul', text: `${c.stars}★ · ${c.minutes}dk` }),
+          el('span', { className: 'parent-gorev__odul', text: `${c.stars}★ · ${c.minutes} ${ceviri('unit.min')}` }),
           el('button', {
             className: 'parent-gorev__sil',
             text: '×',
@@ -265,7 +265,7 @@ function odullerBolumu() {
       el('li', { className: 'parent-gorev' }, [
         el('span', { className: 'parent-gorev__emoji', text: r.emoji }),
         el('span', { className: 'parent-gorev__ad', text: r.name }),
-        el('span', { className: 'parent-gorev__odul', text: `${r.target} dk` }),
+        el('span', { className: 'parent-gorev__odul', text: `${r.target} ${ceviri('unit.min')}` }),
         el('button', {
           className: 'parent-gorev__sil',
           text: '×',
@@ -1373,12 +1373,14 @@ async function sohbetGonder(metin) {
   try {
     const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
     const baglam = {
+      dil: dil(),
       cocukAdi: vm.childName,
       bakimVerenAdi: state.loadSohbetEs(),
       seviyeAdi: levelById(state.loadDrill().level)?.title ?? '',
-      gun: vm.today.dayName,
-      ay: vm.today.monthName,
-      mevsim: vm.today.season
+      // Takvim baglami da aktif dilde: EN sohbette "Sunday, July" gecsin.
+      gun: ceviri('cal.day.' + vm.today.dayIndex),
+      ay: ceviri('cal.month.' + vm.today.monthIndex),
+      mevsim: ceviri('cal.season.' + vm.today.seasonIndex)
     };
     // Son mesaj gecmisten cikarilir; istekGovdesi onu ayrica ekliyor.
     const govde = istekGovdesi(sistemIstemi(baglam), sohbetGecmis.slice(0, -1), temiz);
