@@ -1439,6 +1439,46 @@ let atolyeCiziyor = false;
 let atolyeBaslaNoktasi = null;   // cetvel: cizginin baslangici
 let atolyeAnlik = null;          // cetvel onizlemesi icin canvas kopyasi
 let atolyeBildirimTimer = null;
+let atolyeRenk = '#2D3436';
+let atolyeGecmis = [];           // geri al icin canvas anlik goruntuleri
+let atolyeSablon = 'yok';
+
+const ATOLYE_RENKLER = ['#2D3436', '#5F27CD', '#00CEC9', '#FF7675', '#FFD25E', '#12874A'];
+
+// Kaliplar: uzerinden gecerek cizmek icin silik dis hatlar. Mantiksal
+// 300x200 alanda cizilir; izgara katmaninda durur (cizim degil, rehber).
+const ATOLYE_SABLONLAR = [
+  { id: 'yok', key: 'atolye.tpl.none', ciz: null },
+  { id: 'araba', key: 'atolye.tpl.car', ciz: (g) => {
+    g.beginPath();
+    g.moveTo(30, 130); g.lineTo(70, 130); g.lineTo(95, 95); g.lineTo(190, 95);
+    g.lineTo(215, 130); g.lineTo(270, 130); g.lineTo(270, 155); g.lineTo(30, 155);
+    g.closePath(); g.stroke();
+    g.beginPath(); g.arc(90, 158, 16, 0, 6.29); g.stroke();
+    g.beginPath(); g.arc(210, 158, 16, 0, 6.29); g.stroke();
+  } },
+  { id: 'kamyon', key: 'atolye.tpl.truck', ciz: (g) => {
+    g.strokeRect(30, 80, 150, 75);
+    g.beginPath();
+    g.moveTo(180, 155); g.lineTo(180, 110); g.lineTo(210, 110); g.lineTo(235, 135);
+    g.lineTo(270, 135); g.lineTo(270, 155); g.closePath(); g.stroke();
+    g.beginPath(); g.arc(75, 160, 15, 0, 6.29); g.stroke();
+    g.beginPath(); g.arc(235, 160, 15, 0, 6.29); g.stroke();
+  } },
+  { id: 'roket', key: 'atolye.tpl.rocket', ciz: (g) => {
+    g.beginPath();
+    g.moveTo(150, 20); g.lineTo(180, 90); g.lineTo(180, 150); g.lineTo(120, 150);
+    g.lineTo(120, 90); g.closePath(); g.stroke();
+    g.beginPath(); g.moveTo(120, 150); g.lineTo(95, 185); g.lineTo(120, 168); g.stroke();
+    g.beginPath(); g.moveTo(180, 150); g.lineTo(205, 185); g.lineTo(180, 168); g.stroke();
+    g.beginPath(); g.arc(150, 100, 14, 0, 6.29); g.stroke();
+  } },
+  { id: 'ev', key: 'atolye.tpl.house', ciz: (g) => {
+    g.strokeRect(70, 100, 160, 80);
+    g.beginPath(); g.moveTo(55, 100); g.lineTo(150, 45); g.lineTo(245, 100); g.stroke();
+    g.strokeRect(130, 135, 45, 45);
+  } }
+];
 
 function atolyeIzgaraCiz(grid, w, h, dpr) {
   const g = grid.getContext('2d');
@@ -1447,6 +1487,7 @@ function atolyeIzgaraCiz(grid, w, h, dpr) {
   g.fillRect(0, 0, w, h);
   g.strokeStyle = 'rgba(108, 92, 231, 0.13)';
   g.lineWidth = 1;
+  g.setLineDash([]);
   const adim = 24;
   for (let x = adim; x < w; x += adim) {
     g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
@@ -1454,6 +1495,30 @@ function atolyeIzgaraCiz(grid, w, h, dpr) {
   for (let y = adim; y < h; y += adim) {
     g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
   }
+
+  // Secili kalip silik dis hat (uzerinden gecerek cizmek icin). Mantiksal
+  // 300x200'u alana ortalar.
+  const sb = ATOLYE_SABLONLAR.find((s) => s.id === atolyeSablon);
+  if (sb && sb.ciz) {
+    const sc = Math.min(w / 300, h / 200) * 0.85;
+    g.save();
+    g.translate((w - 300 * sc) / 2, (h - 200 * sc) / 2);
+    g.scale(sc, sc);
+    g.setLineDash([6, 5]);
+    g.strokeStyle = 'rgba(45, 52, 54, 0.3)';
+    g.lineWidth = 2.5 / sc;
+    g.lineCap = 'round';
+    sb.ciz(g);
+    g.restore();
+  }
+}
+
+function atolyeGridYenile() {
+  const grid = document.getElementById('atolye-grid');
+  const cvs = document.getElementById('atolye-canvas');
+  const r = cvs.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  atolyeIzgaraCiz(grid, r.width, r.height, dpr);
 }
 
 function atolyeBoyutlandir() {
@@ -1488,8 +1553,20 @@ function atolyeAyarla() {
   } else {
     atolyeCtx.globalCompositeOperation = 'source-over';
     atolyeCtx.lineWidth = atolyeArac === 'cetvel' ? 2.5 : 3;
-    atolyeCtx.strokeStyle = '#2D3436';
+    atolyeCtx.strokeStyle = atolyeRenk;
   }
+}
+
+// Geri al icin canvasin o anki halini yigina koyar (en fazla 8).
+function atolyeAnliktanKaydet() {
+  const cvs = document.getElementById('atolye-canvas');
+  atolyeGecmis.push(atolyeCtx.getImageData(0, 0, cvs.width, cvs.height));
+  if (atolyeGecmis.length > 8) atolyeGecmis.shift();
+}
+
+function atolyeGeriAl() {
+  if (!atolyeCtx || atolyeGecmis.length === 0) return;
+  atolyeCtx.putImageData(atolyeGecmis.pop(), 0, 0);
 }
 
 function atolyeBasladi(e) {
@@ -1497,6 +1574,7 @@ function atolyeBasladi(e) {
   const cvs = document.getElementById('atolye-canvas');
   cvs.setPointerCapture(e.pointerId);
   atolyeCiziyor = true;
+  atolyeAnliktanKaydet();
   atolyeAyarla();
   const p = atolyeNokta(e);
 
@@ -1542,7 +1620,45 @@ function atolyeAracSec(arac) {
 
 function atolyeTemizle() {
   const cvs = document.getElementById('atolye-canvas');
-  if (atolyeCtx) atolyeCtx.clearRect(0, 0, cvs.width, cvs.height);
+  if (!atolyeCtx) return;
+  atolyeAnliktanKaydet();   // temizlemeyi de geri alinabilir yap
+  atolyeCtx.clearRect(0, 0, cvs.width, cvs.height);
+}
+
+function cizAtolyeRenkler() {
+  mount(document.getElementById('atolye-renkler'), ATOLYE_RENKLER.map((renk) => {
+    const d = el('button', {
+      className: renk === atolyeRenk ? 'atolye__swatch atolye__swatch--secili' : 'atolye__swatch',
+      attrs: { type: 'button', 'aria-label': renk },
+      dataset: { atolyeRenk: renk }
+    });
+    d.style.background = renk;
+    return d;
+  }));
+}
+
+function atolyeRenkSec(renk) {
+  atolyeRenk = renk;
+  // Renk secmek kalemi aktif etsin (silgideyken renk anlamsiz).
+  if (atolyeArac === 'silgi') atolyeAracSec('kalem');
+  cizAtolyeRenkler();
+}
+
+function cizAtolyeSablonlar() {
+  mount(document.getElementById('atolye-sablonlar'), ATOLYE_SABLONLAR.map((sb) =>
+    el('button', {
+      className: sb.id === atolyeSablon ? 'atolye__sablon atolye__sablon--secili' : 'atolye__sablon',
+      text: ceviri(sb.key),
+      attrs: { type: 'button' },
+      dataset: { atolyeSablon: sb.id }
+    })
+  ));
+}
+
+function atolyeSablonSec(id) {
+  atolyeSablon = id;
+  atolyeGridYenile();
+  cizAtolyeSablonlar();
 }
 
 function atolyeBildirimGoster() {
@@ -1603,7 +1719,13 @@ function atolyeCizimSil(i) {
 
 function acAtolye() {
   document.getElementById('atolye').hidden = false;
+  atolyeArac = 'kalem';
+  atolyeRenk = ATOLYE_RENKLER[0];
+  atolyeSablon = 'yok';
+  atolyeGecmis = [];
   atolyeAracSec('kalem');
+  cizAtolyeRenkler();
+  cizAtolyeSablonlar();
   document.getElementById('atolye-bildirim').hidden = true;
   // Olculer overlay gorunur olduktan sonra dogru gelir.
   requestAnimationFrame(() => {
@@ -2168,6 +2290,18 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const atolyeRenkDugme = e.target.closest('[data-atolye-renk]');
+  if (atolyeRenkDugme) {
+    atolyeRenkSec(atolyeRenkDugme.dataset.atolyeRenk);
+    return;
+  }
+
+  const atolyeSablonDugme = e.target.closest('[data-atolye-sablon]');
+  if (atolyeSablonDugme) {
+    atolyeSablonSec(atolyeSablonDugme.dataset.atolyeSablon);
+    return;
+  }
+
   const amiralKare = e.target.closest('[data-amiral-cell]');
   if (amiralKare) {
     amiralAtis(amiralKare.dataset.amiralCell);
@@ -2252,6 +2386,7 @@ document.getElementById('atolye-temizle').addEventListener('click', atolyeTemizl
 document.getElementById('atolye-yeni').addEventListener('click', atolyeTemizle);
 document.getElementById('atolye-kaydet').addEventListener('click', atolyeKaydet);
 document.getElementById('atolye-kapat').addEventListener('click', kapatAtolye);
+document.getElementById('atolye-geri').addEventListener('click', atolyeGeriAl);
 document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
 document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
 document.getElementById('kurucu-yeni').addEventListener('click', kurucuYeni);

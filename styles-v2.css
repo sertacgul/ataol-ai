@@ -2194,3 +2194,76 @@
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* --- Atolye: ikinci satir (renk + geri al) ve kaliplar --- */
+
+.atolye__ikinci {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.atolye__mini {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary-light);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-dark);
+}
+
+.atolye__mini .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.atolye__renkler {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: space-around;
+}
+
+.atolye__swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px var(--card-border);
+  padding: 0;
+}
+
+.atolye__swatch--secili {
+  box-shadow: 0 0 0 3px var(--primary);
+}
+
+.atolye__sablonlar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.atolye__sablon {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--primary-light);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.atolye__sablon--secili {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}

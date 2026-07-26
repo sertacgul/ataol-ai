@@ -90,6 +90,9 @@ const STRINGS = {
     'atolye.gallery': 'Galerim',
     'atolye.saved': 'Kaydedildi!',
     'atolye.emptyGallery': 'Henüz çizimin yok. Bir araç ya da iş makinesi çiz, kaydet!',
+    'atolye.undo': 'Geri al',
+    'atolye.template': 'Kalıp',
+    'atolye.tpl.none': 'Yok', 'atolye.tpl.car': 'Araba', 'atolye.tpl.truck': 'Kamyon', 'atolye.tpl.rocket': 'Roket', 'atolye.tpl.house': 'Ev',
 
     'onboarding.title': "ATAOL'a hoş geldin",
     'onboarding.subtitle': 'Başlamak için birkaç bilgi. Bunu bir yetişkin doldursun.',
@@ -311,6 +314,9 @@ const STRINGS = {
     'atolye.gallery': 'My gallery',
     'atolye.saved': 'Saved!',
     'atolye.emptyGallery': 'No drawings yet. Draw a vehicle or machine and save it!',
+    'atolye.undo': 'Undo',
+    'atolye.template': 'Template',
+    'atolye.tpl.none': 'None', 'atolye.tpl.car': 'Car', 'atolye.tpl.truck': 'Truck', 'atolye.tpl.rocket': 'Rocket', 'atolye.tpl.house': 'House',
 
     'onboarding.title': 'Welcome to ATAOL',
     'onboarding.subtitle': 'A few details to get started. An adult should fill this in.',
