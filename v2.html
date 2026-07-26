@@ -34,7 +34,7 @@
             <div id="sohbet-liste" class="sohbet__liste"></div>
             <div id="sohbet-oneriler" class="sohbet__oneriler"></div>
             <form id="sohbet-form" class="sohbet__giris" autocomplete="off">
-                <input type="text" id="sohbet-metin" placeholder="Bana bir şey yaz..." autocomplete="off">
+                <input type="text" id="sohbet-metin" placeholder="Bana bir şey yaz..." data-i18n-ph="chat.inputPh" autocomplete="off">
                 <button type="submit" id="sohbet-gonder" class="sohbet__gonder" aria-label="Gönder">
                     <span class="material-symbols-rounded">send</span>
                 </button>
@@ -44,19 +44,19 @@
         <nav class="v2-nav">
             <button type="button" class="active" data-nav="routine">
                 <span class="material-symbols-rounded">checklist</span>
-                <span>Rutin</span>
+                <span data-i18n="nav.routine">Rutin</span>
             </button>
             <button type="button" data-nav="parent">
                 <span class="material-symbols-rounded">family_restroom</span>
-                <span>Ebeveyn</span>
+                <span data-i18n="nav.parent">Ebeveyn</span>
             </button>
             <button type="button" data-nav="games">
                 <span class="material-symbols-rounded">sports_esports</span>
-                <span>Oyun</span>
+                <span data-i18n="nav.games">Oyun</span>
             </button>
             <button type="button" data-nav="sohbet">
                 <span class="material-symbols-rounded">chat</span>
-                <span>Sohbet</span>
+                <span data-i18n="nav.chat">Sohbet</span>
             </button>
         </nav>
 
@@ -66,32 +66,32 @@
 
         <div id="pin-modal" class="v2-modal" hidden>
             <div class="v2-modal__box">
-                <h2>Ebeveyn Onayı</h2>
+                <h2 data-i18n="pin.title">Ebeveyn Onayı</h2>
                 <div id="pin-guardians"></div>
-                <input type="password" inputmode="numeric" maxlength="8" id="pin-input" placeholder="PIN">
-                <p id="pin-error" class="v2-modal__error" hidden>PIN yanlış, tekrar dene.</p>
+                <input type="password" inputmode="numeric" maxlength="8" id="pin-input" placeholder="PIN" data-i18n-ph="pin.inputPh">
+                <p id="pin-error" class="v2-modal__error" hidden data-i18n="pin.error">PIN yanlış, tekrar dene.</p>
                 <div class="v2-modal__actions">
-                    <button type="button" id="pin-cancel">Vazgeç</button>
-                    <button type="button" id="pin-submit">Onayla</button>
+                    <button type="button" id="pin-cancel" data-i18n="common.cancel">Vazgeç</button>
+                    <button type="button" id="pin-submit" data-i18n="pin.submit">Onayla</button>
                 </div>
             </div>
         </div>
 
         <div id="guardian-modal" class="v2-modal" hidden>
             <div class="v2-modal__box">
-                <p id="guardian-modal__title">Bakım veren ekle</p>
-                <input type="text" id="guardian-name" placeholder="İsim" autocomplete="off">
-                <input type="text" id="guardian-label" placeholder="Nasıl görünsün (örn. Feride mama)" autocomplete="off">
-                <input type="password" id="guardian-pin" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off">
-                <input type="password" id="guardian-pin2" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" autocomplete="off">
+                <p id="guardian-modal__title" data-i18n="guardianModal.title">Bakım veren ekle</p>
+                <input type="text" id="guardian-name" placeholder="İsim" data-i18n-ph="guardianModal.namePh" autocomplete="off">
+                <input type="text" id="guardian-label" placeholder="Nasıl görünsün (örn. Feride mama)" data-i18n-ph="guardianModal.labelPh" autocomplete="off">
+                <input type="password" id="guardian-pin" inputmode="numeric" maxlength="8" placeholder="PIN" data-i18n-ph="guardianModal.pinPh" autocomplete="off">
+                <input type="password" id="guardian-pin2" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" data-i18n-ph="guardianModal.pin2Ph" autocomplete="off">
                 <div id="guardian-gate" hidden>
-                    <p class="v2-modal__note">Yeni bakım veren eklemek için mevcut bir PIN gerekiyor.</p>
+                    <p class="v2-modal__note" data-i18n="guardianModal.gateNote">Yeni bakım veren eklemek için mevcut bir PIN gerekiyor.</p>
                     <div id="guardian-gate-list"></div>
-                    <input type="password" id="guardian-gate-pin" inputmode="numeric" maxlength="8" placeholder="Mevcut PIN" autocomplete="off">
+                    <input type="password" id="guardian-gate-pin" inputmode="numeric" maxlength="8" placeholder="Mevcut PIN" data-i18n-ph="guardianModal.gatePinPh" autocomplete="off">
                 </div>
                 <p id="guardian-error" class="v2-modal__error" hidden></p>
-                <button type="button" id="guardian-submit">Ekle</button>
-                <button type="button" id="guardian-cancel">Vazgeç</button>
+                <button type="button" id="guardian-submit" data-i18n="common.add">Ekle</button>
+                <button type="button" id="guardian-cancel" data-i18n="common.cancel">Vazgeç</button>
             </div>
         </div>
 
@@ -166,61 +166,61 @@
 
         <div id="gorev-modal" class="v2-modal" hidden>
             <div class="v2-modal__box">
-                <h2>Görev ekle</h2>
-                <input type="text" id="gorev-baslik" placeholder="Görev adı (örn. Piyano çalış)" autocomplete="off">
-                <p class="v2-modal__note">Zaman dilimi</p>
-                <label><input type="radio" name="gorev-blok" value="morning" checked><span>Sabah</span></label>
-                <label><input type="radio" name="gorev-blok" value="afternoon"><span>Öğle</span></label>
-                <label><input type="radio" name="gorev-blok" value="evening"><span>Akşam</span></label>
-                <input type="number" id="gorev-yildiz" inputmode="numeric" placeholder="Yıldız (örn. 3)" autocomplete="off">
-                <input type="number" id="gorev-dakika" inputmode="numeric" placeholder="Dakika (örn. 6)" autocomplete="off">
-                <p class="v2-modal__note">Simge</p>
+                <h2 data-i18n="taskModal.title">Görev ekle</h2>
+                <input type="text" id="gorev-baslik" placeholder="Görev adı (örn. Piyano çalış)" data-i18n-ph="taskModal.namePh" autocomplete="off">
+                <p class="v2-modal__note" data-i18n="taskModal.block">Zaman dilimi</p>
+                <label><input type="radio" name="gorev-blok" value="morning" checked><span data-i18n="block.morning">Sabah</span></label>
+                <label><input type="radio" name="gorev-blok" value="afternoon"><span data-i18n="block.afternoon">Öğle</span></label>
+                <label><input type="radio" name="gorev-blok" value="evening"><span data-i18n="block.evening">Akşam</span></label>
+                <input type="number" id="gorev-yildiz" inputmode="numeric" placeholder="Yıldız (örn. 3)" data-i18n-ph="taskModal.starsPh" autocomplete="off">
+                <input type="number" id="gorev-dakika" inputmode="numeric" placeholder="Dakika (örn. 6)" data-i18n-ph="taskModal.minutesPh" autocomplete="off">
+                <p class="v2-modal__note" data-i18n="taskModal.icon">Simge</p>
                 <div id="gorev-simgeler" class="secim-izgara"></div>
                 <p id="gorev-hata" class="v2-modal__error" hidden></p>
                 <div class="v2-modal__actions">
-                    <button type="button" id="gorev-vazgec">Vazgeç</button>
-                    <button type="button" id="gorev-kaydet">Ekle</button>
+                    <button type="button" id="gorev-vazgec" data-i18n="common.cancel">Vazgeç</button>
+                    <button type="button" id="gorev-kaydet" data-i18n="common.add">Ekle</button>
                 </div>
             </div>
         </div>
 
         <div id="odul-modal" class="v2-modal" hidden>
             <div class="v2-modal__box">
-                <h2>Ödül ekle</h2>
-                <input type="text" id="odul-ad" placeholder="Ödül adı (örn. Lego)" autocomplete="off">
-                <p class="v2-modal__note">Emoji</p>
+                <h2 data-i18n="rewardModal.title">Ödül ekle</h2>
+                <input type="text" id="odul-ad" placeholder="Ödül adı (örn. Lego)" data-i18n-ph="rewardModal.namePh" autocomplete="off">
+                <p class="v2-modal__note" data-i18n="rewardModal.emoji">Emoji</p>
                 <div id="odul-emojiler" class="secim-izgara"></div>
-                <input type="number" id="odul-hedef" inputmode="numeric" placeholder="Hedef dakika (örn. 300)" autocomplete="off">
+                <input type="number" id="odul-hedef" inputmode="numeric" placeholder="Hedef dakika (örn. 300)" data-i18n-ph="rewardModal.targetPh" autocomplete="off">
                 <p id="odul-hata" class="v2-modal__error" hidden></p>
                 <div class="v2-modal__actions">
-                    <button type="button" id="odul-vazgec">Vazgeç</button>
-                    <button type="button" id="odul-kaydet">Ekle</button>
+                    <button type="button" id="odul-vazgec" data-i18n="common.cancel">Vazgeç</button>
+                    <button type="button" id="odul-kaydet" data-i18n="common.add">Ekle</button>
                 </div>
             </div>
         </div>
 
         <div id="onboarding" class="onboarding" hidden>
             <div class="onboarding__box">
-                <h1 class="onboarding__baslik">ATAOL'a hoş geldin</h1>
-                <p class="onboarding__alt">Başlamak için birkaç bilgi. Bunu bir yetişkin doldursun.</p>
+                <h1 class="onboarding__baslik" data-i18n="onboarding.title">ATAOL'a hoş geldin</h1>
+                <p class="onboarding__alt" data-i18n="onboarding.subtitle">Başlamak için birkaç bilgi. Bunu bir yetişkin doldursun.</p>
 
-                <label class="onboarding__label">Çocuğun adı</label>
-                <input type="text" id="ob-ad" class="onboarding__input" placeholder="Örn. Deha" autocomplete="off">
+                <label class="onboarding__label" data-i18n="onboarding.childName">Çocuğun adı</label>
+                <input type="text" id="ob-ad" class="onboarding__input" placeholder="Örn. Deha" data-i18n-ph="onboarding.childNamePh" autocomplete="off">
 
-                <label class="onboarding__label">Yaşı</label>
-                <input type="number" id="ob-yas" class="onboarding__input" inputmode="numeric" placeholder="Örn. 8" autocomplete="off">
+                <label class="onboarding__label" data-i18n="onboarding.age">Yaşı</label>
+                <input type="number" id="ob-yas" class="onboarding__input" inputmode="numeric" placeholder="Örn. 8" data-i18n-ph="onboarding.agePh" autocomplete="off">
 
-                <p class="onboarding__bolum">İlk bakım veren (sen)</p>
-                <input type="text" id="ob-veren-ad" class="onboarding__input" placeholder="Adın" autocomplete="off">
-                <input type="text" id="ob-veren-etiket" class="onboarding__input" placeholder="Nasıl görünsün (örn. Baba)" autocomplete="off">
-                <input type="password" id="ob-pin" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN (4-8 rakam)" autocomplete="off">
-                <input type="password" id="ob-pin2" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" autocomplete="off">
+                <p class="onboarding__bolum" data-i18n="onboarding.firstGuardian">İlk bakım veren (sen)</p>
+                <input type="text" id="ob-veren-ad" class="onboarding__input" placeholder="Adın" data-i18n-ph="onboarding.guardianNamePh" autocomplete="off">
+                <input type="text" id="ob-veren-etiket" class="onboarding__input" placeholder="Nasıl görünsün (örn. Baba)" data-i18n-ph="onboarding.guardianLabelPh" autocomplete="off">
+                <input type="password" id="ob-pin" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN (4-8 rakam)" data-i18n-ph="onboarding.pinPh" autocomplete="off">
+                <input type="password" id="ob-pin2" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" data-i18n-ph="onboarding.pin2Ph" autocomplete="off">
 
-                <p class="onboarding__bolum">Rutin şablonu</p>
+                <p class="onboarding__bolum" data-i18n="onboarding.template">Rutin şablonu</p>
                 <div id="ob-sablonlar" class="onboarding__sablonlar"></div>
 
                 <p id="ob-hata" class="onboarding__hata" hidden></p>
-                <button type="button" id="ob-basla" class="onboarding__basla">Başla</button>
+                <button type="button" id="ob-basla" class="onboarding__basla" data-i18n="onboarding.start">Başla</button>
             </div>
         </div>
     </div>

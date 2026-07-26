@@ -15,19 +15,19 @@ import { createProfile, addGuardian } from '../core/profile.js';
  */
 
 export const DEFAULT_CARDS = [
-  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', icon: 'calendar_month', stars: 2, minutes: 4 },
-  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve yatağını topla', icon: 'bed', stars: 2, minutes: 4 },
-  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', icon: 'restaurant', stars: 2, minutes: 4 },
-  { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı kontrol et', icon: 'backpack', stars: 2, minutes: 4 },
+  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', titleKey: 'card.calendar', icon: 'calendar_month', stars: 2, minutes: 4 },
+  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve yatağını topla', titleKey: 'card.getDressed', icon: 'bed', stars: 2, minutes: 4 },
+  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', titleKey: 'card.breakfast', icon: 'restaurant', stars: 2, minutes: 4 },
+  { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı kontrol et', titleKey: 'card.checkBag', icon: 'backpack', stars: 2, minutes: 4 },
 
-  { id: 'ogle-ust', block: 'afternoon', type: 'approved', title: 'Üstünü değiştir, ellerini yıka', icon: 'wash', stars: 2, minutes: 4 },
-  { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev', icon: 'edit_note', stars: 5, minutes: 10 },
-  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', icon: 'functions', stars: 5, minutes: 10 },
+  { id: 'ogle-ust', block: 'afternoon', type: 'approved', title: 'Üstünü değiştir, ellerini yıka', titleKey: 'card.changeWash', icon: 'wash', stars: 2, minutes: 4 },
+  { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev', titleKey: 'card.homework', icon: 'edit_note', stars: 5, minutes: 10 },
+  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', titleKey: 'card.mathSet', icon: 'functions', stars: 5, minutes: 10 },
 
-  { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', icon: 'volunteer_activism', stars: 5, minutes: 10 },
-  { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', icon: 'shower', stars: 2, minutes: 4 },
-  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '15 dakika kitap', icon: 'menu_book', stars: 3, minutes: 6 },
-  { id: 'aksam-canta', block: 'evening', type: 'approved', title: 'Yarının çantası', icon: 'checklist', stars: 2, minutes: 4 }
+  { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', titleKey: 'card.helpTable', icon: 'volunteer_activism', stars: 5, minutes: 10 },
+  { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', titleKey: 'card.shower', icon: 'shower', stars: 2, minutes: 4 },
+  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '15 dakika kitap', titleKey: 'card.read15', icon: 'menu_book', stars: 3, minutes: 6 },
+  { id: 'aksam-canta', block: 'evening', type: 'approved', title: 'Yarının çantası', titleKey: 'card.packTomorrow', icon: 'checklist', stars: 2, minutes: 4 }
 ];
 
 export const DEFAULT_ROUTINE = {
@@ -48,18 +48,18 @@ export const DEFAULT_REWARDS = [
 // Okul oncesi: odev ve matematik seti YOK (yasa uygun degil). Gun ogrenme
 // (sabah-takvim, measured quiz) kalir; oz bakim, oyun, resim, masal.
 const OKULONCESI_CARDS = [
-  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', icon: 'calendar_month', stars: 2, minutes: 6 },
-  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Kendin giyin', icon: 'checkroom', stars: 2, minutes: 6 },
-  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltını yap', icon: 'restaurant', stars: 2, minutes: 6 },
+  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', titleKey: 'card.calendar', icon: 'calendar_month', stars: 2, minutes: 6 },
+  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Kendin giyin', titleKey: 'card.dressSelf', icon: 'checkroom', stars: 2, minutes: 6 },
+  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltını yap', titleKey: 'card.eatBreakfast', icon: 'restaurant', stars: 2, minutes: 6 },
 
-  { id: 'ogle-oyun', block: 'afternoon', type: 'approved', title: 'Biraz oyun oyna', icon: 'toys', stars: 2, minutes: 6 },
-  { id: 'ogle-topla', block: 'afternoon', type: 'approved', title: 'Oyuncaklarını topla', icon: 'cleaning_services', stars: 3, minutes: 6 },
-  { id: 'ogle-resim', block: 'afternoon', type: 'approved', title: 'Resim yap ya da boya', icon: 'palette', stars: 3, minutes: 6 },
+  { id: 'ogle-oyun', block: 'afternoon', type: 'approved', title: 'Biraz oyun oyna', titleKey: 'card.play', icon: 'toys', stars: 2, minutes: 6 },
+  { id: 'ogle-topla', block: 'afternoon', type: 'approved', title: 'Oyuncaklarını topla', titleKey: 'card.tidyToys', icon: 'cleaning_services', stars: 3, minutes: 6 },
+  { id: 'ogle-resim', block: 'afternoon', type: 'approved', title: 'Resim yap ya da boya', titleKey: 'card.draw', icon: 'palette', stars: 3, minutes: 6 },
 
-  { id: 'aksam-yemek', block: 'evening', type: 'approved', title: 'Akşam yemeğini ye', icon: 'restaurant', stars: 2, minutes: 7 },
-  { id: 'aksam-banyo', block: 'evening', type: 'approved', title: 'Banyo yap', icon: 'shower', stars: 3, minutes: 7 },
-  { id: 'aksam-masal', block: 'evening', type: 'approved', title: 'Masal dinle', icon: 'auto_stories', stars: 3, minutes: 7 },
-  { id: 'aksam-dis', block: 'evening', type: 'approved', title: 'Dişini fırçala', icon: 'bedtime', stars: 2, minutes: 7 }
+  { id: 'aksam-yemek', block: 'evening', type: 'approved', title: 'Akşam yemeğini ye', titleKey: 'card.dinner', icon: 'restaurant', stars: 2, minutes: 7 },
+  { id: 'aksam-banyo', block: 'evening', type: 'approved', title: 'Banyo yap', titleKey: 'card.bath', icon: 'shower', stars: 3, minutes: 7 },
+  { id: 'aksam-masal', block: 'evening', type: 'approved', title: 'Masal dinle', titleKey: 'card.story', icon: 'auto_stories', stars: 3, minutes: 7 },
+  { id: 'aksam-dis', block: 'evening', type: 'approved', title: 'Dişini fırçala', titleKey: 'card.brushTeeth', icon: 'bedtime', stars: 2, minutes: 7 }
 ];
 
 const OKULONCESI_ROUTINE = {
@@ -71,18 +71,18 @@ const OKULONCESI_ROUTINE = {
 // Ortaokul: daha cok calisma ve sorumluluk. Matematik seti (drill) kalir;
 // takvim quiz'i cikarilir (bu yasta basit kalir).
 const ORTAOKUL_CARDS = [
-  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve hazırlan', icon: 'checkroom', stars: 2, minutes: 5 },
-  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', icon: 'restaurant', stars: 2, minutes: 5 },
-  { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı ve ödevlerini kontrol et', icon: 'backpack', stars: 2, minutes: 5 },
+  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve hazırlan', titleKey: 'card.dressReady', icon: 'checkroom', stars: 2, minutes: 5 },
+  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', titleKey: 'card.breakfast', icon: 'restaurant', stars: 2, minutes: 5 },
+  { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı ve ödevlerini kontrol et', titleKey: 'card.checkBagHw', icon: 'backpack', stars: 2, minutes: 5 },
 
-  { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev ve çalışma', icon: 'edit_note', stars: 5, minutes: 12 },
-  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', icon: 'functions', stars: 5, minutes: 12 },
-  { id: 'ogle-tekrar', block: 'afternoon', type: 'approved', title: 'Ders tekrarı ve okuma', icon: 'menu_book', stars: 3, minutes: 8 },
+  { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev ve çalışma', titleKey: 'card.homeworkStudy', icon: 'edit_note', stars: 5, minutes: 12 },
+  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', titleKey: 'card.mathSet', icon: 'functions', stars: 5, minutes: 12 },
+  { id: 'ogle-tekrar', block: 'afternoon', type: 'approved', title: 'Ders tekrarı ve okuma', titleKey: 'card.reviseRead', icon: 'menu_book', stars: 3, minutes: 8 },
 
-  { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', icon: 'volunteer_activism', stars: 5, minutes: 8 },
-  { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', icon: 'shower', stars: 2, minutes: 5 },
-  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '30 dakika kitap', icon: 'auto_stories', stars: 3, minutes: 8 },
-  { id: 'aksam-plan', block: 'evening', type: 'approved', title: 'Yarını planla, çantanı hazırla', icon: 'checklist', stars: 2, minutes: 5 }
+  { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', titleKey: 'card.helpTable', icon: 'volunteer_activism', stars: 5, minutes: 8 },
+  { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', titleKey: 'card.shower', icon: 'shower', stars: 2, minutes: 5 },
+  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '30 dakika kitap', titleKey: 'card.read30', icon: 'auto_stories', stars: 3, minutes: 8 },
+  { id: 'aksam-plan', block: 'evening', type: 'approved', title: 'Yarını planla, çantanı hazırla', titleKey: 'card.planTomorrow', icon: 'checklist', stars: 2, minutes: 5 }
 ];
 
 const ORTAOKUL_ROUTINE = {

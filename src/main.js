@@ -3,11 +3,12 @@ import { createAppState } from './core/state.js';
 import { verifyPin, hashPin } from './core/crypto.js';
 import { addGuardian, addCard, removeCard, addReward, removeReward } from './core/profile.js';
 import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
+import { t, DILLER } from './core/i18n.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
 import { guardianSummary, validateGuardianInput, requiresExistingPin } from './views/settings.js';
-import { validateCardInput, validateRewardInput, BLOCK_LABELS, ICON_OPTIONS, EMOJI_OPTIONS } from './views/content.js';
+import { validateCardInput, validateRewardInput, ICON_OPTIONS, EMOJI_OPTIONS } from './views/content.js';
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timequiz.js';
@@ -52,9 +53,11 @@ function showRecovery() {
   const app = document.getElementById('app');
   mount(app, [
     el('div', { className: 'v2-recovery' }, [
-      el('p', { text: 'Uygulama açılamadı.' }),
+      // ceviri/dil bu noktada henuz tanimlanmadi (TDZ); t dogrudan cagrilir.
+      // Profil yok, dil bilinmiyor: TR gosterilir.
+      el('p', { text: t('tr', 'recovery.text') }),
       el('button', {
-        text: 'Sıfırla ve yeniden başla',
+        text: t('tr', 'recovery.reset'),
         attrs: { type: 'button' },
         dataset: { recover: 'reset' }
       })
@@ -88,6 +91,29 @@ try {
 const now = () => new Date();
 const today = () => dayKey(now(), profile.settings.dayResetHour);
 
+// Aktif dil. Profil yoksa (onboarding) TR.
+const dil = () => profile?.settings?.language ?? 'tr';
+
+// Kisa ceviri kancasi: t(anahtar, params) aktif dille.
+const ceviri = (anahtar, params) => t(dil(), anahtar, params);
+
+// Kart basligi: sablon kartlarinda titleKey var -> cevrilir; ebeveynin
+// ekledigi kartta yok -> yazildigi gibi (o dilde) gosterilir.
+const kartBaslik = (card) => (card.titleKey ? ceviri(card.titleKey) : card.title);
+
+// data-i18n / data-i18n-ph tasiyan statik ogeleri aktif dile cevirir.
+// Acilis, her render ve dil degisiminde cagrilir.
+function uygulaDil() {
+  const d = dil();
+  for (const eleman of document.querySelectorAll('[data-i18n]')) {
+    eleman.textContent = t(d, eleman.dataset.i18n);
+  }
+  for (const eleman of document.querySelectorAll('[data-i18n-ph]')) {
+    eleman.setAttribute('placeholder', t(d, eleman.dataset.i18nPh));
+  }
+  document.documentElement.lang = d;
+}
+
 let pendingCardId = null;
 let lastSignature = null;
 
@@ -108,16 +134,8 @@ const AMIRAL_KAYBETME = 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla t
 // Oneri baloncuklari. Cocugun dokunup gonderdigi hazir cumleler.
 // Icinde isim GECMEZ: "${ad}'ya" gibi Turkce sevgi/durum eki kodla
 // uretilemez (ses uyumu bozulur), bu yuzden ada bagli oneri yok.
-const SOHBET_ONERILERI = [
-  'Bana bir soru sor',
-  'Bugün ne öğrensem?',
-  'Bana bir bilmece sor',
-  'Bugün çok iyiydim'
-];
-
-const SOHBET_ANAHTAR_YOK = 'Şu an seninle konuşamıyorum ama birazdan buradayım. Sen yine de yazmaya devam et.';
-const SOHBET_HATA = 'Şu an konuşmakta zorlanıyorum. Birazdan tekrar dener misin?';
-const SOHBET_BOS_YANIT = 'Şimdi biraz düşünmem gerek. Birazdan tekrar yazar mısın?';
+// Metin degil ANAHTAR tutulur; aktif dile gore cizim aninda cevrilir.
+const SOHBET_ONERI_ANAHTARLARI = ['chat.s1', 'chat.s2', 'chat.s3', 'chat.s4'];
 
 // v1 ile ayni uc nokta ve model.
 const SOHBET_MODEL = 'gemini-2.5-flash';
@@ -128,7 +146,7 @@ function cardNode(card) {
     dataset: { cardId: card.id }
   }, [
     el('span', { className: 'material-symbols-rounded routine-card__icon', text: card.icon }),
-    el('span', { className: 'routine-card__title', text: card.title }),
+    el('span', { className: 'routine-card__title', text: kartBaslik(card) }),
     el('span', { className: 'routine-card__reward', text: `${card.stars}★ · ${card.minutes}dk` })
   ]);
 }
@@ -136,7 +154,7 @@ function cardNode(card) {
 function blockNode(block) {
   return el('section', { className: 'routine-block', dataset: { block: block.id } }, [
     el('h2', { className: 'routine-block__title' }, [
-      el('span', { text: block.title }),
+      el('span', { text: ceviri('block.' + block.id) }),
       el('span', { className: 'routine-block__time', text: block.from })
     ]),
     el('ul', { className: 'routine-block__cards' }, block.cards.map(cardNode))
@@ -147,13 +165,13 @@ function renderRoutine() {
   const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
   mount(document.getElementById('view-routine'), [
     el('header', { className: 'routine-header' }, [
-      el('p', { className: 'routine-header__greeting', text: `Merhaba ${vm.childName}` }),
+      el('p', { className: 'routine-header__greeting', text: ceviri('routine.greeting', { ad: vm.childName }) }),
       el('p', { className: 'routine-header__date', text: `${vm.today.dayName} · ${vm.today.dayOfMonth} ${vm.today.monthName} · ${vm.today.season}` }),
       el('p', { className: 'routine-header__totals', text: `${vm.stars}★ · ${vm.minutes}/${vm.minuteCap} dk` }),
       // Gunun yildizi yukaridaki satirda; bu satir biriken toplam.
       // v1'den tasinan yildizlar da buraya girer, yoksa karsilama
       // ekrani kapandigi anda cocuk emeginin silindigini sanar.
-      el('p', { className: 'routine-header__birikim', text: `Toplam ${state.totalStars()}★` })
+      el('p', { className: 'routine-header__birikim', text: ceviri('routine.total', { n: state.totalStars() }) })
     ]),
     ...vm.blocks.map(blockNode)
   ]);
@@ -166,29 +184,29 @@ function renderParent() {
 
   const bolumler = [
     el('section', { className: 'parent-guardians' }, [
-      el('h2', { className: 'parent-guardians__title', text: 'Bakım verenler' }),
+      el('h2', { className: 'parent-guardians__title', text: ceviri('parent.guardians') }),
       guardians.length === 0
-        ? el('p', { className: 'parent-empty', text: 'Henüz bakım veren yok. Onay verebilmek için önce kendinizi ekleyin.' })
+        ? el('p', { className: 'parent-empty', text: ceviri('parent.guardiansEmpty') })
         : el('ul', { className: 'parent-guardians__list' }, guardians.map((g) =>
             el('li', { className: 'parent-guardians__item', text: g.label })
           )),
       el('button', {
         className: 'parent-guardians__add',
-        text: 'Bakım veren ekle',
+        text: ceviri('parent.addGuardian'),
         attrs: { type: 'button' },
         dataset: { addGuardian: 'yes' }
       })
     ]),
     queue.length === 0
-      ? el('p', { className: 'parent-empty', text: 'Onay bekleyen görev yok.' })
+      ? el('p', { className: 'parent-empty', text: ceviri('parent.queueEmpty') })
       : el('ul', { className: 'parent-queue' }, queue.map((c) =>
           el('li', { className: 'parent-queue__item' }, [
             el('span', { className: 'material-symbols-rounded', text: c.icon }),
-            el('span', { className: 'parent-queue__title', text: c.title }),
+            el('span', { className: 'parent-queue__title', text: kartBaslik(c) }),
             el('span', { className: 'parent-queue__reward', text: `${c.stars}★` }),
             el('button', {
               className: 'parent-queue__approve',
-              text: 'Onayla',
+              text: ceviri('parent.approve'),
               attrs: { type: 'button' },
               dataset: { approveCard: c.id }
             })
@@ -197,7 +215,8 @@ function renderParent() {
 
     gorevlerBolumu(),
     odullerBolumu(),
-    sohbetAyarBolumu()
+    sohbetAyarBolumu(),
+    dilBolumu()
   ];
 
   mount(target, bolumler);
@@ -209,17 +228,17 @@ function gorevlerBolumu() {
 
   const bloklar = ['morning', 'afternoon', 'evening'].map((b) =>
     el('div', { className: 'parent-gorev-blok' }, [
-      el('p', { className: 'parent-gorev-blok__ad', text: BLOCK_LABELS[b] }),
+      el('p', { className: 'parent-gorev-blok__ad', text: ceviri('block.' + b) }),
       el('ul', { className: 'parent-gorev-liste' }, profile.routine[b].map((id) => {
         const c = byId.get(id);
         return el('li', { className: 'parent-gorev' }, [
           el('span', { className: 'material-symbols-rounded parent-gorev__ikon', text: c.icon }),
-          el('span', { className: 'parent-gorev__ad', text: c.title }),
+          el('span', { className: 'parent-gorev__ad', text: kartBaslik(c) }),
           el('span', { className: 'parent-gorev__odul', text: `${c.stars}★ · ${c.minutes}dk` }),
           el('button', {
             className: 'parent-gorev__sil',
             text: '×',
-            attrs: { type: 'button', 'aria-label': 'Sil' },
+            attrs: { type: 'button', 'aria-label': ceviri('parent.delete') },
             dataset: { cardSil: id }
           })
         ]);
@@ -228,11 +247,11 @@ function gorevlerBolumu() {
   );
 
   return el('section', { className: 'parent-guardians' }, [
-    el('h2', { className: 'parent-guardians__title', text: 'Görevler' }),
+    el('h2', { className: 'parent-guardians__title', text: ceviri('parent.tasks') }),
     ...bloklar,
     el('button', {
       className: 'parent-guardians__add',
-      text: 'Görev ekle',
+      text: ceviri('parent.addTask'),
       attrs: { type: 'button' },
       dataset: { gorevEkle: 'yes' }
     })
@@ -241,7 +260,7 @@ function gorevlerBolumu() {
 
 function odullerBolumu() {
   return el('section', { className: 'parent-guardians' }, [
-    el('h2', { className: 'parent-guardians__title', text: 'Ödüller' }),
+    el('h2', { className: 'parent-guardians__title', text: ceviri('parent.rewards') }),
     el('ul', { className: 'parent-gorev-liste' }, profile.rewards.map((r) =>
       el('li', { className: 'parent-gorev' }, [
         el('span', { className: 'parent-gorev__emoji', text: r.emoji }),
@@ -250,14 +269,14 @@ function odullerBolumu() {
         el('button', {
           className: 'parent-gorev__sil',
           text: '×',
-          attrs: { type: 'button', 'aria-label': 'Sil' },
+          attrs: { type: 'button', 'aria-label': ceviri('parent.delete') },
           dataset: { rewardSil: r.id }
         })
       ])
     )),
     el('button', {
       className: 'parent-guardians__add',
-      text: 'Ödül ekle',
+      text: ceviri('parent.addReward'),
       attrs: { type: 'button' },
       dataset: { odulEkle: 'yes' }
     })
@@ -386,39 +405,65 @@ function sohbetAyarBolumu() {
   const esAdi = state.loadSohbetEs();
 
   return el('section', { className: 'parent-sohbet' }, [
-    el('h2', { className: 'parent-guardians__title', text: 'Sohbet ayarları' }),
+    el('h2', { className: 'parent-guardians__title', text: ceviri('parent.chatSettings') }),
 
-    el('label', { className: 'parent-sohbet__label', text: 'ATAOL API Anahtarı' }),
+    el('label', { className: 'parent-sohbet__label', text: ceviri('parent.apiKey') }),
     el('input', {
       className: 'parent-sohbet__input',
       attrs: {
         type: 'password',
         id: 'sohbet-apikey',
-        placeholder: anahtarVar ? 'Anahtar kayıtlı — değiştirmek için yeni anahtar yaz' : 'Anahtarı buraya yapıştır'
+        placeholder: anahtarVar ? ceviri('parent.apiKeySaved') : ceviri('parent.apiKeyEmpty')
       }
     }),
 
-    el('label', { className: 'parent-sohbet__label', text: 'Sohbette eş / bakım veren adı' }),
+    el('label', { className: 'parent-sohbet__label', text: ceviri('parent.partnerName') }),
     el('input', {
       className: 'parent-sohbet__input',
       attrs: { type: 'text', id: 'sohbet-esadi', value: esAdi, placeholder: 'örn. Feride Mama' }
     }),
     el('p', {
       className: 'parent-sohbet__not',
-      text: 'Bu kişi çocuğun annesi ya da babası olarak değil, yalnızca adıyla anılır. Boş bırakırsanız aile bağı hiç konuşulmaz.'
+      text: ceviri('parent.partnerNote')
     }),
 
     el('button', {
       className: 'parent-sohbet__kaydet',
-      text: 'Kaydet',
+      text: ceviri('parent.save'),
       attrs: { type: 'button' },
       dataset: { sohbetAyarKaydet: 'yes' }
     })
   ]);
 }
 
+// Dil secici (ebeveyn). TR/EN dugmeleri; secilince profile.settings.language
+// guncellenir, kaydedilir ve tum ekran yeniden cizilir.
+function dilBolumu() {
+  return el('section', { className: 'parent-guardians' }, [
+    el('h2', { className: 'parent-guardians__title', text: ceviri('parent.language') }),
+    el('div', { className: 'dil-secici' }, DILLER.map((d) =>
+      el('button', {
+        className: d === dil() ? 'dil-dugme dil-dugme--secili' : 'dil-dugme',
+        text: d.toUpperCase(),
+        attrs: { type: 'button' },
+        dataset: { dilSec: d }
+      })
+    ))
+  ]);
+}
+
+function dilSec(d) {
+  if (!DILLER.includes(d) || d === dil()) return;
+  profile = { ...profile, settings: { ...profile.settings, language: d } };
+  state.saveProfile(profile);
+  uygulaDil();
+  render();
+}
+
 function renderGames() {
   const target = document.getElementById('view-games');
+
+  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -427,12 +472,13 @@ function renderGames() {
       dataset: { game: g.id }
     }, [
       el('span', { className: 'material-symbols-rounded games-card__icon', text: g.icon }),
-      el('span', { className: 'games-card__title', text: g.title })
+      el('span', { className: 'games-card__title', text: ceviri(OYUN_ANAHTAR[g.id]) })
     ])
   ));
 }
 
 function render() {
+  uygulaDil();
   lastSignature = renderSignature(profile, now());
   renderRoutine();
   renderParent();
@@ -462,11 +508,11 @@ function karsilamayiGosterGerekirse() {
     el('p', { className: 'migrate__yildiz', text: '⭐' }),
     el('p', {
       className: 'migrate__metin',
-      text: `Eski uygulamadaki ${yildiz} yıldızın burada. Hepsi duruyor.`
+      text: ceviri('migrate.text', { n: yildiz })
     }),
     el('button', {
       className: 'migrate__dugme',
-      text: 'Başlayalım',
+      text: ceviri('migrate.start'),
       attrs: { type: 'button' },
       dataset: { migrateOk: 'yes' }
     })
@@ -492,15 +538,17 @@ function onboardingHata(mesaj) {
 }
 
 function onboardingiGoster() {
+  uygulaDil();
   // Sablon secenekleri ROUTINE_TEMPLATES'ten cizilir; ilkokul secili gelir.
-  mount(document.getElementById('ob-sablonlar'), ROUTINE_TEMPLATES.map((t) =>
+  // Baslik/aciklama i18n anahtariyla cevrilir (template.<id>.title/.desc).
+  mount(document.getElementById('ob-sablonlar'), ROUTINE_TEMPLATES.map((sb) =>
     el('label', { className: 'onboarding__sablon' }, [
       el('input', {
-        attrs: { type: 'radio', name: 'ob-sablon', value: t.id, ...(t.id === 'ilkokul' ? { checked: 'checked' } : {}) }
+        attrs: { type: 'radio', name: 'ob-sablon', value: sb.id, ...(sb.id === 'ilkokul' ? { checked: 'checked' } : {}) }
       }),
       el('span', {}, [
-        el('span', { className: 'onboarding__sablon-ad', text: t.title }),
-        el('span', { className: 'onboarding__sablon-aciklama', text: t.aciklama })
+        el('span', { className: 'onboarding__sablon-ad', text: ceviri('template.' + sb.id + '.title') }),
+        el('span', { className: 'onboarding__sablon-aciklama', text: ceviri('template.' + sb.id + '.desc') })
       ])
     ])
   ));
@@ -516,12 +564,12 @@ async function onboardingBasla() {
   const pin2 = document.getElementById('ob-pin2').value;
   const sablon = document.querySelector('input[name="ob-sablon"]:checked')?.value;
 
-  if (!ad) return onboardingHata('Çocuğun adını yaz.');
-  if (!Number.isInteger(yas) || yas < 3 || yas > 16) return onboardingHata('Yaş 3 ile 16 arasında olmalı.');
+  if (!ad) return onboardingHata(ceviri('onboarding.errName'));
+  if (!Number.isInteger(yas) || yas < 3 || yas > 16) return onboardingHata(ceviri('onboarding.errAge'));
 
   const dogrulama = validateGuardianInput({ name: verenAd, label: etiket, pin, pinConfirm: pin2 });
   if (!dogrulama.valid) return onboardingHata(dogrulama.errors[0]);
-  if (!sablon) return onboardingHata('Bir rutin şablonu seç.');
+  if (!sablon) return onboardingHata(ceviri('onboarding.errTemplate'));
 
   const { hash, salt } = await hashPin(pin);
   profile = seedProfile({
@@ -1246,7 +1294,7 @@ function yeniSoyun() {
 // olsaydi her istekte modele sahte bir "ai" turu olarak geri gonderilirdi.
 function sohbetKarsilama() {
   const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
-  return `Selam ${vm.childName}! Ben senin arkadaşınım, hep buradayım. Bana dilediğin her şeyi yazabilirsin.`;
+  return ceviri('chat.welcome', { ad: vm.childName });
 }
 
 function sohbetBaloncuk(m) {
@@ -1276,14 +1324,15 @@ function renderSohbet() {
   mount(liste, balonlar);
   liste.scrollTop = liste.scrollHeight;
 
-  mount(document.getElementById('sohbet-oneriler'), SOHBET_ONERILERI.map((o) =>
-    el('button', {
+  mount(document.getElementById('sohbet-oneriler'), SOHBET_ONERI_ANAHTARLARI.map((anahtar) => {
+    const metin = ceviri(anahtar);
+    return el('button', {
       className: 'sohbet__oneri',
-      text: o,
+      text: metin,
       attrs: { type: 'button' },
-      dataset: { sohbetOneri: o }
-    })
-  ));
+      dataset: { sohbetOneri: metin }
+    });
+  }));
 
   document.getElementById('sohbet-gonder').disabled = sohbetBekliyor;
 }
@@ -1312,7 +1361,7 @@ async function sohbetGonder(metin) {
   // Anahtar yoksa cocuga teknik hata degil, sakin bir mesaj.
   const anahtar = state.loadApiKey();
   if (!anahtar) {
-    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: SOHBET_ANAHTAR_YOK }];
+    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: ceviri('chat.noKey') }];
     state.saveSohbet(sohbetGecmis);
     renderSohbet();
     return;
@@ -1333,10 +1382,10 @@ async function sohbetGonder(metin) {
     };
     // Son mesaj gecmisten cikarilir; istekGovdesi onu ayrica ekliyor.
     const govde = istekGovdesi(sistemIstemi(baglam), sohbetGecmis.slice(0, -1), temiz);
-    const yanit = yanitAyikla(await sohbetIste(anahtar, govde)) ?? SOHBET_BOS_YANIT;
+    const yanit = yanitAyikla(await sohbetIste(anahtar, govde)) ?? ceviri('chat.empty');
     sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: yanit }];
   } catch (err) {
-    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: SOHBET_HATA }];
+    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: ceviri('chat.error') }];
   } finally {
     sohbetBekliyor = false;
     state.saveSohbet(sohbetGecmis);
@@ -1595,6 +1644,12 @@ document.getElementById('app').addEventListener('click', (e) => {
   const ayarKaydet = e.target.closest('[data-sohbet-ayar-kaydet]');
   if (ayarKaydet) {
     kaydetSohbetAyar();
+    return;
+  }
+
+  const dilDugme = e.target.closest('[data-dil-sec]');
+  if (dilDugme) {
+    dilSec(dilDugme.dataset.dilSec);
     return;
   }
 

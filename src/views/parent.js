@@ -20,7 +20,7 @@ export function approvalQueue(profile, dayProgress) {
     .filter(([, v]) => v.state === 'awaiting_approval')
     .map(([id]) => byId.get(id))
     .filter(Boolean)
-    .map((c) => ({ id: c.id, title: c.title, icon: c.icon, stars: c.stars, minutes: c.minutes }));
+    .map((c) => ({ id: c.id, title: c.title, titleKey: c.titleKey ?? null, icon: c.icon, stars: c.stars, minutes: c.minutes }));
 }
 
 export function approvalSummary(days, guardians, fromKey, toKey) {

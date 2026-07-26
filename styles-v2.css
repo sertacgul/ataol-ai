@@ -1626,3 +1626,28 @@
   border-color: var(--primary);
   color: #fff;
 }
+
+/* --- Dil secici --- */
+
+.dil-secici {
+  display: flex;
+  gap: 8px;
+}
+
+.dil-dugme {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--primary-light);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dil-dugme--secili {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}

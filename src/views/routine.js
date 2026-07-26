@@ -29,6 +29,9 @@ export function routineViewModel(profile, dayProgress, date) {
         id: s.cardId,
         state: s.state,
         title: s.card?.title ?? '',
+        // Cevrilebilir sablon kartlarinda titleKey var; UI onu ceviri
+        // icin kullanir, yoksa title'a duser (ebeveynin ekledigi kart).
+        titleKey: s.card?.titleKey ?? null,
         icon: s.card?.icon ?? 'help',
         stars: s.card?.stars ?? 0,
         minutes: s.card?.minutes ?? 0
