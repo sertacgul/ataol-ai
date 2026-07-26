@@ -251,6 +251,33 @@
             </div>
         </div>
 
+        <div id="kodlama" class="kodlama" hidden>
+            <p id="kodlama-seviye" class="kodlama__seviye"></p>
+            <div class="kodlama__tuval">
+                <canvas id="kodlama-canvas" class="kodlama__canvas"></canvas>
+                <p id="kodlama-mesaj" class="kodlama__mesaj" hidden></p>
+            </div>
+            <p class="kodlama__ipucu" data-i18n="kod.hint">Robotu bayrağa ulaştır</p>
+            <div id="kodlama-program" class="kodlama__program"></div>
+            <div class="kodlama__komutlar">
+                <button type="button" class="kodlama__komut" data-kod-komut="ileri">
+                    <span class="kodlama__ikon">⬆️</span><span data-i18n="kod.forward">İleri</span>
+                </button>
+                <button type="button" class="kodlama__komut" data-kod-komut="sol">
+                    <span class="kodlama__ikon">↺</span><span data-i18n="kod.left">Sola dön</span>
+                </button>
+                <button type="button" class="kodlama__komut" data-kod-komut="sag">
+                    <span class="kodlama__ikon">↻</span><span data-i18n="kod.right">Sağa dön</span>
+                </button>
+            </div>
+            <div class="kodlama__alt">
+                <button type="button" id="kodlama-calistir" class="atolye__dugme kodlama__calistir" data-i18n="kod.run">Çalıştır</button>
+                <button type="button" id="kodlama-sil" class="atolye__dugme" data-i18n="kod.clear">Sil</button>
+                <button type="button" id="kodlama-sonraki" class="atolye__dugme" data-i18n="kod.next" hidden>Sonraki</button>
+                <button type="button" id="kodlama-kapat" class="atolye__dugme" data-i18n="game.close">Kapat</button>
+            </div>
+        </div>
+
         <div id="kahraman-modal" class="v2-modal" hidden>
             <div class="v2-modal__box">
                 <div class="kahraman__ust">

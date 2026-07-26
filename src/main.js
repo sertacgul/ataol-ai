@@ -39,6 +39,7 @@ import {
   tipOf
 } from './engines/chessgame.js';
 import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
+import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 
 let state;
 let profile;
@@ -594,7 +595,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
+  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', kodlama: 'games.kodlama', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -731,6 +732,8 @@ function renderIfStale() {
   if (document.getElementById('muh-modal').hidden === false) return;
   if (document.getElementById('kahraman-modal').hidden === false) return;
   if (document.getElementById('kurucu').hidden === false) return;
+  if (document.getElementById('kodlama').hidden === false) return;
+  if (document.getElementById('rozet-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -2131,6 +2134,172 @@ function kapatKurucu() {
   document.getElementById('kurucu').hidden = true;
 }
 
+// --- Kodlama oyunu ---
+//
+// Cocuk komut dizisi kurar (ileri, sag, sol), robot izgarada hedefe gider.
+// Motor saf (engines/kodlama.js); burada canvas, program cipleri ve adim
+// adim canlandirma. Mantiksal izgara 5x5, hucre 50 => 250x250 alan.
+const KOD_HUCRE = 50;
+const KOD_OK = { ileri: '⬆️', sag: '↻', sol: '↺' };
+const KOD_ACI = { 0: -Math.PI / 2, 1: 0, 2: Math.PI / 2, 3: Math.PI };
+let kodSeviyeIndex = 0;
+let kodKomutlar = [];
+let kodCtx = null;
+let kodT = { s: 1, offX: 0, offY: 0 };
+let kodOynatiliyor = false;
+
+function kodBoyutlandir() {
+  const cvs = document.getElementById('kodlama-canvas');
+  const r = cvs.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cvs.width = Math.round(r.width * dpr);
+  cvs.height = Math.round(r.height * dpr);
+  kodCtx = cvs.getContext('2d');
+  const L = 5 * KOD_HUCRE;
+  const s = Math.min(r.width / L, r.height / L) * dpr;
+  kodT = { s, offX: (cvs.width - L * s) / 2, offY: (cvs.height - L * s) / 2 };
+}
+
+function kodRobotCiz(c, d, B) {
+  const cx = d.x * B + B / 2;
+  const cy = d.y * B + B / 2;
+  const rr = B * 0.32;
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(KOD_ACI[d.yon]);
+  c.fillStyle = d.carpma ? '#e17055' : '#00b894';
+  c.beginPath();
+  c.moveTo(rr, 0);
+  c.lineTo(-rr * 0.8, rr * 0.72);
+  c.lineTo(-rr * 0.8, -rr * 0.72);
+  c.closePath();
+  c.fill();
+  c.restore();
+}
+
+function kodCizDurum(durum) {
+  if (!kodCtx) return;
+  const sev = KOD_SEVIYELER[kodSeviyeIndex];
+  const cvs = document.getElementById('kodlama-canvas');
+  const c = kodCtx;
+  const B = KOD_HUCRE;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, cvs.width, cvs.height);
+  c.setTransform(kodT.s, 0, 0, kodT.s, kodT.offX, kodT.offY);
+
+  c.fillStyle = '#f1f5f9';
+  c.fillRect(0, 0, sev.en * B, sev.boy * B);
+  c.strokeStyle = '#cbd5e1';
+  c.lineWidth = 1;
+  for (let i = 0; i <= sev.en; i++) {
+    c.beginPath();
+    c.moveTo(i * B, 0);
+    c.lineTo(i * B, sev.boy * B);
+    c.stroke();
+  }
+  for (let j = 0; j <= sev.boy; j++) {
+    c.beginPath();
+    c.moveTo(0, j * B);
+    c.lineTo(sev.en * B, j * B);
+    c.stroke();
+  }
+
+  c.fillStyle = '#64748b';
+  for (const e of sev.engeller) c.fillRect(e.x * B + 4, e.y * B + 4, B - 8, B - 8);
+
+  c.font = `${B * 0.6}px serif`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText('🚩', sev.hedef.x * B + B / 2, sev.hedef.y * B + B / 2);
+
+  kodRobotCiz(c, durum, B);
+}
+
+function kodProgramCiz() {
+  const kap = document.getElementById('kodlama-program');
+  if (kodKomutlar.length === 0) {
+    mount(kap, [el('span', { className: 'kodlama__bos', text: ceviri('kod.empty') })]);
+    return;
+  }
+  mount(kap, kodKomutlar.map((k) => el('span', { className: 'kodlama__cip', text: KOD_OK[k] })));
+}
+
+function kodSeviyeYukle() {
+  kodKomutlar = [];
+  kodOynatiliyor = false;
+  document.getElementById('kodlama-seviye').textContent =
+    ceviri('kod.level', { n: kodSeviyeIndex + 1, toplam: KOD_SEVIYELER.length });
+  document.getElementById('kodlama-mesaj').hidden = true;
+  document.getElementById('kodlama-sonraki').hidden = true;
+  kodProgramCiz();
+  kodCizDurum(KOD_SEVIYELER[kodSeviyeIndex].baslangic);
+}
+
+function acKodlama() {
+  document.getElementById('kodlama').hidden = false;
+  kodSeviyeIndex = 0;
+  kodBoyutlandir();
+  kodSeviyeYukle();
+}
+
+function kapatKodlama() {
+  kodOynatiliyor = false;
+  document.getElementById('kodlama').hidden = true;
+}
+
+function kodKomutEkle(k) {
+  if (kodOynatiliyor) return;
+  kodKomutlar.push(k);
+  document.getElementById('kodlama-mesaj').hidden = true;
+  kodProgramCiz();
+}
+
+function kodSil() {
+  if (kodOynatiliyor) return;
+  kodKomutlar = [];
+  document.getElementById('kodlama-mesaj').hidden = true;
+  document.getElementById('kodlama-sonraki').hidden = true;
+  kodProgramCiz();
+  kodCizDurum(KOD_SEVIYELER[kodSeviyeIndex].baslangic);
+}
+
+// Adim adim canlandirir. Her adim ara durumu cizer; son adimda sonuc mesaji.
+function kodCalistirBaslat() {
+  if (kodOynatiliyor || kodKomutlar.length === 0) return;
+  const sonuc = kodCalistir(KOD_SEVIYELER[kodSeviyeIndex], kodKomutlar);
+  kodOynatiliyor = true;
+  document.getElementById('kodlama-mesaj').hidden = true;
+  let i = 0;
+  const adim = () => {
+    if (document.getElementById('kodlama').hidden) { kodOynatiliyor = false; return; }
+    kodCizDurum(sonuc.adimlar[i]);
+    i += 1;
+    if (i < sonuc.adimlar.length) {
+      window.setTimeout(adim, 350);
+      return;
+    }
+    kodOynatiliyor = false;
+    const mesaj = document.getElementById('kodlama-mesaj');
+    mesaj.hidden = false;
+    if (sonuc.basarili) {
+      mesaj.textContent = ceviri('kod.win');
+      mesaj.className = 'kodlama__mesaj kodlama__mesaj--basari';
+      if (kodSeviyeIndex < KOD_SEVIYELER.length - 1) {
+        document.getElementById('kodlama-sonraki').hidden = false;
+      }
+    } else {
+      mesaj.textContent = sonuc.carpma ? ceviri('kod.crash') : ceviri('kod.miss');
+      mesaj.className = 'kodlama__mesaj kodlama__mesaj--hata';
+    }
+  };
+  adim();
+}
+
+function kodSonraki() {
+  if (kodSeviyeIndex < KOD_SEVIYELER.length - 1) kodSeviyeIndex += 1;
+  kodSeviyeYukle();
+}
+
 // --- Sohbet ---
 
 // Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
@@ -2453,6 +2622,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   const oyunKart = e.target.closest('[data-game]');
   if (oyunKart) {
     if (oyunKart.dataset.game === 'rozetler') acRozetler();
+    if (oyunKart.dataset.game === 'kodlama') acKodlama();
     if (oyunKart.dataset.game === 'matematik') acDrill(true);
     if (oyunKart.dataset.game === 'amiral') acAmiral();
     if (oyunKart.dataset.game === 'satranc') acSatranc();
@@ -2603,6 +2773,14 @@ document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik)
 document.getElementById('kahraman-baska').addEventListener('click', kahramanBaska);
 document.getElementById('kahraman-kapat').addEventListener('click', kapatKahraman);
 document.getElementById('rozet-kapat').addEventListener('click', kapatRozetler);
+document.getElementById('kodlama-calistir').addEventListener('click', kodCalistirBaslat);
+document.getElementById('kodlama-sil').addEventListener('click', kodSil);
+document.getElementById('kodlama-sonraki').addEventListener('click', kodSonraki);
+document.getElementById('kodlama-kapat').addEventListener('click', kapatKodlama);
+document.querySelector('.kodlama__komutlar').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-kod-komut]');
+  if (b) kodKomutEkle(b.dataset.kodKomut);
+});
 document.getElementById('kurucu-yeni').addEventListener('click', kurucuYeni);
 document.getElementById('kurucu-kapat').addEventListener('click', kapatKurucu);
 

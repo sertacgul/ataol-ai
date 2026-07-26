@@ -83,6 +83,16 @@ const STRINGS = {
     'rozet.sanatci.ad': 'Sanatçı', 'rozet.sanatci.desc': '5 çizim kaydet',
     'rozet.seri.ad': 'Kararlı', 'rozet.seri.desc': '7 gün üst üste yıldız kazan',
 
+    'games.kodlama': 'Kodlama',
+    'kod.hint': 'Robotu bayrağa ulaştır',
+    'kod.level': 'Seviye {n} / {toplam}',
+    'kod.forward': 'İleri', 'kod.left': 'Sola dön', 'kod.right': 'Sağa dön',
+    'kod.run': 'Çalıştır', 'kod.clear': 'Sil', 'kod.next': 'Sonraki',
+    'kod.empty': 'Komutları seç, sonra Çalıştır',
+    'kod.win': 'Harika! Robot bayrağa ulaştı 🎉',
+    'kod.crash': 'Çarptın! Tekrar dene',
+    'kod.miss': 'Bayrağa ulaşamadın, tekrar dene',
+
     'kur.hint': 'Parçaları seç, makineyi kur',
     'kur.done': '{ad} hazır! 🎉',
     'kur.m.ekskavator': 'Ekskavatör', 'kur.m.vinc': 'Vinç', 'kur.m.kamyon': 'Kamyon',
@@ -326,6 +336,16 @@ const STRINGS = {
     'rozet.satrancci.ad': 'Chess Champion', 'rozet.satrancci.desc': 'Win 3 chess games',
     'rozet.sanatci.ad': 'Artist', 'rozet.sanatci.desc': 'Save 5 drawings',
     'rozet.seri.ad': 'Consistent', 'rozet.seri.desc': 'Earn stars 7 days in a row',
+
+    'games.kodlama': 'Coding',
+    'kod.hint': 'Get the robot to the flag',
+    'kod.level': 'Level {n} / {toplam}',
+    'kod.forward': 'Forward', 'kod.left': 'Turn left', 'kod.right': 'Turn right',
+    'kod.run': 'Run', 'kod.clear': 'Clear', 'kod.next': 'Next',
+    'kod.empty': 'Pick commands, then Run',
+    'kod.win': 'Great! The robot reached the flag 🎉',
+    'kod.crash': 'You crashed! Try again',
+    'kod.miss': 'You did not reach the flag, try again',
 
     'kur.hint': 'Tap the parts to build the machine',
     'kur.done': '{ad} is ready! 🎉',
