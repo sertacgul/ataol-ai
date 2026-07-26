@@ -32,6 +32,13 @@ const STRINGS = {
     'block.afternoon': 'Öğle',
     'block.evening': 'Akşam',
 
+    'report.section': 'İlerleme',
+    'report.period': 'Son 14 gün',
+    'report.total': '{n}★ toplam',
+    'report.activeDays': 'Aktif gün {n}/{d}',
+    'report.best': 'En iyi {n}★',
+    'report.empty': 'Henüz veri yok. Çocuk görev tamamladıkça burada görünecek.',
+
     'parent.guardians': 'Bakım verenler',
     'parent.guardiansEmpty': 'Henüz bakım veren yok. Onay verebilmek için önce kendinizi ekleyin.',
     'parent.addGuardian': 'Bakım veren ekle',
@@ -212,6 +219,13 @@ const STRINGS = {
     'block.morning': 'Morning',
     'block.afternoon': 'Afternoon',
     'block.evening': 'Evening',
+
+    'report.section': 'Progress',
+    'report.period': 'Last 14 days',
+    'report.total': '{n}★ total',
+    'report.activeDays': 'Active days {n}/{d}',
+    'report.best': 'Best {n}★',
+    'report.empty': 'No data yet. It will show here as the child completes tasks.',
 
     'parent.guardians': 'Caregivers',
     'parent.guardiansEmpty': 'No caregivers yet. Add yourself first so you can approve tasks.',

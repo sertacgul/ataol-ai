@@ -6,6 +6,7 @@ import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
 import { t, DILLER } from './core/i18n.js';
 import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
 import { rewardProgress } from './engines/rewards.js';
+import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -258,6 +259,7 @@ function renderParent() {
           ])
         )),
 
+    ilerlemeBolumu(),
     gorevlerBolumu(),
     odullerBolumu(),
     sohbetAyarBolumu(),
@@ -265,6 +267,52 @@ function renderParent() {
   ];
 
   mount(target, bolumler);
+}
+
+// Ebeveyn ilerleme raporu: son 14 gunun yildiz cizelgesi + ozet.
+// Hekime goturulebilecek surekli veri (basari olcutu) buradan gorunur.
+const RAPOR_GUN = 14;
+
+function sonGunAnahtarlari(n) {
+  const gunMs = 24 * 3600 * 1000;
+  const simdi = now().getTime();
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) {
+    out.push(dayKey(new Date(simdi - i * gunMs), profile.settings.dayResetHour));
+  }
+  return out;
+}
+
+function ilerlemeBolumu() {
+  const seri = ilerlemeSerisi(state.allDays(), sonGunAnahtarlari(RAPOR_GUN));
+  const ozet = ilerlemeOzeti(seri);
+
+  const govde = ozet.toplamYildiz === 0
+    ? [el('p', { className: 'parent-empty', text: ceviri('report.empty') })]
+    : [
+        el('div', { className: 'rapor-cizelge' }, seri.map((g) => {
+          const bar = el('div', { className: g.key === seri[seri.length - 1].key ? 'rapor-bar rapor-bar--bugun' : 'rapor-bar' });
+          // En yuksek gun tam yukseklik; digerleri orantili. 0 yildiz ince
+          // bir iz birakir ki "acik ama sifir" ile "hic acilmamis" ayrilsin.
+          const oran = ozet.enYuksek > 0 ? g.stars / ozet.enYuksek : 0;
+          bar.style.height = `${Math.max(3, Math.round(oran * 100))}%`;
+          return el('div', { className: 'rapor-sutun' }, [
+            el('div', { className: 'rapor-bar-yuva' }, [bar]),
+            el('span', { className: 'rapor-gun', text: g.key.slice(8) })
+          ]);
+        })),
+        el('div', { className: 'rapor-ozet' }, [
+          el('span', { className: 'rapor-ozet__deger', text: ceviri('report.total', { n: ozet.toplamYildiz }) }),
+          el('span', { className: 'rapor-ozet__deger', text: ceviri('report.activeDays', { n: ozet.aktifGun, d: ozet.gunSayisi }) }),
+          el('span', { className: 'rapor-ozet__deger', text: ceviri('report.best', { n: ozet.enYuksek }) })
+        ])
+      ];
+
+  return el('section', { className: 'parent-guardians' }, [
+    el('h2', { className: 'parent-guardians__title', text: ceviri('report.section') }),
+    el('p', { className: 'rapor-period', text: ceviri('report.period') }),
+    ...govde
+  ]);
 }
 
 // Ebeveyn gorevleri bloklara gore listeler, siler, yenisini ekler.
