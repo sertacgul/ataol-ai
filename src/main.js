@@ -24,6 +24,12 @@ let state;
 let profile;
 let tasimaSonucu = null;
 
+// Sohbet. Gecmis cihazda saklanir, v1'den TASINMAZ (aile hatasi icerebilir).
+// Bildirim: acilis try'i (asagida) sohbetGecmis'e yaziyor, bu yuzden
+// tanim ORADAN once gelmeli; yoksa let'in TDZ'sine takilir.
+let sohbetGecmis = [];
+let sohbetBekliyor = false;
+
 function showRecovery() {
   const app = document.getElementById('app');
   mount(app, [
@@ -79,10 +85,6 @@ let amiralDurum = null;
 
 const AMIRAL_KAZANMA = 'Kazandın! Bütün rakip gemilerini batırdın.';
 const AMIRAL_KAYBETME = 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!';
-
-// Sohbet. Gecmis cihazda saklanir, v1'den TASINMAZ (aile hatasi icerebilir).
-let sohbetGecmis = [];
-let sohbetBekliyor = false;
 
 // Oneri baloncuklari. Cocugun dokunup gonderdigi hazir cumleler.
 // Icinde isim GECMEZ: "${ad}'ya" gibi Turkce sevgi/durum eki kodla
