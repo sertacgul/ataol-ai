@@ -2098,11 +2098,13 @@
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  overflow-x: auto;
 }
 
 .kurucu__makine {
-  flex: 1;
+  flex-shrink: 0;
   min-height: 40px;
+  padding: 0 16px;
   border: 1px solid var(--primary-light);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.85);
@@ -2110,6 +2112,7 @@
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .kurucu__makine--secili {

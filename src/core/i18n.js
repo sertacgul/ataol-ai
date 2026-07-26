@@ -71,9 +71,11 @@ const STRINGS = {
     'kur.hint': 'Parçaları seç, makineyi kur',
     'kur.done': '{ad} hazır! 🎉',
     'kur.m.ekskavator': 'Ekskavatör', 'kur.m.vinc': 'Vinç', 'kur.m.kamyon': 'Kamyon',
+    'kur.m.itfaiye': 'İtfaiye', 'kur.m.traktor': 'Traktör', 'kur.m.ucak': 'Uçak', 'kur.m.forklift': 'Forklift', 'kur.m.gemi': 'Gemi', 'kur.m.tren': 'Tren',
     'kur.p.palet': 'Palet', 'kur.p.kabin': 'Kabin', 'kur.p.bom': 'Bom', 'kur.p.kova': 'Kova',
     'kur.p.taban': 'Taban', 'kur.p.kule': 'Kule', 'kur.p.kol': 'Kol', 'kur.p.kanca': 'Kanca',
     'kur.p.tekerlek': 'Tekerlek', 'kur.p.kasa': 'Kasa',
+    'kur.p.merdiven': 'Merdiven', 'kur.p.kaput': 'Kaput', 'kur.p.baca': 'Baca', 'kur.p.govde': 'Gövde', 'kur.p.kanat': 'Kanat', 'kur.p.kuyruk': 'Kuyruk', 'kur.p.pervane': 'Pervane', 'kur.p.direk': 'Direk', 'kur.p.catal': 'Çatal', 'kur.p.lokomotif': 'Lokomotif', 'kur.p.vagon': 'Vagon',
 
     'muh.next': 'Sonraki',
     'muh.done': 'Harika! Hepsini bitirdin. 🛠️',
@@ -296,9 +298,11 @@ const STRINGS = {
     'kur.hint': 'Tap the parts to build the machine',
     'kur.done': '{ad} is ready! 🎉',
     'kur.m.ekskavator': 'Excavator', 'kur.m.vinc': 'Crane', 'kur.m.kamyon': 'Truck',
+    'kur.m.itfaiye': 'Fire truck', 'kur.m.traktor': 'Tractor', 'kur.m.ucak': 'Plane', 'kur.m.forklift': 'Forklift', 'kur.m.gemi': 'Ship', 'kur.m.tren': 'Train',
     'kur.p.palet': 'Track', 'kur.p.kabin': 'Cabin', 'kur.p.bom': 'Boom', 'kur.p.kova': 'Bucket',
     'kur.p.taban': 'Base', 'kur.p.kule': 'Tower', 'kur.p.kol': 'Arm', 'kur.p.kanca': 'Hook',
     'kur.p.tekerlek': 'Wheel', 'kur.p.kasa': 'Cargo bed',
+    'kur.p.merdiven': 'Ladder', 'kur.p.kaput': 'Hood', 'kur.p.baca': 'Funnel', 'kur.p.govde': 'Body', 'kur.p.kanat': 'Wing', 'kur.p.kuyruk': 'Tail', 'kur.p.pervane': 'Propeller', 'kur.p.direk': 'Mast', 'kur.p.catal': 'Fork', 'kur.p.lokomotif': 'Locomotive', 'kur.p.vagon': 'Car',
 
     'muh.next': 'Next',
     'muh.done': 'Great! You finished them all. 🛠️',
