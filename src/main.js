@@ -4,6 +4,7 @@ import { verifyPin, hashPin } from './core/crypto.js';
 import { addGuardian, addCard, removeCard, addReward, removeReward } from './core/profile.js';
 import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
 import { t, DILLER } from './core/i18n.js';
+import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -100,6 +101,18 @@ const ceviri = (anahtar, params) => t(dil(), anahtar, params);
 // Kart basligi: sablon kartlarinda titleKey var -> cevrilir; ebeveynin
 // ekledigi kartta yok -> yazildigi gibi (o dilde) gosterilir.
 const kartBaslik = (card) => (card.titleKey ? ceviri(card.titleKey) : card.title);
+
+// Takvim adini (TR) aktif dile cevirir. Saat quizi motoru TR uretir;
+// ekranda dogru dil gosterilir ama secim karsilastirmasi TR deger
+// uzerinden kalir (motor mantigi bozulmaz).
+const TAKVIM_DIZI = [['cal.day', DAYS], ['cal.month', MONTHS], ['cal.season', SEASONS]];
+function takvimAdCevir(trAd) {
+  for (const [onek, dizi] of TAKVIM_DIZI) {
+    const i = dizi.indexOf(trAd);
+    if (i !== -1) return ceviri(onek + '.' + i);
+  }
+  return trAd;
+}
 
 // data-i18n / data-i18n-ph tasiyan statik ogeleri aktif dile cevirir.
 // Acilis, her render ve dil degisiminde cagrilir.
@@ -610,13 +623,13 @@ function sonrakiSoru() {
 function cizQuiz() {
   document.getElementById('timequiz-progress').textContent =
     `${QUIZ_SORU_SAYISI - quizKalan + 1} / ${QUIZ_SORU_SAYISI}`;
-  document.getElementById('timequiz-prompt').textContent = aktifSoru.prompt;
+  document.getElementById('timequiz-prompt').textContent = ceviri('quiz.' + aktifSoru.kind);
   document.getElementById('timequiz-feedback').hidden = true;
 
   mount(document.getElementById('timequiz-options'), aktifSoru.options.map((o) =>
     el('button', {
       className: 'timequiz__option',
-      text: o,
+      text: takvimAdCevir(o),
       attrs: { type: 'button' },
       dataset: { quizOption: o }
     })
@@ -629,7 +642,7 @@ function cevapla(secim) {
 
   if (!dogru) {
     const geri = document.getElementById('timequiz-feedback');
-    geri.textContent = `Doğrusu: ${aktifSoru.answer}. Bir daha deneyelim.`;
+    geri.textContent = ceviri('quiz.answerRetry', { x: takvimAdCevir(aktifSoru.answer) });
     geri.hidden = false;
     return;
   }
@@ -717,7 +730,7 @@ function drillNormalGorunum() {
   document.getElementById('drill-celebrate').hidden = true;
 
   const kapat = document.getElementById('drill-cancel');
-  kapat.textContent = 'Kapat';
+  kapat.textContent = ceviri('game.close');
   kapat.classList.remove('is-primary');
 }
 
@@ -736,11 +749,11 @@ function drillKutlama() {
   document.getElementById('drill-progress').textContent = '';
 
   document.getElementById('drill-celebrate-level').textContent =
-    levelById(drillSession.drill.level)?.title ?? '';
+    ceviri('level.' + drillSession.drill.level);
   document.getElementById('drill-celebrate').hidden = false;
 
   const kapat = document.getElementById('drill-cancel');
-  kapat.textContent = 'Devam';
+  kapat.textContent = ceviri('game.continue');
   kapat.classList.add('is-primary');
 }
 
@@ -756,7 +769,7 @@ function drillOnayla() {
   drillShownAt = performance.now();
 
   const geri = document.getElementById('drill-feedback');
-  geri.textContent = dogru ? 'Doğru!' : `Doğrusu: ${dogruCevap}`;
+  geri.textContent = dogru ? ceviri('drill.correct') : ceviri('drill.answer', { x: dogruCevap });
   geri.hidden = false;
 
   if (sonraki.finished) {
@@ -773,7 +786,8 @@ function drillOnayla() {
 }
 
 function acDrill() {
-  drillSession = startSession(state.loadDrill());
+  // Sozel problemler yalniz TR'de; Ingilizce'de saf aritmetik gorunur.
+  drillSession = startSession(state.loadDrill(), Math.random, dil() === 'tr');
   drillTyped = '';
   drillShownAt = performance.now();
   cizDrillPad();
@@ -948,9 +962,9 @@ function amiralAtis(cell) {
 const SATRANC_GLIF = { K: '♜', F: '♝', V: '♛', S: '♚', A: '♞', P: '♟' };
 
 const SATRANC_GOREV = {
-  serbest: (ad) => `${ad} nereye gidebilir? Gidebileceği bir kareye dokun.`,
-  engelli: (ad) => `Yolda taşlar var. ${ad} şimdi nereye gidebilir? Bir kareye dokun.`,
-  alma: (ad) => `${ad} hangi taşı alabilir? O taşın karesine dokun.`
+  serbest: (ad) => ceviri('chess.task.serbest', { ad }),
+  engelli: (ad) => ceviri('chess.task.engelli', { ad }),
+  alma: (ad) => ceviri('chess.task.alma', { ad })
 };
 
 // Geri bildirim ders tipine gore degisir, cunku yesilin anlami degisir.
@@ -964,29 +978,31 @@ const SATRANC_GOREV = {
 // yesilin anlami degistigi icin o ayri yazilir.
 const gidebilirGeri = (ad, dogru) =>
   dogru
-    ? `Doğru! ${ad} yeşil karelerin hepsine gidebilir.`
-    : `${ad} oraya gidemez. Gidebileceği kareler yeşil.`;
+    ? ceviri('chess.fb.moveRight', { ad })
+    : ceviri('chess.fb.moveWrong', { ad });
 
 const SATRANC_GERI = {
   serbest: gidebilirGeri,
   engelli: gidebilirGeri,
   alma: (ad, dogru, kareDolu) => {
-    if (dogru) return `Doğru! ${ad} o taşı alabilir.`;
+    if (dogru) return ceviri('chess.fb.takeRight', { ad });
     return kareDolu
-      ? `${ad} o taşı alamaz. Alabileceği taş yeşil.`
-      : `Orada alınacak taş yok. Alabileceği taş yeşil.`;
+      ? ceviri('chess.fb.takeWrongFull', { ad })
+      : ceviri('chess.fb.takeWrongEmpty', { ad });
   }
 };
+
+// Tas adi aktif dilde (kod'dan cevrilir). satrancTasBilgi(...).ad yerine
+// bu kullanilir; view model TR ad'i tasiyor, biz kod'dan ceviriyoruz.
+function satrancTasAd(kod) {
+  return ceviri('chess.piece.' + kod + '.name');
+}
 
 let satrancKartlar = {};
 let satrancTas = null;
 let satrancSoru = null;
 let satrancIsaret = {};
 let satrancCevaplandi = false;
-
-function satrancTasBilgi(kod) {
-  return chessViewModel(satrancKartlar).taslar.find((t) => t.kod === kod);
-}
 
 function satrancTasNode(t) {
   const dersler = el('span', { className: 'satranc__tas-dersler' },
@@ -1000,7 +1016,7 @@ function satrancTasNode(t) {
     dataset: { satrancTas: t.kod }
   }, [
     el('span', { className: 'satranc__glif', text: SATRANC_GLIF[t.kod] }),
-    el('span', { className: 'satranc__tas-ad', text: t.ad }),
+    el('span', { className: 'satranc__tas-ad', text: satrancTasAd(t.kod) }),
     t.acik
       ? dersler
       : el('span', { className: 'material-symbols-rounded satranc__kilit', text: 'lock' })
@@ -1046,9 +1062,9 @@ function satrancYeniSoru() {
   satrancIsaret = {};
   satrancCevaplandi = false;
 
-  document.getElementById('satranc-kural').textContent = satrancSoru.anlat;
+  document.getElementById('satranc-kural').textContent = ceviri('chess.piece.' + satrancSoru.tas + '.desc');
   document.getElementById('satranc-gorev').textContent =
-    SATRANC_GOREV[ders](satrancTasBilgi(satrancTas).ad);
+    SATRANC_GOREV[ders](satrancTasAd(satrancTas));
   document.getElementById('satranc-geribildirim').hidden = true;
   cizSatrancTahta();
 }
@@ -1073,7 +1089,7 @@ function satrancKareTikla(kare) {
 
   const geri = document.getElementById('satranc-geribildirim');
   geri.textContent = SATRANC_GERI[satrancSoru.tip](
-    satrancTasBilgi(satrancSoru.tas).ad,
+    satrancTasAd(satrancSoru.tas),
     dogru,
     Boolean(satrancSoru.tahta[kare])
   );
@@ -1084,7 +1100,7 @@ function satrancKareTikla(kare) {
 
   if (vm.acikTaslar.length > oncekiAcik) {
     const yeni = vm.taslar.find((t) => t.kod === vm.acikTaslar[vm.acikTaslar.length - 1]);
-    satrancMujde(`${satrancTasBilgi(satrancTas).ad} tamam! Yeni taş açıldı: ${yeni.ad}`);
+    satrancMujde(ceviri('chess.unlocked', { ad: satrancTasAd(satrancTas), yeni: satrancTasAd(yeni.kod) }));
   }
 
   cizSatrancTahta();

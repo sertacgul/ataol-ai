@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ataol-ai-v18';
+const CACHE_NAME = 'ataol-ai-v19';
 const ASSETS = [
   // v1 varliklari (gunluk kullanilan surum)
   './',

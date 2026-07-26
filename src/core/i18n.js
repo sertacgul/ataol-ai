@@ -151,6 +151,7 @@ const STRINGS = {
     'cal.season.0': 'Kış', 'cal.season.1': 'İlkbahar', 'cal.season.2': 'Yaz', 'cal.season.3': 'Sonbahar',
 
     'game.close': 'Kapat',
+    'game.continue': 'Devam',
     'game.newGame': 'Yeni oyun',
     'amiral.win': 'Kazandın! Bütün rakip gemilerini batırdın.',
     'amiral.lose': 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!',
@@ -167,7 +168,31 @@ const STRINGS = {
     'chessGame.youLose': 'Şah mat! Bu sefer rakip kazandı. Yeni oyunla tekrar dene.',
     'chessLearn.whichPiece': 'Hangi taşı öğrenelim?',
     'chessLearn.newQuestion': 'Yeni soru',
-    'chessLearn.backToPieces': 'Taşlara dön'
+    'chessLearn.backToPieces': 'Taşlara dön',
+
+    'chess.piece.K.name': 'Kale', 'chess.piece.A.name': 'At', 'chess.piece.F.name': 'Fil', 'chess.piece.V.name': 'Vezir', 'chess.piece.S.name': 'Şah', 'chess.piece.P.name': 'Piyon',
+    'chess.piece.K.desc': 'Kale düz gider. Yukarı, aşağı, sağa, sola. Önüne çıkan taşta durur, o taşı alabilir.',
+    'chess.piece.A.desc': 'At iki kare düz, sonra bir kare yana gider. Yolundaki taşların üstünden atlar.',
+    'chess.piece.F.desc': 'Fil çapraz gider. Başladığı karenin rengini hiç değiştirmez.',
+    'chess.piece.V.desc': 'Vezir hem düz hem çapraz gider. Yani kale ile filin toplamıdır.',
+    'chess.piece.S.desc': 'Şah her yöne gider ama sadece bir kare.',
+    'chess.piece.P.desc': 'Piyon bir kare ileri gider. Önündeki taşı alamaz, sadece çaprazındaki taşı alır.',
+    'chess.task.serbest': '{ad} nereye gidebilir? Gidebileceği bir kareye dokun.',
+    'chess.task.engelli': 'Yolda taşlar var. {ad} şimdi nereye gidebilir? Bir kareye dokun.',
+    'chess.task.alma': '{ad} hangi taşı alabilir? O taşın karesine dokun.',
+    'chess.fb.moveRight': 'Doğru! {ad} yeşil karelerin hepsine gidebilir.',
+    'chess.fb.moveWrong': '{ad} oraya gidemez. Gidebileceği kareler yeşil.',
+    'chess.fb.takeRight': 'Doğru! {ad} o taşı alabilir.',
+    'chess.fb.takeWrongFull': '{ad} o taşı alamaz. Alabileceği taş yeşil.',
+    'chess.fb.takeWrongEmpty': 'Orada alınacak taş yok. Alabileceği taş yeşil.',
+    'chess.unlocked': '{ad} tamam! Yeni taş açıldı: {yeni}',
+
+    'drill.correct': 'Doğru!',
+    'drill.answer': 'Doğrusu: {x}',
+    'drill.newLevel': 'Yeni seviyeye geçtin!',
+    'quiz.answerRetry': 'Doğrusu: {x}. Bir daha deneyelim.',
+    'level.topla-10': "Toplama, 10'a kadar", 'level.cikar-10': "Çıkarma, 10'a kadar", 'level.topla-20': "Toplama, 20'ye kadar", 'level.cikar-20': "Çıkarma, 20'ye kadar", 'level.carp-2-5': 'Çarpma: 2, 3, 4, 5', 'level.carp-6-10': 'Çarpma: 6, 7, 8, 9, 10', 'level.bol': 'Bölme', 'level.karisik': 'Karışık dört işlem',
+    'quiz.bugun-gun': 'Bugün ne günü?', 'quiz.yarin-gun': 'Yarın ne günü?', 'quiz.ay': 'Hangi aydayız?', 'quiz.mevsim': 'Hangi mevsimdeyiz?'
   },
   en: {
     'nav.routine': 'Routine',
@@ -304,6 +329,7 @@ const STRINGS = {
     'cal.season.0': 'Winter', 'cal.season.1': 'Spring', 'cal.season.2': 'Summer', 'cal.season.3': 'Autumn',
 
     'game.close': 'Close',
+    'game.continue': 'Continue',
     'game.newGame': 'New game',
     'amiral.win': 'You won! You sank all the enemy ships.',
     'amiral.lose': "You didn’t win this time, but you tried great. Try again with a new game!",
@@ -320,7 +346,31 @@ const STRINGS = {
     'chessGame.youLose': 'Checkmate! The opponent won this time. Try again with a new game.',
     'chessLearn.whichPiece': 'Which piece shall we learn?',
     'chessLearn.newQuestion': 'New question',
-    'chessLearn.backToPieces': 'Back to pieces'
+    'chessLearn.backToPieces': 'Back to pieces',
+
+    'chess.piece.K.name': 'Rook', 'chess.piece.A.name': 'Knight', 'chess.piece.F.name': 'Bishop', 'chess.piece.V.name': 'Queen', 'chess.piece.S.name': 'King', 'chess.piece.P.name': 'Pawn',
+    'chess.piece.K.desc': 'The rook moves in straight lines: up, down, left, right. It stops at the first piece in its way and can capture it.',
+    'chess.piece.A.desc': 'The knight moves two squares straight, then one square to the side. It jumps over pieces in its way.',
+    'chess.piece.F.desc': 'The bishop moves diagonally. It never changes the color of the square it started on.',
+    'chess.piece.V.desc': 'The queen moves both straight and diagonally. So it is the rook and the bishop combined.',
+    'chess.piece.S.desc': 'The king moves in any direction, but only one square.',
+    'chess.piece.P.desc': "The pawn moves one square forward. It can't capture the piece in front of it, only the piece diagonally.",
+    'chess.task.serbest': 'Where can the {ad} go? Tap a square it can move to.',
+    'chess.task.engelli': 'There are pieces in the way. Where can the {ad} go now? Tap a square.',
+    'chess.task.alma': "Which piece can the {ad} capture? Tap that piece's square.",
+    'chess.fb.moveRight': 'Correct! The {ad} can go to all the green squares.',
+    'chess.fb.moveWrong': "The {ad} can't go there. Its possible squares are green.",
+    'chess.fb.takeRight': 'Correct! The {ad} can capture that piece.',
+    'chess.fb.takeWrongFull': "The {ad} can't capture that piece. The one it can capture is green.",
+    'chess.fb.takeWrongEmpty': "There's no piece to capture there. The one it can capture is green.",
+    'chess.unlocked': '{ad} done! New piece unlocked: {yeni}',
+
+    'drill.correct': 'Correct!',
+    'drill.answer': 'The answer is: {x}',
+    'drill.newLevel': 'You reached a new level!',
+    'quiz.answerRetry': "The answer is: {x}. Let's try again.",
+    'level.topla-10': 'Addition up to 10', 'level.cikar-10': 'Subtraction up to 10', 'level.topla-20': 'Addition up to 20', 'level.cikar-20': 'Subtraction up to 20', 'level.carp-2-5': 'Multiplication: 2, 3, 4, 5', 'level.carp-6-10': 'Multiplication: 6, 7, 8, 9, 10', 'level.bol': 'Division', 'level.karisik': 'Mixed operations',
+    'quiz.bugun-gun': 'What day is it today?', 'quiz.yarin-gun': 'What day is tomorrow?', 'quiz.ay': 'What month is it?', 'quiz.mevsim': 'What season is it?'
   }
 };
 

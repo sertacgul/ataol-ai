@@ -20,7 +20,10 @@ export const SESSION_LENGTH = 10;
 const SPEED_THRESHOLD_MS = 6000;
 const PROBLEM_COUNT = 2;
 
-function soruSec(drill, rng, kalan, haric = null) {
+// problemVar: sozel problemler yalniz bu acikken gorunur. Sozel problem
+// Turkce gramere gomulu (problems.js), Ingilizce'ye henuz cevrilmedi;
+// EN'de kapatilir, saf aritmetik (dilden bagimsiz) gorunur.
+function soruSec(drill, rng, kalan, haric = null, problemVar = true) {
   const facts = drill.byLevel[drill.level];
   let key = selectDrillFact(facts, rng);
 
@@ -32,7 +35,7 @@ function soruSec(drill, rng, kalan, haric = null) {
   if (!key) return null;
   const f = { ...facts[key], key };
 
-  if (kalan <= PROBLEM_COUNT) {
+  if (problemVar && kalan <= PROBLEM_COUNT) {
     const p = buildProblem(f, VEHICLE_THEME, rng);
     if (p) return { key, kind: 'problem', text: p.text, answer: p.answer };
   }
@@ -40,10 +43,11 @@ function soruSec(drill, rng, kalan, haric = null) {
   return { key, kind: 'fact', text: formatQuestion(f), answer: f.answer };
 }
 
-export function startSession(drill, rng = Math.random) {
+export function startSession(drill, rng = Math.random, problemVar = true) {
   return {
     drill,
-    current: soruSec(drill, rng, SESSION_LENGTH),
+    problemVar,
+    current: soruSec(drill, rng, SESSION_LENGTH, null, problemVar),
     remaining: SESSION_LENGTH,
     correctCount: 0,
     lastCorrect: null,
@@ -88,7 +92,7 @@ export function answerCurrent(session, verilen, ms, rng = Math.random) {
 
   return {
     drill,
-    current: finished ? null : soruSec(drill, rng, remaining, key),
+    current: finished ? null : soruSec(drill, rng, remaining, key, session.problemVar),
     remaining,
     correctCount: session.correctCount + (dogru ? 1 : 0),
     lastCorrect: dogru,
