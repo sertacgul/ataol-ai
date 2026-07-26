@@ -24,6 +24,9 @@ const STRINGS = {
 
     'routine.greeting': 'Merhaba {ad}',
     'routine.total': 'Toplam {n}★',
+    'reward.section': 'Ödüllerin',
+    'reward.ready': 'Hazır!',
+    'reward.remaining': '{n}★ kaldı',
 
     'block.morning': 'Sabah',
     'block.afternoon': 'Öğle',
@@ -202,6 +205,9 @@ const STRINGS = {
 
     'routine.greeting': 'Hi {ad}',
     'routine.total': 'Total {n}★',
+    'reward.section': 'Your rewards',
+    'reward.ready': 'Ready!',
+    'reward.remaining': '{n}★ to go',
 
     'block.morning': 'Morning',
     'block.afternoon': 'Afternoon',

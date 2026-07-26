@@ -1651,3 +1651,84 @@
   border-color: var(--primary);
   color: #fff;
 }
+
+/* --- Odul ilerleme (cocuk, rutin ekrani) --- */
+
+.reward-ilerleme {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
+  margin-top: 4px;
+}
+
+.reward-ilerleme__baslik {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.reward-ilerleme__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reward-item__emoji {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.reward-item__orta {
+  flex: 1;
+  min-width: 0;
+}
+
+.reward-item__ad {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.reward-item__bar {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(131, 149, 167, 0.18);
+  overflow: hidden;
+}
+
+.reward-item__dolu {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  transition: width 0.4s ease;
+}
+
+.reward-item__durum {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.reward-item--acik .reward-item__durum {
+  color: var(--secondary);
+}
+
+.reward-item--acik .reward-item__dolu {
+  background: var(--gold);
+}

@@ -5,6 +5,7 @@ import { addGuardian, addCard, removeCard, addReward, removeReward } from './cor
 import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
 import { t, DILLER } from './core/i18n.js';
 import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
+import { rewardProgress } from './engines/rewards.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -183,7 +184,41 @@ function renderRoutine() {
       // ekrani kapandigi anda cocuk emeginin silindigini sanar.
       el('p', { className: 'routine-header__birikim', text: ceviri('routine.total', { n: state.totalStars() }) })
     ]),
-    ...vm.blocks.map(blockNode)
+    ...vm.blocks.map(blockNode),
+    odulIlerlemeBolumu()
+  ]);
+}
+
+// Cocugun odullere ne kadar yaklastigini gosterir: tum ekonomiye (yildiz)
+// gorunur bir karsilik. Ilerleme TOPLAM yildiz uzerinden (rewards.js).
+// Kilit acilir mantik: total >= target ise odul "hazir". Odul yoksa bolum
+// hic cizilmez.
+function odulIlerlemeBolumu() {
+  if (!profile.rewards || profile.rewards.length === 0) return null;
+
+  const toplam = state.totalStars();
+  const oduller = rewardProgress(toplam, profile.rewards);
+
+  return el('section', { className: 'reward-ilerleme' }, [
+    el('h2', { className: 'reward-ilerleme__baslik', text: ceviri('reward.section') }),
+    el('ul', { className: 'reward-ilerleme__liste' }, oduller.map((r) => {
+      const dolu = el('div', { className: 'reward-item__dolu' });
+      dolu.style.width = `${Math.round(r.progress * 100)}%`;
+
+      return el('li', {
+        className: r.unlocked ? 'reward-item reward-item--acik' : 'reward-item'
+      }, [
+        el('span', { className: 'reward-item__emoji', text: r.emoji }),
+        el('div', { className: 'reward-item__orta' }, [
+          el('span', { className: 'reward-item__ad', text: r.name }),
+          el('div', { className: 'reward-item__bar' }, [dolu])
+        ]),
+        el('span', {
+          className: 'reward-item__durum',
+          text: r.unlocked ? ceviri('reward.ready') : ceviri('reward.remaining', { n: r.target - toplam })
+        })
+      ]);
+    }))
   ]);
 }
 
