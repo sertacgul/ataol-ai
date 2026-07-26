@@ -146,7 +146,17 @@ test('yanit ayiklama bozuk cevapta cokmez', () => {
 
 **Renk uyarısı:** `--card-bg` / `--card-border` kullanma, beyaz zeminde görünmez. `[hidden]` için açık `display: none` yaz.
 
-- [ ] Ekranı yaz, tarayıcıda doğrula, ekran görüntüsü al
-- [ ] Anahtar YOKKEN çökmediğini doğrula
-- [ ] Yanıtta `**` veya `#` görünmediğini doğrula
-- [ ] Commit
+- [x] Ekranı yaz, tarayıcıda doğrula, ekran görüntüsü al
+- [x] Anahtar YOKKEN çökmediğini doğrula (sakin mesaj gösteriyor)
+- [x] Yanıtta `**` veya `#` görünmediğini doğrula (`yanitAyikla` -> `duzMetin` süzüyor, test edildi)
+- [x] Commit (be7bad8 özellik, b1b79f3 TDZ + sw.js düzeltmesi)
+
+**Not (kurulum katmanı):** `main.js` yeni `engines/ai.js`'i import ettiği için
+o dosya `sw.js` ASSETS listesine eklendi ve `CACHE_NAME` v9 -> v10 yükseltildi;
+yoksa Deha'nın kurulu PWA'sı yeni import'u çevrimdışı bulamaz, eski cache'te kalırdı.
+
+**Kararlaştırıldı:** "Feride Mama" (annesi olmayan bakım veren) adı, guardian
+listesinden tahmin edilmiyor; Ebeveyn sekmesinde ayrı bir alandan giriliyor
+(`state.loadSohbetEs`). Boşsa istem jenerik aile dalını kullanıp kimseye
+"annen değil" demiyor. Öneri baloncukları isim içermiyor (Türkçe sevgi/durum
+eki kodla üretilemez kuralı gereği).
