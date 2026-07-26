@@ -63,6 +63,14 @@ const STRINGS = {
     'games.satranc': 'Satranç',
     'games.atolye': 'Çizim Atölyesi',
     'games.muhendislik': 'Mühendislik',
+    'games.kurucu': 'Makine Kur',
+
+    'kur.hint': 'Parçaları seç, makineyi kur',
+    'kur.done': '{ad} hazır! 🎉',
+    'kur.m.ekskavator': 'Ekskavatör', 'kur.m.vinc': 'Vinç', 'kur.m.kamyon': 'Kamyon',
+    'kur.p.palet': 'Palet', 'kur.p.kabin': 'Kabin', 'kur.p.bom': 'Bom', 'kur.p.kova': 'Kova',
+    'kur.p.taban': 'Taban', 'kur.p.kule': 'Kule', 'kur.p.kol': 'Kol', 'kur.p.kanca': 'Kanca',
+    'kur.p.tekerlek': 'Tekerlek', 'kur.p.kasa': 'Kasa',
 
     'muh.next': 'Sonraki',
     'muh.done': 'Harika! Hepsini bitirdin. 🛠️',
@@ -273,6 +281,14 @@ const STRINGS = {
     'games.satranc': 'Chess',
     'games.atolye': 'Drawing Studio',
     'games.muhendislik': 'Engineering',
+    'games.kurucu': 'Build a Machine',
+
+    'kur.hint': 'Tap the parts to build the machine',
+    'kur.done': '{ad} is ready! 🎉',
+    'kur.m.ekskavator': 'Excavator', 'kur.m.vinc': 'Crane', 'kur.m.kamyon': 'Truck',
+    'kur.p.palet': 'Track', 'kur.p.kabin': 'Cabin', 'kur.p.bom': 'Boom', 'kur.p.kova': 'Bucket',
+    'kur.p.taban': 'Base', 'kur.p.kule': 'Tower', 'kur.p.kol': 'Arm', 'kur.p.kanca': 'Hook',
+    'kur.p.tekerlek': 'Wheel', 'kur.p.kasa': 'Cargo bed',
 
     'muh.next': 'Next',
     'muh.done': 'Great! You finished them all. 🛠️',

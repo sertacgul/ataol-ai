@@ -8,6 +8,7 @@ import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
 import { rewardProgress } from './engines/rewards.js';
 import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
 import { SORULAR as MUH_SORULAR, soruMetni as muhSoruMetni } from './data/muhendislik.js';
+import { MAKINELER, makineById } from './views/kurucu.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -557,7 +558,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik' };
+  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -692,6 +693,7 @@ function renderIfStale() {
   if (document.getElementById('odul-modal').hidden === false) return;
   if (document.getElementById('atolye').hidden === false) return;
   if (document.getElementById('muh-modal').hidden === false) return;
+  if (document.getElementById('kurucu').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -1696,6 +1698,106 @@ function kapatMuhendislik() {
   document.getElementById('muh-modal').hidden = true;
 }
 
+// --- Is makinesi kurucu ---
+//
+// Cocuk parcalari secerek makineyi kurar, her parcayi adiyla ogrenir.
+// Parca cizimleri saf (views/kurucu.js, ctx alir); burada canvas, olcek ve
+// secim. Cizim mantiksal 300x220 alanda; kurucuT bunu canvasa oturtur.
+let kurucuMakine = null;
+let kurucuYerlesen = new Set();
+let kurucuCtx = null;
+let kurucuT = { s: 1, offX: 0, offY: 0 };
+
+function kurucuBoyutlandir() {
+  const cvs = document.getElementById('kurucu-canvas');
+  const r = cvs.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cvs.width = Math.round(r.width * dpr);
+  cvs.height = Math.round(r.height * dpr);
+  kurucuCtx = cvs.getContext('2d');
+  const s = Math.min(r.width / 300, r.height / 220) * dpr;
+  kurucuT = { s, offX: (cvs.width - 300 * s) / 2, offY: (cvs.height - 220 * s) / 2 };
+}
+
+function kurucuCiz() {
+  if (!kurucuCtx || !kurucuMakine) return;
+  const cvs = document.getElementById('kurucu-canvas');
+  const c = kurucuCtx;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, cvs.width, cvs.height);
+  c.setTransform(kurucuT.s, 0, 0, kurucuT.s, kurucuT.offX, kurucuT.offY);
+  // z-sira: makine parcalar dizisi sirasi; yalniz yerlesenler cizilir.
+  for (const p of kurucuMakine.parcalar) {
+    if (kurucuYerlesen.has(p.id)) p.ciz(c);
+  }
+}
+
+function cizKurucuMakineler() {
+  mount(document.getElementById('kurucu-makineler'), MAKINELER.map((m) =>
+    el('button', {
+      className: m.id === kurucuMakine?.id ? 'kurucu__makine kurucu__makine--secili' : 'kurucu__makine',
+      text: ceviri(m.adKey),
+      attrs: { type: 'button' },
+      dataset: { kurucuMakine: m.id }
+    })
+  ));
+}
+
+function cizKurucuParcalar() {
+  mount(document.getElementById('kurucu-parcalar'), kurucuMakine.parcalar.map((p) =>
+    el('button', {
+      className: kurucuYerlesen.has(p.id) ? 'kurucu__parca kurucu__parca--yerlesti' : 'kurucu__parca',
+      text: ceviri(p.adKey),
+      attrs: { type: 'button' },
+      dataset: { kurucuParca: p.id }
+    })
+  ));
+}
+
+function kurucuMesaj(metin) {
+  const b = document.getElementById('kurucu-mesaj');
+  b.textContent = metin;
+  b.hidden = metin === '';
+}
+
+function kurucuMakineSec(id) {
+  kurucuMakine = makineById(id);
+  kurucuYerlesen = new Set();
+  kurucuMesaj('');
+  cizKurucuMakineler();
+  cizKurucuParcalar();
+  requestAnimationFrame(() => {
+    kurucuBoyutlandir();
+    kurucuCiz();
+  });
+}
+
+function kurucuParcaSec(id) {
+  if (!kurucuMakine || kurucuYerlesen.has(id)) return;
+  kurucuYerlesen.add(id);
+  kurucuCiz();
+  cizKurucuParcalar();
+  if (kurucuYerlesen.size === kurucuMakine.parcalar.length) {
+    kurucuMesaj(ceviri('kur.done', { ad: ceviri(kurucuMakine.adKey) }));
+  }
+}
+
+function kurucuYeni() {
+  kurucuYerlesen = new Set();
+  kurucuMesaj('');
+  kurucuCiz();
+  cizKurucuParcalar();
+}
+
+function acKurucu() {
+  document.getElementById('kurucu').hidden = false;
+  kurucuMakineSec(MAKINELER[0].id);
+}
+
+function kapatKurucu() {
+  document.getElementById('kurucu').hidden = true;
+}
+
 // --- Sohbet ---
 
 // Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
@@ -2020,12 +2122,25 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (oyunKart.dataset.game === 'satranc-oyun') acSoyun();
     if (oyunKart.dataset.game === 'atolye') acAtolye();
     if (oyunKart.dataset.game === 'muhendislik') acMuhendislik();
+    if (oyunKart.dataset.game === 'kurucu') acKurucu();
     return;
   }
 
   const muhSecenek = e.target.closest('[data-muh-secenek]');
   if (muhSecenek) {
     muhCevapla(muhSecenek.dataset.muhSecenek);
+    return;
+  }
+
+  const kurucuMakineDugme = e.target.closest('[data-kurucu-makine]');
+  if (kurucuMakineDugme) {
+    kurucuMakineSec(kurucuMakineDugme.dataset.kurucuMakine);
+    return;
+  }
+
+  const kurucuParcaDugme = e.target.closest('[data-kurucu-parca]');
+  if (kurucuParcaDugme) {
+    kurucuParcaSec(kurucuParcaDugme.dataset.kurucuParca);
     return;
   }
 
@@ -2127,6 +2242,8 @@ document.getElementById('atolye-kaydet').addEventListener('click', atolyeKaydet)
 document.getElementById('atolye-kapat').addEventListener('click', kapatAtolye);
 document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
 document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
+document.getElementById('kurucu-yeni').addEventListener('click', kurucuYeni);
+document.getElementById('kurucu-kapat').addEventListener('click', kapatKurucu);
 
 document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   e.preventDefault();

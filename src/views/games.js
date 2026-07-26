@@ -22,5 +22,6 @@ export const GAMES = [
   { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' },
   { id: 'satranc-oyun', title: 'Satranç', icon: 'castle' },
   { id: 'atolye', title: 'Çizim Atölyesi', icon: 'draw' },
-  { id: 'muhendislik', title: 'Mühendislik', icon: 'engineering' }
+  { id: 'muhendislik', title: 'Mühendislik', icon: 'engineering' },
+  { id: 'kurucu', title: 'Makine Kur', icon: 'construction' }
 ];
