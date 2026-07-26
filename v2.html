@@ -163,6 +163,31 @@
                 <button type="button" id="satranc-oyun-kapat">Kapat</button>
             </div>
         </div>
+
+        <div id="onboarding" class="onboarding" hidden>
+            <div class="onboarding__box">
+                <h1 class="onboarding__baslik">ATAOL'a hoş geldin</h1>
+                <p class="onboarding__alt">Başlamak için birkaç bilgi. Bunu bir yetişkin doldursun.</p>
+
+                <label class="onboarding__label">Çocuğun adı</label>
+                <input type="text" id="ob-ad" class="onboarding__input" placeholder="Örn. Deha" autocomplete="off">
+
+                <label class="onboarding__label">Yaşı</label>
+                <input type="number" id="ob-yas" class="onboarding__input" inputmode="numeric" placeholder="Örn. 8" autocomplete="off">
+
+                <p class="onboarding__bolum">İlk bakım veren (sen)</p>
+                <input type="text" id="ob-veren-ad" class="onboarding__input" placeholder="Adın" autocomplete="off">
+                <input type="text" id="ob-veren-etiket" class="onboarding__input" placeholder="Nasıl görünsün (örn. Baba)" autocomplete="off">
+                <input type="password" id="ob-pin" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN (4-8 rakam)" autocomplete="off">
+                <input type="password" id="ob-pin2" class="onboarding__input" inputmode="numeric" maxlength="8" placeholder="PIN tekrar" autocomplete="off">
+
+                <p class="onboarding__bolum">Rutin şablonu</p>
+                <div id="ob-sablonlar" class="onboarding__sablonlar"></div>
+
+                <p id="ob-hata" class="onboarding__hata" hidden></p>
+                <button type="button" id="ob-basla" class="onboarding__basla">Başla</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="src/main.js"></script>

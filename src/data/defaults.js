@@ -45,13 +45,88 @@ export const DEFAULT_REWARDS = [
   { id: 'playstation', name: 'PlayStation', emoji: '🎮', target: 1200 }
 ];
 
-export function seedProfile({ childName, birthYear, guardians = [] }) {
+// Okul oncesi: odev ve matematik seti YOK (yasa uygun degil). Gun ogrenme
+// (sabah-takvim, measured quiz) kalir; oz bakim, oyun, resim, masal.
+const OKULONCESI_CARDS = [
+  { id: 'sabah-takvim', block: 'morning', type: 'measured', title: 'Bugün ne günü?', icon: 'calendar_month', stars: 2, minutes: 6 },
+  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Kendin giyin', icon: 'checkroom', stars: 2, minutes: 6 },
+  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltını yap', icon: 'restaurant', stars: 2, minutes: 6 },
+
+  { id: 'ogle-oyun', block: 'afternoon', type: 'approved', title: 'Biraz oyun oyna', icon: 'toys', stars: 2, minutes: 6 },
+  { id: 'ogle-topla', block: 'afternoon', type: 'approved', title: 'Oyuncaklarını topla', icon: 'cleaning_services', stars: 3, minutes: 6 },
+  { id: 'ogle-resim', block: 'afternoon', type: 'approved', title: 'Resim yap ya da boya', icon: 'palette', stars: 3, minutes: 6 },
+
+  { id: 'aksam-yemek', block: 'evening', type: 'approved', title: 'Akşam yemeğini ye', icon: 'restaurant', stars: 2, minutes: 7 },
+  { id: 'aksam-banyo', block: 'evening', type: 'approved', title: 'Banyo yap', icon: 'shower', stars: 3, minutes: 7 },
+  { id: 'aksam-masal', block: 'evening', type: 'approved', title: 'Masal dinle', icon: 'auto_stories', stars: 3, minutes: 7 },
+  { id: 'aksam-dis', block: 'evening', type: 'approved', title: 'Dişini fırçala', icon: 'bedtime', stars: 2, minutes: 7 }
+];
+
+const OKULONCESI_ROUTINE = {
+  morning: ['sabah-takvim', 'sabah-giyin', 'sabah-kahvalti'],
+  afternoon: ['ogle-oyun', 'ogle-topla', 'ogle-resim'],
+  evening: ['aksam-yemek', 'aksam-banyo', 'aksam-masal', 'aksam-dis']
+};
+
+// Ortaokul: daha cok calisma ve sorumluluk. Matematik seti (drill) kalir;
+// takvim quiz'i cikarilir (bu yasta basit kalir).
+const ORTAOKUL_CARDS = [
+  { id: 'sabah-giyin', block: 'morning', type: 'approved', title: 'Giyin ve hazırlan', icon: 'checkroom', stars: 2, minutes: 5 },
+  { id: 'sabah-kahvalti', block: 'morning', type: 'approved', title: 'Kahvaltı', icon: 'restaurant', stars: 2, minutes: 5 },
+  { id: 'sabah-canta', block: 'morning', type: 'approved', title: 'Çantanı ve ödevlerini kontrol et', icon: 'backpack', stars: 2, minutes: 5 },
+
+  { id: 'ogle-odev', block: 'afternoon', type: 'approved', title: 'Ödev ve çalışma', icon: 'edit_note', stars: 5, minutes: 12 },
+  { id: 'ogle-matematik', block: 'afternoon', type: 'measured', title: 'Matematik seti', icon: 'functions', stars: 5, minutes: 12 },
+  { id: 'ogle-tekrar', block: 'afternoon', type: 'approved', title: 'Ders tekrarı ve okuma', icon: 'menu_book', stars: 3, minutes: 8 },
+
+  { id: 'aksam-sofra', block: 'evening', type: 'approved', title: 'Sofraya yardım et', icon: 'volunteer_activism', stars: 5, minutes: 8 },
+  { id: 'aksam-dus', block: 'evening', type: 'approved', title: 'Duş', icon: 'shower', stars: 2, minutes: 5 },
+  { id: 'aksam-kitap', block: 'evening', type: 'approved', title: '30 dakika kitap', icon: 'auto_stories', stars: 3, minutes: 8 },
+  { id: 'aksam-plan', block: 'evening', type: 'approved', title: 'Yarını planla, çantanı hazırla', icon: 'checklist', stars: 2, minutes: 5 }
+];
+
+const ORTAOKUL_ROUTINE = {
+  morning: ['sabah-giyin', 'sabah-kahvalti', 'sabah-canta'],
+  afternoon: ['ogle-odev', 'ogle-matematik', 'ogle-tekrar'],
+  evening: ['aksam-sofra', 'aksam-dus', 'aksam-kitap', 'aksam-plan']
+};
+
+// Rutin sablonlari. Onboarding'de ebeveyn birini secer. ilkokul mevcut
+// DEFAULT_* verisini kullanir; geriye uyum ve defaults.test.js icin.
+export const ROUTINE_TEMPLATES = [
+  {
+    id: 'okuloncesi',
+    title: 'Okul Öncesi',
+    aciklama: 'Küçük çocuklar için: öz bakım, oyun, resim ve masal. Ödev yok.',
+    cards: OKULONCESI_CARDS,
+    routine: OKULONCESI_ROUTINE
+  },
+  {
+    id: 'ilkokul',
+    title: 'İlkokul',
+    aciklama: 'Ödev, matematik seti, kitap ve ev işleri.',
+    cards: DEFAULT_CARDS,
+    routine: DEFAULT_ROUTINE
+  },
+  {
+    id: 'ortaokul',
+    title: 'Ortaokul',
+    aciklama: 'Daha çok çalışma ve sorumluluk: ders tekrarı ve planlama.',
+    cards: ORTAOKUL_CARDS,
+    routine: ORTAOKUL_ROUTINE
+  }
+];
+
+export function seedProfile({ childName, birthYear, guardians = [], sablon = 'ilkokul' }) {
+  const secili = ROUTINE_TEMPLATES.find((t) => t.id === sablon)
+    ?? ROUTINE_TEMPLATES.find((t) => t.id === 'ilkokul');
+
   let profile = createProfile({ childName, birthYear });
 
   profile = {
     ...profile,
-    cards: structuredClone(DEFAULT_CARDS),
-    routine: structuredClone(DEFAULT_ROUTINE),
+    cards: structuredClone(secili.cards),
+    routine: structuredClone(secili.routine),
     rewards: structuredClone(DEFAULT_REWARDS)
   };
 

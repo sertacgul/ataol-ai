@@ -2,7 +2,7 @@ import { createStorage } from './core/storage.js';
 import { createAppState } from './core/state.js';
 import { verifyPin, hashPin } from './core/crypto.js';
 import { addGuardian } from './core/profile.js';
-import { seedProfile } from './data/defaults.js';
+import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
@@ -33,6 +33,9 @@ import {
 let state;
 let profile;
 let tasimaSonucu = null;
+// Acilis hata verirse (catch) kurtarma ekrani gosterilir; o durumda
+// onboarding'e girilmez.
+let kurtarma = false;
 
 // Sohbet. Gecmis cihazda saklanir, v1'den TASINMAZ (aile hatasi icerebilir).
 // Bildirim: acilis try'i (asagida) sohbetGecmis'e yaziyor, bu yuzden
@@ -63,16 +66,17 @@ function showRecovery() {
 try {
   state = createAppState(createStorage(window.localStorage, 'ataol2'));
   profile = state.loadProfile();
-  if (!profile) {
-    profile = seedProfile({ childName: 'Deha', birthYear: 2016, guardians: [] });
-    state.saveProfile(profile);
+  // Profil yoksa artik Deha tohumlanmaz; ilk kurulum (onboarding) calisir.
+  // Deha'nin (ve her mevcut kullanicinin) profili zaten var, buraya dusmez.
+  if (profile) {
+    // Tasima ilk cizimden once calisir: yildiz toplami rutin basligina
+    // yaziliyor, sonra calissa cocuk once eksik toplami gorurdu.
+    tasimaSonucu = state.migrateOnce((anahtar) => window.localStorage.getItem(anahtar));
+    sohbetGecmis = state.loadSohbet();
   }
-  // Tasima ilk cizimden once calisir: yildiz toplami rutin basligina
-  // yaziliyor, sonra calissa cocuk once eksik toplami gorurdu.
-  tasimaSonucu = state.migrateOnce((anahtar) => window.localStorage.getItem(anahtar));
-  sohbetGecmis = state.loadSohbet();
 } catch (err) {
   profile = null;
+  kurtarma = true;
   showRecovery();
 }
 
@@ -290,6 +294,65 @@ function karsilamayiGosterGerekirse() {
 
 function karsilamayiKapat() {
   document.getElementById('migrate-modal').hidden = true;
+}
+
+// --- Onboarding (ilk kurulum) ---
+//
+// Yalniz profil YOKKEN gosterilir. Ebeveyn cocugun adini/yasini, ilk
+// bakim vereni (ad, etiket, PIN) ve bir rutin sablonu girer. Bittiginde
+// profil olusturulur ve uygulama baslar. Mevcut kullanici (Deha) buraya
+// hic dusmez.
+function onboardingHata(mesaj) {
+  const k = document.getElementById('ob-hata');
+  k.textContent = mesaj;
+  k.hidden = false;
+}
+
+function onboardingiGoster() {
+  // Sablon secenekleri ROUTINE_TEMPLATES'ten cizilir; ilkokul secili gelir.
+  mount(document.getElementById('ob-sablonlar'), ROUTINE_TEMPLATES.map((t) =>
+    el('label', { className: 'onboarding__sablon' }, [
+      el('input', {
+        attrs: { type: 'radio', name: 'ob-sablon', value: t.id, ...(t.id === 'ilkokul' ? { checked: 'checked' } : {}) }
+      }),
+      el('span', {}, [
+        el('span', { className: 'onboarding__sablon-ad', text: t.title }),
+        el('span', { className: 'onboarding__sablon-aciklama', text: t.aciklama })
+      ])
+    ])
+  ));
+  document.getElementById('onboarding').hidden = false;
+}
+
+async function onboardingBasla() {
+  const ad = document.getElementById('ob-ad').value.trim();
+  const yas = Number(document.getElementById('ob-yas').value.trim());
+  const verenAd = document.getElementById('ob-veren-ad').value;
+  const etiket = document.getElementById('ob-veren-etiket').value;
+  const pin = document.getElementById('ob-pin').value;
+  const pin2 = document.getElementById('ob-pin2').value;
+  const sablon = document.querySelector('input[name="ob-sablon"]:checked')?.value;
+
+  if (!ad) return onboardingHata('Çocuğun adını yaz.');
+  if (!Number.isInteger(yas) || yas < 3 || yas > 16) return onboardingHata('Yaş 3 ile 16 arasında olmalı.');
+
+  const dogrulama = validateGuardianInput({ name: verenAd, label: etiket, pin, pinConfirm: pin2 });
+  if (!dogrulama.valid) return onboardingHata(dogrulama.errors[0]);
+  if (!sablon) return onboardingHata('Bir rutin şablonu seç.');
+
+  const { hash, salt } = await hashPin(pin);
+  profile = seedProfile({
+    childName: ad,
+    birthYear: now().getFullYear() - yas,
+    guardians: [{ name: verenAd.trim(), label: etiket.trim(), pinHash: hash, pinSalt: salt }],
+    sablon
+  });
+  state.saveProfile(profile);
+  tasimaSonucu = state.migrateOnce((anahtar) => window.localStorage.getItem(anahtar));
+  sohbetGecmis = state.loadSohbet();
+
+  document.getElementById('onboarding').hidden = true;
+  uygulamayiBaslat();
 }
 
 function renderIfStale() {
@@ -1340,7 +1403,12 @@ document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   sohbetGonder(document.getElementById('sohbet-metin').value);
 });
 
-if (profile) {
+document.getElementById('ob-basla').addEventListener('click', onboardingBasla);
+
+// Profil hazir olduktan sonra (mevcut kullanici ya da onboarding biter
+// bitmez) uygulamayi baslatir. Iki yol da ayni baslangici kullansin diye
+// ayri fonksiyon.
+function uygulamayiBaslat() {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) renderIfStale();
   });
@@ -1348,4 +1416,11 @@ if (profile) {
   setInterval(renderIfStale, 30000);
   render();
   karsilamayiGosterGerekirse();
+}
+
+if (profile) {
+  uygulamayiBaslat();
+} else if (state && !kurtarma) {
+  // Profil yok, hata da yok: ilk kurulum.
+  onboardingiGoster();
 }
