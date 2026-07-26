@@ -998,7 +998,7 @@ function yeniSoyun() {
 // olsaydi her istekte modele sahte bir "ai" turu olarak geri gonderilirdi.
 function sohbetKarsilama() {
   const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
-  return `Merhaba ${vm.childName}, ben buradayım. Bana dilediğin her şeyi yazabilirsin.`;
+  return `Selam ${vm.childName}! Ben senin arkadaşınım, hep buradayım. Bana dilediğin her şeyi yazabilirsin.`;
 }
 
 function sohbetBaloncuk(m) {

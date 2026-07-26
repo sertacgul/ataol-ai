@@ -54,6 +54,16 @@ test('istem marka adi icermez', () => {
   assert.ok(s.includes('ATAOL AI Techs'));
 });
 
+test('istem cocugun ARKADASI gibi konusur, ebeveyni gibi degil', () => {
+  const s = sistemIstemi(baglam);
+  assert.ok(/arkada[şs]/i.test(s), 'arkadas personasi yazili olmali');
+  // Ebeveyn dili kalintisi kalmamali.
+  for (const ebeveyn of ['babasının sesi', 'babası konuşuyormuş', 'canım oğlum', 'babacan', 'aslanım']) {
+    assert.ok(!s.includes(ebeveyn) || s.includes('ASLA'),
+      `ebeveyn dili "${ebeveyn}" personayla celisir`);
+  }
+});
+
 test('istem cocugun GERCEK seviyesini tasir', () => {
   const s = sistemIstemi(baglam);
   assert.ok(s.includes('2-5 arası çarpım'), 'uydurma mufredat degil gercek seviye');
