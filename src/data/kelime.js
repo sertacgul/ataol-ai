@@ -135,5 +135,148 @@ export const KELIME_SORULAR = [
     id: 'bilgi-heceli', kategori: 'bilgi', dogru: 0,
     tr: { soru: '"Elma" kelimesi kaç hecelidir?', secenekler: ['İki', 'Bir', 'Üç', 'Dört'] },
     en: { soru: 'How many syllables are in "apple" (ap-ple)?', secenekler: ['Two', 'One', 'Three', 'Four'] }
+  },
+
+  // --- Zit anlam (devam) ---
+  {
+    id: 'zit-guzel', kategori: 'zit', dogru: 0,
+    tr: { soru: '"Güzel" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Çirkin', 'Hoş', 'Şirin', 'Temiz'] },
+    en: { soru: 'What is the opposite of "beautiful"?', secenekler: ['Ugly', 'Lovely', 'Cute', 'Clean'] }
+  },
+  {
+    id: 'zit-uzun', kategori: 'zit', dogru: 1,
+    tr: { soru: '"Uzun" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Geniş', 'Kısa', 'İnce', 'Derin'] },
+    en: { soru: 'What is the opposite of "long"?', secenekler: ['Wide', 'Short', 'Thin', 'Deep'] }
+  },
+  {
+    id: 'zit-yeni', kategori: 'zit', dogru: 2,
+    tr: { soru: '"Yeni" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Taze', 'Parlak', 'Eski', 'Temiz'] },
+    en: { soru: 'What is the opposite of "new"?', secenekler: ['Fresh', 'Shiny', 'Old', 'Clean'] }
+  },
+  {
+    id: 'zit-agir', kategori: 'zit', dogru: 3,
+    tr: { soru: '"Ağır" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Kalın', 'Sert', 'Büyük', 'Hafif'] },
+    en: { soru: 'What is the opposite of "heavy"?', secenekler: ['Thick', 'Hard', 'Big', 'Light'] }
+  },
+  {
+    id: 'zit-temiz', kategori: 'zit', dogru: 0,
+    tr: { soru: '"Temiz" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Kirli', 'Parlak', 'Islak', 'Yeni'] },
+    en: { soru: 'What is the opposite of "clean"?', secenekler: ['Dirty', 'Shiny', 'Wet', 'New'] }
+  },
+  {
+    id: 'zit-yukari', kategori: 'zit', dogru: 1,
+    tr: { soru: '"Yukarı" kelimesinin zıt anlamlısı hangisi?', secenekler: ['İleri', 'Aşağı', 'Sağ', 'Yan'] },
+    en: { soru: 'What is the opposite of "up"?', secenekler: ['Forward', 'Down', 'Right', 'Beside'] }
+  },
+  {
+    id: 'zit-ileri', kategori: 'zit', dogru: 2,
+    tr: { soru: '"İleri" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Yukarı', 'Sağ', 'Geri', 'Uzak'] },
+    en: { soru: 'What is the opposite of "forward"?', secenekler: ['Up', 'Right', 'Back', 'Far'] }
+  },
+  {
+    id: 'zit-zengin', kategori: 'zit', dogru: 3,
+    tr: { soru: '"Zengin" kelimesinin zıt anlamlısı hangisi?', secenekler: ['Cömert', 'Mutlu', 'Güçlü', 'Fakir'] },
+    en: { soru: 'What is the opposite of "rich"?', secenekler: ['Generous', 'Happy', 'Strong', 'Poor'] }
+  },
+
+  // --- Es anlam (devam) ---
+  {
+    id: 'es-kocaman', kategori: 'esanlam', dogru: 0,
+    tr: { soru: '"Kocaman" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Büyük', 'Küçük', 'İnce', 'Kısa'] },
+    en: { soru: 'Which word means the same as "huge"?', secenekler: ['Big', 'Small', 'Thin', 'Short'] }
+  },
+  {
+    id: 'es-cabuk', kategori: 'esanlam', dogru: 1,
+    tr: { soru: '"Çabuk" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Yavaş', 'Hızlı', 'Ağır', 'Sakin'] },
+    en: { soru: 'Which word means the same as "quick"?', secenekler: ['Slow', 'Fast', 'Heavy', 'Calm'] }
+  },
+  {
+    id: 'es-ihtiyar', kategori: 'esanlam', dogru: 2,
+    tr: { soru: '"İhtiyar" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Genç', 'Bebek', 'Yaşlı', 'Küçük'] },
+    en: { soru: 'Which word means the same as "elderly"?', secenekler: ['Young', 'Baby', 'Old', 'Little'] }
+  },
+  {
+    id: 'es-hekim', kategori: 'esanlam', dogru: 0,
+    tr: { soru: '"Hekim" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Doktor', 'Hemşire', 'Öğretmen', 'Şoför'] },
+    en: { soru: 'Which word means the same as "physician"?', secenekler: ['Doctor', 'Nurse', 'Teacher', 'Driver'] }
+  },
+  {
+    id: 'es-konuk', kategori: 'esanlam', dogru: 1,
+    tr: { soru: '"Konuk" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Komşu', 'Misafir', 'Yabancı', 'Arkadaş'] },
+    en: { soru: 'Which word means the same as "guest"?', secenekler: ['Neighbor', 'Visitor', 'Stranger', 'Friend'] }
+  },
+  {
+    id: 'es-yanit', kategori: 'esanlam', dogru: 2,
+    tr: { soru: '"Yanıt" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Soru', 'Sözcük', 'Cevap', 'Selam'] },
+    en: { soru: 'Which word means the same as "answer"?', secenekler: ['Question', 'Word', 'Reply', 'Hello'] }
+  },
+  {
+    id: 'es-nese', kategori: 'esanlam', dogru: 3,
+    tr: { soru: '"Neşe" kelimesiyle aynı anlama gelen hangisi?', secenekler: ['Üzüntü', 'Korku', 'Öfke', 'Sevinç'] },
+    en: { soru: 'Which word means the same as "joy"?', secenekler: ['Sorrow', 'Fear', 'Anger', 'Cheer'] }
+  },
+
+  // --- Okuma-anlama (devam) ---
+  {
+    id: 'oku-kus', kategori: 'okuma', dogru: 0,
+    tr: { soru: 'Küçük kuş yuvasına döndü ve yavrularını besledi. Kuş kimi besledi?', secenekler: ['Yavrularını', 'Anneyi', 'Kediyi', 'Ağacı'] },
+    en: { soru: 'The little bird returned to its nest and fed its chicks. Whom did the bird feed?', secenekler: ['Its chicks', 'The mother', 'The cat', 'The tree'] }
+  },
+  {
+    id: 'oku-karne', kategori: 'okuma', dogru: 1,
+    tr: { soru: 'Elif çok çalıştı ve sınavdan yüksek not aldı. Elif neden yüksek not aldı?', secenekler: ['Şans eseri', 'Çok çalıştığı için', 'Uyuduğu için', 'Oynadığı için'] },
+    en: { soru: 'Elif studied hard and got a high grade. Why did she get a high grade?', secenekler: ['By luck', 'Because she studied hard', 'Because she slept', 'Because she played'] }
+  },
+  {
+    id: 'oku-kar', kategori: 'okuma', dogru: 2,
+    tr: { soru: 'Kış geldi, her yer bembeyaz oldu. Her yeri ne beyaza boyadı?', secenekler: ['Boya', 'Bulut', 'Kar', 'Un'] },
+    en: { soru: 'Winter came and everywhere turned white. What made everything white?', secenekler: ['Paint', 'A cloud', 'Snow', 'Flour'] }
+  },
+  {
+    id: 'oku-bisiklet', kategori: 'okuma', dogru: 3,
+    tr: { soru: 'Mert yeni bisikletiyle parka gitti ve arkadaşlarıyla oynadı. Mert nereye gitti?', secenekler: ['Okula', 'Eve', 'Markete', 'Parka'] },
+    en: { soru: 'Mert rode his new bike to the park and played with friends. Where did Mert go?', secenekler: ['School', 'Home', 'The store', 'The park'] }
+  },
+  {
+    id: 'oku-tohum', kategori: 'okuma', dogru: 0,
+    tr: { soru: 'Ayşe toprağa bir tohum ekti, her gün suladı ve tohum büyüdü. Tohum neden büyüdü?', secenekler: ['Sulandığı için', 'Konuştuğu için', 'Karanlıkta durduğu için', 'Kırıldığı için'] },
+    en: { soru: 'Ayse planted a seed, watered it every day, and it grew. Why did the seed grow?', secenekler: ['Because it was watered', 'Because it talked', 'Because it stayed dark', 'Because it broke'] }
+  },
+
+  // --- Kelime bilgisi (devam) ---
+  {
+    id: 'bilgi-sesli', kategori: 'bilgi', dogru: 0,
+    tr: { soru: 'Hangisi bir sesli (ünlü) harftir?', secenekler: ['A', 'B', 'K', 'T'] },
+    en: { soru: 'Which one is a vowel?', secenekler: ['A', 'B', 'K', 'T'] }
+  },
+  {
+    id: 'bilgi-sessiz', kategori: 'bilgi', dogru: 1,
+    tr: { soru: 'Hangisi bir sessiz (ünsüz) harftir?', secenekler: ['E', 'M', 'O', 'U'] },
+    en: { soru: 'Which one is a consonant?', secenekler: ['E', 'M', 'O', 'U'] }
+  },
+  {
+    id: 'bilgi-soru', kategori: 'bilgi', dogru: 2,
+    tr: { soru: 'Bir soru cümlesinin sonuna hangi işaret konur?', secenekler: ['Nokta (.)', 'Virgül (,)', 'Soru işareti (?)', 'Ünlem (!)'] },
+    en: { soru: 'Which mark goes at the end of a question?', secenekler: ['Period (.)', 'Comma (,)', 'Question mark (?)', 'Exclamation (!)'] }
+  },
+  {
+    id: 'bilgi-nokta', kategori: 'bilgi', dogru: 3,
+    tr: { soru: 'Düz bir cümlenin (haber cümlesi) sonuna ne konur?', secenekler: ['Soru işareti', 'İki nokta', 'Ünlem', 'Nokta'] },
+    en: { soru: 'What goes at the end of a plain telling sentence?', secenekler: ['Question mark', 'Colon', 'Exclamation', 'Period'] }
+  },
+  {
+    id: 'bilgi-alfabe', kategori: 'bilgi', dogru: 0,
+    tr: { soru: 'Alfabetik sırada hangi kelime önce gelir?', secenekler: ['Armut', 'Elma', 'Karpuz', 'Üzüm'] },
+    en: { soru: 'In alphabetical order, which word comes first?', secenekler: ['Apple', 'Cherry', 'Melon', 'Pear'] }
+  },
+  {
+    id: 'bilgi-tekil', kategori: 'bilgi', dogru: 1,
+    tr: { soru: 'Hangisi tek bir varlığı anlatır (tekildir)?', secenekler: ['Çocuklar', 'Kalem', 'Evler', 'Kuşlar'] },
+    en: { soru: 'Which word describes just one thing (singular)?', secenekler: ['Children', 'Pencil', 'Houses', 'Birds'] }
+  },
+  {
+    id: 'bilgi-hece-iki', kategori: 'bilgi', dogru: 2,
+    tr: { soru: '"Kalem" kelimesi kaç hecelidir? (ka-lem)', secenekler: ['Bir', 'Üç', 'İki', 'Dört'] },
+    en: { soru: 'How many syllables are in "pencil" (pen-cil)?', secenekler: ['One', 'Three', 'Two', 'Four'] }
   }
 ];

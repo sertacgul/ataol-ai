@@ -89,5 +89,50 @@ export const SEVIYELER = [
     id: 's6', en: 5, boy: 5,
     baslangic: { x: 0, y: 2, yon: 1 }, hedef: { x: 4, y: 2 },
     engeller: [{ x: 2, y: 1 }, { x: 2, y: 2 }, { x: 2, y: 3 }]
+  },
+  {
+    id: 's7', en: 5, boy: 5,
+    baslangic: { x: 0, y: 0, yon: 1 }, hedef: { x: 4, y: 4 },
+    engeller: [{ x: 1, y: 2 }, { x: 3, y: 2 }]
+  },
+  {
+    id: 's8', en: 5, boy: 5,
+    baslangic: { x: 4, y: 0, yon: 2 }, hedef: { x: 0, y: 4 },
+    engeller: [{ x: 2, y: 2 }]
+  },
+  {
+    id: 's9', en: 5, boy: 5,
+    baslangic: { x: 2, y: 0, yon: 2 }, hedef: { x: 2, y: 4 },
+    engeller: [{ x: 2, y: 2 }, { x: 1, y: 2 }]
+  },
+  {
+    id: 's10', en: 5, boy: 5,
+    baslangic: { x: 0, y: 4, yon: 0 }, hedef: { x: 4, y: 4 },
+    engeller: [{ x: 2, y: 4 }, { x: 2, y: 3 }]
+  },
+  {
+    id: 's11', en: 5, boy: 5,
+    baslangic: { x: 0, y: 0, yon: 2 }, hedef: { x: 2, y: 2 },
+    engeller: [{ x: 1, y: 1 }, { x: 3, y: 3 }]
+  },
+  {
+    id: 's12', en: 5, boy: 5,
+    baslangic: { x: 4, y: 4, yon: 0 }, hedef: { x: 0, y: 0 },
+    engeller: [{ x: 2, y: 2 }, { x: 2, y: 3 }, { x: 3, y: 2 }]
+  },
+  {
+    id: 's13', en: 5, boy: 5,
+    baslangic: { x: 0, y: 2, yon: 1 }, hedef: { x: 4, y: 2 },
+    engeller: [{ x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }]
+  },
+  {
+    id: 's14', en: 5, boy: 5,
+    baslangic: { x: 2, y: 2, yon: 0 }, hedef: { x: 0, y: 0 },
+    engeller: [{ x: 1, y: 1 }, { x: 3, y: 3 }, { x: 1, y: 3 }, { x: 3, y: 1 }]
+  },
+  {
+    id: 's15', en: 5, boy: 5,
+    baslangic: { x: 0, y: 4, yon: 1 }, hedef: { x: 4, y: 0 },
+    engeller: [{ x: 1, y: 1 }, { x: 2, y: 2 }, { x: 3, y: 3 }]
   }
 ];

@@ -122,7 +122,7 @@ const STRINGS = {
     'muh.cat.gorunus': 'Görünüş',
     'muh.cat.kavram': 'Kavram',
     'muh.cat.makine': 'Basit Makine',
-    'geo.cat.sekil': 'Şekil', 'geo.cat.kenar': 'Kenar', 'geo.cat.kavram': 'Kavram',
+    'geo.cat.sekil': 'Şekil', 'geo.cat.kenar': 'Kenar', 'geo.cat.aci': 'Açı', 'geo.cat.kavram': 'Kavram',
 
     'atolye.pen': 'Kalem',
     'atolye.ruler': 'Cetvel',
@@ -281,7 +281,7 @@ const STRINGS = {
     'drill.answer': 'Doğrusu: {x}',
     'drill.newLevel': 'Yeni seviyeye geçtin!',
     'quiz.answerRetry': 'Doğrusu: {x}. Bir daha deneyelim.',
-    'level.topla-10': "Toplama, 10'a kadar", 'level.cikar-10': "Çıkarma, 10'a kadar", 'level.topla-20': "Toplama, 20'ye kadar", 'level.cikar-20': "Çıkarma, 20'ye kadar", 'level.carp-2-5': 'Çarpma: 2, 3, 4, 5', 'level.carp-6-10': 'Çarpma: 6, 7, 8, 9, 10', 'level.bol': 'Bölme', 'level.karisik': 'Karışık dört işlem',
+    'level.topla-10': "Toplama, 10'a kadar", 'level.cikar-10': "Çıkarma, 10'a kadar", 'level.topla-20': "Toplama, 20'ye kadar", 'level.cikar-20': "Çıkarma, 20'ye kadar", 'level.carp-2-5': 'Çarpma: 2, 3, 4, 5', 'level.carp-6-10': 'Çarpma: 6, 7, 8, 9, 10', 'level.bol': 'Bölme', 'level.kareler': 'Kare sayılar', 'level.karisik': 'Karışık dört işlem',
     'quiz.bugun-gun': 'Bugün ne günü?', 'quiz.yarin-gun': 'Yarın ne günü?', 'quiz.ay': 'Hangi aydayız?', 'quiz.mevsim': 'Hangi mevsimdeyiz?'
   },
   en: {
@@ -390,7 +390,7 @@ const STRINGS = {
     'muh.cat.gorunus': 'View',
     'muh.cat.kavram': 'Concept',
     'muh.cat.makine': 'Simple machine',
-    'geo.cat.sekil': 'Shape', 'geo.cat.kenar': 'Side', 'geo.cat.kavram': 'Concept',
+    'geo.cat.sekil': 'Shape', 'geo.cat.kenar': 'Side', 'geo.cat.aci': 'Angle', 'geo.cat.kavram': 'Concept',
 
     'atolye.pen': 'Pen',
     'atolye.ruler': 'Ruler',
@@ -549,7 +549,7 @@ const STRINGS = {
     'drill.answer': 'The answer is: {x}',
     'drill.newLevel': 'You reached a new level!',
     'quiz.answerRetry': "The answer is: {x}. Let's try again.",
-    'level.topla-10': 'Addition up to 10', 'level.cikar-10': 'Subtraction up to 10', 'level.topla-20': 'Addition up to 20', 'level.cikar-20': 'Subtraction up to 20', 'level.carp-2-5': 'Multiplication: 2, 3, 4, 5', 'level.carp-6-10': 'Multiplication: 6, 7, 8, 9, 10', 'level.bol': 'Division', 'level.karisik': 'Mixed operations',
+    'level.topla-10': 'Addition up to 10', 'level.cikar-10': 'Subtraction up to 10', 'level.topla-20': 'Addition up to 20', 'level.cikar-20': 'Subtraction up to 20', 'level.carp-2-5': 'Multiplication: 2, 3, 4, 5', 'level.carp-6-10': 'Multiplication: 6, 7, 8, 9, 10', 'level.bol': 'Division', 'level.kareler': 'Square numbers', 'level.karisik': 'Mixed operations',
     'quiz.bugun-gun': 'What day is it today?', 'quiz.yarin-gun': 'What day is tomorrow?', 'quiz.ay': 'What month is it?', 'quiz.mevsim': 'What season is it?'
   }
 };

@@ -59,6 +59,23 @@ export const TEMPLATES = [
     yuk: true,
     yaz: ({ ad, yonelme, birim, a, b }) =>
       `${a} ${birim} ${b} ${yonelme} eşit olarak paylaştırıldı. Her ${ad} kaç ${birim} taşıyor?`
+  },
+  {
+    // Karsilastirma: "baska bir ${bulunma}" hem yuk hem yolcu araciyla dogru
+    // Turkce verir ("baska bir tirda", "baska bir otobuste"). yuk: null,
+    // fark her arac icin anlamli.
+    id: 'fark',
+    op: '-',
+    yuk: null,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `${buyukHarf(bulunma)} ${a} ${birim}, başka bir ${bulunma} ${b} ${birim} var. Aradaki fark kaç ${birim}?`
+  },
+  {
+    id: 'birlestir',
+    op: '+',
+    yuk: null,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `${buyukHarf(bulunma)} ${a} ${birim}, başka bir ${bulunma} ${b} ${birim} var. Toplam kaç ${birim}?`
   }
 ];
 
@@ -106,6 +123,20 @@ export const TEMPLATES_EN = [
     yuk: true,
     yaz: ({ ad, coklu, birim, a, b }) =>
       `${a} ${birim} were shared equally among ${b} ${coklu}. How many ${birim} does each ${ad} carry?`
+  },
+  {
+    id: 'fark',
+    op: '-',
+    yuk: null,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `There are ${a} ${birim} ${bulunma} and ${b} ${birim} on another one. What is the difference?`
+  },
+  {
+    id: 'birlestir',
+    op: '+',
+    yuk: null,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `There are ${a} ${birim} ${bulunma} and ${b} ${birim} on another one. How many ${birim} in total?`
   }
 ];
 

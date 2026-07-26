@@ -18,7 +18,7 @@ test('soru idleri benzersiz', () => {
 });
 
 test('kategoriler beklenen kumede', () => {
-  const gecerli = new Set(['sekil', 'kenar', 'kavram']);
+  const gecerli = new Set(['sekil', 'kenar', 'aci', 'kavram']);
   for (const s of GEOMETRI_SORULAR) assert.ok(gecerli.has(s.kategori), `${s.id} gecersiz kategori`);
 });
 

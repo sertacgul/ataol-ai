@@ -18,7 +18,7 @@ import { themeFor } from '../data/themes.js';
 
 export const SESSION_LENGTH = 10;
 const SPEED_THRESHOLD_MS = 6000;
-const PROBLEM_COUNT = 2;
+const PROBLEM_COUNT = 3;
 
 // dil: sozel problemler o dilin sablon+temasiyla uretilir (problems.js /
 // themes.js). Saf aritmetik zaten dilden bagimsiz.

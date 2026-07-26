@@ -169,6 +169,124 @@ export const SORULAR = [
     id: 'vida', kategori: 'makine', dogru: 0,
     tr: { soru: 'Döndükçe içeri ilerleyip parçaları birbirine tutturan?', secenekler: ['Vida', 'Balon', 'İp', 'Sünger'] },
     en: { soru: 'What moves inward as it turns and holds parts together?', secenekler: ['Screw', 'Balloon', 'Rope', 'Sponge'] }
+  },
+
+  // --- Parca (devam) ---
+  {
+    id: 'fren', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Hareket eden aracı durduran parça hangisi?', secenekler: ['Fren', 'Korna', 'Ayna', 'Cam'] },
+    en: { soru: 'Which part stops a moving vehicle?', secenekler: ['Brake', 'Horn', 'Mirror', 'Window'] }
+  },
+  {
+    id: 'kanca', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Vincin ucunda yükü tutan kıvrık parça hangisi?', secenekler: ['Kanca', 'Kova', 'Kabin', 'Palet'] },
+    en: { soru: 'Which curved part at the end of a crane holds the load?', secenekler: ['Hook', 'Bucket', 'Cabin', 'Track'] }
+  },
+  {
+    id: 'hidrolik-kol', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Ekskavatörün kovasını sıvı basıncıyla kaldırıp indiren parça?', secenekler: ['Hidrolik kol', 'Anten', 'Ayna', 'Korna'] },
+    en: { soru: 'Which part raises and lowers the bucket using liquid pressure?', secenekler: ['Hydraulic arm', 'Antenna', 'Mirror', 'Horn'] }
+  },
+  {
+    id: 'sasi', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Aracın tüm parçalarının üzerine bağlandığı ana iskelet?', secenekler: ['Şasi', 'Cam', 'Far', 'Koltuk'] },
+    en: { soru: 'What is the main frame that all vehicle parts attach to?', secenekler: ['Chassis', 'Window', 'Headlight', 'Seat'] }
+  },
+  {
+    id: 'depo', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Aracın yakıtını içinde tutan parça hangisi?', secenekler: ['Yakıt deposu', 'Direksiyon', 'Ayna', 'Anten'] },
+    en: { soru: 'Which part holds the vehicle\'s fuel inside?', secenekler: ['Fuel tank', 'Steering wheel', 'Mirror', 'Antenna'] }
+  },
+  {
+    id: 'karsi-agirlik', kategori: 'parca', dogru: 0,
+    tr: { soru: 'Vincin devrilmemesi için arkasına konan ağır parça?', secenekler: ['Karşı ağırlık', 'Balon', 'Anten', 'Cam'] },
+    en: { soru: 'What heavy part is put on a crane\'s back so it does not tip over?', secenekler: ['Counterweight', 'Balloon', 'Antenna', 'Glass'] }
+  },
+
+  // --- Gorunus (devam) ---
+  {
+    id: 'ustten', kategori: 'gorunus', dogru: 0,
+    tr: { soru: 'Bir nesneye tam tepesinden bakınca gördüğümüz görünüş?', secenekler: ['Üstten görünüş', 'Önden görünüş', 'Yandan görünüş', 'İçten görünüş'] },
+    en: { soru: 'What view do we see when looking straight down on an object?', secenekler: ['Top view', 'Front view', 'Side view', 'Inside view'] }
+  },
+  {
+    id: 'yandan', kategori: 'gorunus', dogru: 0,
+    tr: { soru: 'Bir nesneye yanından baktığımızda gördüğümüz görünüş?', secenekler: ['Yandan görünüş', 'Üstten görünüş', 'Alttan görünüş', 'Renk'] },
+    en: { soru: 'What view do we see when looking at an object from the side?', secenekler: ['Side view', 'Top view', 'Bottom view', 'Color'] }
+  },
+  {
+    id: 'olcu-cizgi', kategori: 'gorunus', dogru: 0,
+    tr: { soru: 'Teknik çizimde bir kenarın uzunluğunu gösteren çizgi?', secenekler: ['Ölçü çizgisi', 'Gökkuşağı', 'Sınır', 'Gölge'] },
+    en: { soru: 'In a technical drawing, which line shows the length of an edge?', secenekler: ['Dimension line', 'Rainbow', 'Border', 'Shadow'] }
+  },
+  {
+    id: 'kesit', kategori: 'gorunus', dogru: 0,
+    tr: { soru: 'Bir nesnenin içini göstermek için kesip çizilen görünüş?', secenekler: ['Kesit', 'Fotoğraf', 'Gölge', 'Boya'] },
+    en: { soru: 'What view is drawn by cutting through to show the inside?', secenekler: ['Cross-section', 'Photo', 'Shadow', 'Paint'] }
+  },
+  {
+    id: 'perspektif', kategori: 'gorunus', dogru: 0,
+    tr: { soru: 'Bir nesneyi üç boyutlu, gerçekçi gösteren çizim türü?', secenekler: ['Perspektif', 'Nokta', 'Çizgi', 'Leke'] },
+    en: { soru: 'What kind of drawing shows an object in 3D, realistically?', secenekler: ['Perspective', 'Dot', 'Line', 'Blob'] }
+  },
+
+  // --- Kavram (devam) ---
+  {
+    id: 'eskiz', kategori: 'kavram', dogru: 0,
+    tr: { soru: 'Bir fikri hızlıca, kabaca çizmeye ne denir?', secenekler: ['Eskiz (taslak)', 'Boyama', 'Fotoğraf', 'Silme'] },
+    en: { soru: 'What is a quick, rough drawing of an idea called?', secenekler: ['Sketch', 'Coloring', 'Photo', 'Erasing'] }
+  },
+  {
+    id: 'prototip', kategori: 'kavram', dogru: 0,
+    tr: { soru: 'Bir ürünün seri üretimden önce yapılan ilk denemesine ne denir?', secenekler: ['Prototip', 'Kutu', 'Etiket', 'Reklam'] },
+    en: { soru: 'What is the first trial model of a product before mass production called?', secenekler: ['Prototype', 'Box', 'Label', 'Ad'] }
+  },
+  {
+    id: 'montaj', kategori: 'kavram', dogru: 0,
+    tr: { soru: 'Parçaları bir araya getirip birleştirme işine ne denir?', secenekler: ['Montaj', 'Boyama', 'Ölçme', 'Kesme'] },
+    en: { soru: 'What is putting parts together to build something called?', secenekler: ['Assembly', 'Painting', 'Measuring', 'Cutting'] }
+  },
+  {
+    id: 'malzeme', kategori: 'kavram', dogru: 0,
+    tr: { soru: 'Bir köprü demirden yapılır. Demir burada nedir?', secenekler: ['Malzeme', 'Renk', 'Ölçü', 'Ağırlık'] },
+    en: { soru: 'A bridge is made of steel. What is steel here?', secenekler: ['Material', 'Color', 'Measure', 'Weight'] }
+  },
+  {
+    id: 'denge', kategori: 'kavram', dogru: 0,
+    tr: { soru: 'Bir kulenin devrilmeden dik durabilmesi için ne gerekir?', secenekler: ['Denge', 'Renk', 'Ses', 'Koku'] },
+    en: { soru: 'What does a tower need to stand up without toppling?', secenekler: ['Balance', 'Color', 'Sound', 'Smell'] }
+  },
+
+  // --- Basit Makine (devam) ---
+  {
+    id: 'tekerlek-aks', kategori: 'makine', dogru: 0,
+    tr: { soru: 'Bir çubuğa (aks) bağlı dönen tekerlek, yükü kolayca taşır. Bu basit makine?', secenekler: ['Tekerlek ve aks', 'Kaldıraç', 'Vida', 'Kama'] },
+    en: { soru: 'A wheel turning on a rod (axle) moves loads easily. Which simple machine?', secenekler: ['Wheel and axle', 'Lever', 'Screw', 'Wedge'] }
+  },
+  {
+    id: 'kama', kategori: 'makine', dogru: 0,
+    tr: { soru: 'Baltanın ucu gibi, bir şeyi yarıp ayıran sivri basit makine?', secenekler: ['Kama', 'Makara', 'Yay', 'Halka'] },
+    en: { soru: 'Which sharp simple machine splits things apart, like an axe blade?', secenekler: ['Wedge', 'Pulley', 'Spring', 'Ring'] }
+  },
+  {
+    id: 'kayis-kasnak', kategori: 'makine', dogru: 0,
+    tr: { soru: 'İki tekerleği bir bantla birbirine bağlayıp birlikte döndüren sistem?', secenekler: ['Kayış-kasnak', 'Çekiç', 'Cetvel', 'Fırça'] },
+    en: { soru: 'Which system links two wheels with a belt so they turn together?', secenekler: ['Belt and pulley', 'Hammer', 'Ruler', 'Brush'] }
+  },
+  {
+    id: 'yay', kategori: 'makine', dogru: 0,
+    tr: { soru: 'Bastırınca sıkışıp bırakınca geri fırlayan sarmal parça?', secenekler: ['Yay', 'Palet', 'Kova', 'Cam'] },
+    en: { soru: 'Which coiled part squashes when pressed and springs back?', secenekler: ['Spring', 'Track', 'Bucket', 'Glass'] }
+  },
+  {
+    id: 'zincir-disli', kategori: 'makine', dogru: 0,
+    tr: { soru: 'Bisiklette pedalın gücünü tekerleğe taşıyan halkalı parça?', secenekler: ['Zincir', 'Seledon', 'Fren', 'Zil'] },
+    en: { soru: 'On a bike, which linked part carries the pedal\'s power to the wheel?', secenekler: ['Chain', 'Seat', 'Brake', 'Bell'] }
+  },
+  {
+    id: 'menteşe', kategori: 'makine', dogru: 0,
+    tr: { soru: 'Bir kapının açılıp kapanmasını sağlayan dönen eklem parça?', secenekler: ['Menteşe', 'Anahtar', 'Çivi', 'Boya'] },
+    en: { soru: 'Which turning joint lets a door open and close?', secenekler: ['Hinge', 'Key', 'Nail', 'Paint'] }
   }
 ];
 

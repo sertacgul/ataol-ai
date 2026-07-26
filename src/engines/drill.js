@@ -23,6 +23,7 @@ export const LEVELS = [
   { id: 'carp-2-5', title: 'Çarpma: 2, 3, 4, 5' },
   { id: 'carp-6-10', title: 'Çarpma: 6, 7, 8, 9, 10' },
   { id: 'bol', title: 'Bölme' },
+  { id: 'kareler', title: 'Kare sayılar' },
   { id: 'karisik', title: 'Karışık dört işlem' }
 ];
 
@@ -88,6 +89,13 @@ function uret(levelId, hedef) {
     for (let b = 2; b <= 10; b++) {
       for (let q = 1; q <= 10; q++) ekle(hedef, '/', b * q, b, q);
     }
+    return;
+  }
+
+  if (levelId === 'kareler') {
+    // Kare sayilar: 2x2 .. 10x10. Kucuk ve ustesinden gelinebilir bir kume,
+    // cocuk carpim tablosunu pekistirsin diye ayri bir basamak.
+    for (let a = 2; a <= 10; a++) ekle(hedef, 'x', a, a, a * a);
   }
 }
 
