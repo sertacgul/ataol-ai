@@ -41,6 +41,44 @@ export function addGuardian(profile, { name, label, color = null, pinHash, pinSa
   };
 }
 
+// Ebeveynin ekledigi kart DAIMA 'approved'. measured yalniz sabah-takvim
+// ve ogle-matematik'e ozeldir (main.js quiz/drill'e onlari baglar); ebeveyn
+// measured uretemez, yoksa dokununca hicbir sey olmaz.
+export function addCard(profile, { title, block, stars, minutes, icon }) {
+  const id = randomId();
+  const card = { id, block, type: 'approved', title, icon, stars, minutes };
+  return {
+    ...profile,
+    cards: [...profile.cards, card],
+    routine: { ...profile.routine, [block]: [...profile.routine[block], id] }
+  };
+}
+
+// Kart cards'tan VE tum routine bloklarindan cikar; ikisi tutarli kalmali,
+// yoksa renderRoutine olmayan bir karti cizmeye calisir.
+export function removeCard(profile, id) {
+  const routine = {};
+  for (const b of Object.keys(profile.routine)) {
+    routine[b] = profile.routine[b].filter((x) => x !== id);
+  }
+  return {
+    ...profile,
+    cards: profile.cards.filter((c) => c.id !== id),
+    routine
+  };
+}
+
+export function addReward(profile, { name, emoji, target }) {
+  return {
+    ...profile,
+    rewards: [...profile.rewards, { id: randomId(), name, emoji, target }]
+  };
+}
+
+export function removeReward(profile, id) {
+  return { ...profile, rewards: profile.rewards.filter((r) => r.id !== id) };
+}
+
 export function validateProfile(profile) {
   const errors = [];
 

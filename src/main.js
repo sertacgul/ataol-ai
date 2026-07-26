@@ -1,12 +1,13 @@
 import { createStorage } from './core/storage.js';
 import { createAppState } from './core/state.js';
 import { verifyPin, hashPin } from './core/crypto.js';
-import { addGuardian } from './core/profile.js';
+import { addGuardian, addCard, removeCard, addReward, removeReward } from './core/profile.js';
 import { seedProfile, ROUTINE_TEMPLATES } from './data/defaults.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
 import { approvalQueue } from './views/parent.js';
 import { guardianSummary, validateGuardianInput, requiresExistingPin } from './views/settings.js';
+import { validateCardInput, validateRewardInput, BLOCK_LABELS, ICON_OPTIONS, EMOJI_OPTIONS } from './views/content.js';
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timequiz.js';
@@ -42,6 +43,10 @@ let kurtarma = false;
 // tanim ORADAN once gelmeli; yoksa let'in TDZ'sine takilir.
 let sohbetGecmis = [];
 let sohbetBekliyor = false;
+
+// Icerik kisisellestirme modallarinda secili simge/emoji.
+let seciliGorevSimge = null;
+let seciliOdulEmoji = null;
 
 function showRecovery() {
   const app = document.getElementById('app');
@@ -190,10 +195,188 @@ function renderParent() {
           ])
         )),
 
+    gorevlerBolumu(),
+    odullerBolumu(),
     sohbetAyarBolumu()
   ];
 
   mount(target, bolumler);
+}
+
+// Ebeveyn gorevleri bloklara gore listeler, siler, yenisini ekler.
+function gorevlerBolumu() {
+  const byId = new Map(profile.cards.map((c) => [c.id, c]));
+
+  const bloklar = ['morning', 'afternoon', 'evening'].map((b) =>
+    el('div', { className: 'parent-gorev-blok' }, [
+      el('p', { className: 'parent-gorev-blok__ad', text: BLOCK_LABELS[b] }),
+      el('ul', { className: 'parent-gorev-liste' }, profile.routine[b].map((id) => {
+        const c = byId.get(id);
+        return el('li', { className: 'parent-gorev' }, [
+          el('span', { className: 'material-symbols-rounded parent-gorev__ikon', text: c.icon }),
+          el('span', { className: 'parent-gorev__ad', text: c.title }),
+          el('span', { className: 'parent-gorev__odul', text: `${c.stars}★ · ${c.minutes}dk` }),
+          el('button', {
+            className: 'parent-gorev__sil',
+            text: '×',
+            attrs: { type: 'button', 'aria-label': 'Sil' },
+            dataset: { cardSil: id }
+          })
+        ]);
+      }))
+    ])
+  );
+
+  return el('section', { className: 'parent-guardians' }, [
+    el('h2', { className: 'parent-guardians__title', text: 'Görevler' }),
+    ...bloklar,
+    el('button', {
+      className: 'parent-guardians__add',
+      text: 'Görev ekle',
+      attrs: { type: 'button' },
+      dataset: { gorevEkle: 'yes' }
+    })
+  ]);
+}
+
+function odullerBolumu() {
+  return el('section', { className: 'parent-guardians' }, [
+    el('h2', { className: 'parent-guardians__title', text: 'Ödüller' }),
+    el('ul', { className: 'parent-gorev-liste' }, profile.rewards.map((r) =>
+      el('li', { className: 'parent-gorev' }, [
+        el('span', { className: 'parent-gorev__emoji', text: r.emoji }),
+        el('span', { className: 'parent-gorev__ad', text: r.name }),
+        el('span', { className: 'parent-gorev__odul', text: `${r.target} dk` }),
+        el('button', {
+          className: 'parent-gorev__sil',
+          text: '×',
+          attrs: { type: 'button', 'aria-label': 'Sil' },
+          dataset: { rewardSil: r.id }
+        })
+      ])
+    )),
+    el('button', {
+      className: 'parent-guardians__add',
+      text: 'Ödül ekle',
+      attrs: { type: 'button' },
+      dataset: { odulEkle: 'yes' }
+    })
+  ]);
+}
+
+// --- Gorev ve odul ekleme modallari ---
+function cizGorevSimgeler() {
+  mount(document.getElementById('gorev-simgeler'), ICON_OPTIONS.map((ikon) =>
+    el('button', {
+      className: ikon === seciliGorevSimge ? 'secim-hucre secim-hucre--secili' : 'secim-hucre',
+      attrs: { type: 'button' },
+      dataset: { gorevSimge: ikon }
+    }, [el('span', { className: 'material-symbols-rounded', text: ikon })])
+  ));
+}
+
+function acGorevModal() {
+  document.getElementById('gorev-baslik').value = '';
+  document.getElementById('gorev-yildiz').value = '';
+  document.getElementById('gorev-dakika').value = '';
+  document.querySelector('input[name="gorev-blok"][value="morning"]').checked = true;
+  seciliGorevSimge = null;
+  cizGorevSimgeler();
+  document.getElementById('gorev-hata').hidden = true;
+  document.getElementById('gorev-modal').hidden = false;
+}
+
+function kapatGorevModal() {
+  document.getElementById('gorev-modal').hidden = true;
+}
+
+function kaydetGorev() {
+  const girdi = {
+    title: document.getElementById('gorev-baslik').value,
+    block: document.querySelector('input[name="gorev-blok"]:checked')?.value,
+    stars: document.getElementById('gorev-yildiz').value,
+    minutes: document.getElementById('gorev-dakika').value,
+    icon: seciliGorevSimge
+  };
+
+  const sonuc = validateCardInput(girdi);
+  if (!sonuc.valid) {
+    const h = document.getElementById('gorev-hata');
+    h.textContent = sonuc.errors[0];
+    h.hidden = false;
+    return;
+  }
+
+  profile = addCard(profile, {
+    title: girdi.title.trim(),
+    block: girdi.block,
+    stars: Number(girdi.stars),
+    minutes: Number(girdi.minutes),
+    icon: girdi.icon
+  });
+  state.saveProfile(profile);
+  kapatGorevModal();
+  render();
+}
+
+function silGorev(id) {
+  profile = removeCard(profile, id);
+  state.saveProfile(profile);
+  render();
+}
+
+function cizOdulEmojiler() {
+  mount(document.getElementById('odul-emojiler'), EMOJI_OPTIONS.map((em) =>
+    el('button', {
+      className: em === seciliOdulEmoji ? 'secim-hucre secim-hucre--secili' : 'secim-hucre',
+      attrs: { type: 'button' },
+      dataset: { odulEmoji: em }
+    }, [el('span', { className: 'secim-emoji', text: em })])
+  ));
+}
+
+function acOdulModal() {
+  document.getElementById('odul-ad').value = '';
+  document.getElementById('odul-hedef').value = '';
+  seciliOdulEmoji = null;
+  cizOdulEmojiler();
+  document.getElementById('odul-hata').hidden = true;
+  document.getElementById('odul-modal').hidden = false;
+}
+
+function kapatOdulModal() {
+  document.getElementById('odul-modal').hidden = true;
+}
+
+function kaydetOdul() {
+  const girdi = {
+    name: document.getElementById('odul-ad').value,
+    emoji: seciliOdulEmoji,
+    target: document.getElementById('odul-hedef').value
+  };
+
+  const sonuc = validateRewardInput(girdi);
+  if (!sonuc.valid) {
+    const h = document.getElementById('odul-hata');
+    h.textContent = sonuc.errors[0];
+    h.hidden = false;
+    return;
+  }
+
+  profile = addReward(profile, {
+    name: girdi.name.trim(),
+    emoji: girdi.emoji,
+    target: Number(girdi.target)
+  });
+  state.saveProfile(profile);
+  kapatOdulModal();
+  render();
+}
+
+function silOdul(id) {
+  profile = removeReward(profile, id);
+  state.saveProfile(profile);
+  render();
 }
 
 // Sohbetin ebeveyn ayarlari: API anahtari ve sohbette anilan es adi.
@@ -363,6 +546,8 @@ function renderIfStale() {
   if (document.getElementById('amiral-modal').hidden === false) return;
   if (document.getElementById('satranc-modal').hidden === false) return;
   if (document.getElementById('satranc-oyun-modal').hidden === false) return;
+  if (document.getElementById('gorev-modal').hidden === false) return;
+  if (document.getElementById('odul-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -1331,6 +1516,44 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const gorevEkle = e.target.closest('[data-gorev-ekle]');
+  if (gorevEkle) {
+    acGorevModal();
+    return;
+  }
+
+  const odulEkle = e.target.closest('[data-odul-ekle]');
+  if (odulEkle) {
+    acOdulModal();
+    return;
+  }
+
+  const cardSil = e.target.closest('[data-card-sil]');
+  if (cardSil) {
+    silGorev(cardSil.dataset.cardSil);
+    return;
+  }
+
+  const rewardSil = e.target.closest('[data-reward-sil]');
+  if (rewardSil) {
+    silOdul(rewardSil.dataset.rewardSil);
+    return;
+  }
+
+  const gorevSimge = e.target.closest('[data-gorev-simge]');
+  if (gorevSimge) {
+    seciliGorevSimge = gorevSimge.dataset.gorevSimge;
+    cizGorevSimgeler();
+    return;
+  }
+
+  const odulEmoji = e.target.closest('[data-odul-emoji]');
+  if (odulEmoji) {
+    seciliOdulEmoji = odulEmoji.dataset.odulEmoji;
+    cizOdulEmojiler();
+    return;
+  }
+
   const oyunKart = e.target.closest('[data-game]');
   if (oyunKart) {
     if (oyunKart.dataset.game === 'amiral') acAmiral();
@@ -1387,6 +1610,10 @@ document.getElementById('app').addEventListener('click', (e) => {
 document.getElementById('pin-submit').addEventListener('click', submitPin);
 document.getElementById('pin-cancel').addEventListener('click', closePinModal);
 document.getElementById('guardian-submit').addEventListener('click', submitGuardian);
+document.getElementById('gorev-kaydet').addEventListener('click', kaydetGorev);
+document.getElementById('gorev-vazgec').addEventListener('click', kapatGorevModal);
+document.getElementById('odul-kaydet').addEventListener('click', kaydetOdul);
+document.getElementById('odul-vazgec').addEventListener('click', kapatOdulModal);
 document.getElementById('guardian-cancel').addEventListener('click', closeGuardianModal);
 document.getElementById('timequiz-cancel').addEventListener('click', kapatQuiz);
 document.getElementById('drill-cancel').addEventListener('click', kapatDrill);

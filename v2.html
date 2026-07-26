@@ -164,6 +164,41 @@
             </div>
         </div>
 
+        <div id="gorev-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box">
+                <h2>Görev ekle</h2>
+                <input type="text" id="gorev-baslik" placeholder="Görev adı (örn. Piyano çalış)" autocomplete="off">
+                <p class="v2-modal__note">Zaman dilimi</p>
+                <label><input type="radio" name="gorev-blok" value="morning" checked><span>Sabah</span></label>
+                <label><input type="radio" name="gorev-blok" value="afternoon"><span>Öğle</span></label>
+                <label><input type="radio" name="gorev-blok" value="evening"><span>Akşam</span></label>
+                <input type="number" id="gorev-yildiz" inputmode="numeric" placeholder="Yıldız (örn. 3)" autocomplete="off">
+                <input type="number" id="gorev-dakika" inputmode="numeric" placeholder="Dakika (örn. 6)" autocomplete="off">
+                <p class="v2-modal__note">Simge</p>
+                <div id="gorev-simgeler" class="secim-izgara"></div>
+                <p id="gorev-hata" class="v2-modal__error" hidden></p>
+                <div class="v2-modal__actions">
+                    <button type="button" id="gorev-vazgec">Vazgeç</button>
+                    <button type="button" id="gorev-kaydet">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="odul-modal" class="v2-modal" hidden>
+            <div class="v2-modal__box">
+                <h2>Ödül ekle</h2>
+                <input type="text" id="odul-ad" placeholder="Ödül adı (örn. Lego)" autocomplete="off">
+                <p class="v2-modal__note">Emoji</p>
+                <div id="odul-emojiler" class="secim-izgara"></div>
+                <input type="number" id="odul-hedef" inputmode="numeric" placeholder="Hedef dakika (örn. 300)" autocomplete="off">
+                <p id="odul-hata" class="v2-modal__error" hidden></p>
+                <div class="v2-modal__actions">
+                    <button type="button" id="odul-vazgec">Vazgeç</button>
+                    <button type="button" id="odul-kaydet">Ekle</button>
+                </div>
+            </div>
+        </div>
+
         <div id="onboarding" class="onboarding" hidden>
             <div class="onboarding__box">
                 <h1 class="onboarding__baslik">ATAOL'a hoş geldin</h1>

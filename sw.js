@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ataol-ai-v14';
+const CACHE_NAME = 'ataol-ai-v15';
 const ASSETS = [
   // v1 varliklari (gunluk kullanilan surum)
   './',
@@ -40,6 +40,7 @@ const ASSETS = [
   './src/views/parent.js',
   './src/views/routine.js',
   './src/views/settings.js',
+  './src/views/content.js',
   // PWA ikonlari
   './icons/icon-192.png',
   './icons/icon-512.png',
