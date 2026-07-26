@@ -1238,6 +1238,32 @@ const SOYUN_GLIF = { K: '♜', A: '♞', F: '♝', V: '♛', S: '♚', P: '♟' 
 let soyunDurum = null;
 let soyunSecili = null;       // secili karenin adi, ya da null
 let soyunYasal = [];          // secili tasin gidebilecegi kareler (to listesi)
+let soyunDerinlik = 2;        // AI arama derinligi: 1 kolay, 2 orta, 3 zor
+
+// Zorluk = AI arama derinligi. Derin arama daha iyi oynar ama yavaslar
+// (olculen: 1~2ms, 2~34ms, 3~464ms); ucu de cocuk icin kabul edilir.
+const SOYUN_ZORLUKLAR = [
+  { d: 1, key: 'chessGame.easy' },
+  { d: 2, key: 'chessGame.medium' },
+  { d: 3, key: 'chessGame.hard' }
+];
+
+function cizSoyunZorluk() {
+  mount(document.getElementById('satranc-oyun-zorluk'), SOYUN_ZORLUKLAR.map((z) =>
+    el('button', {
+      className: z.d === soyunDerinlik ? 'soyun-zorluk__dugme soyun-zorluk__dugme--secili' : 'soyun-zorluk__dugme',
+      text: ceviri(z.key),
+      attrs: { type: 'button' },
+      dataset: { soyunZorluk: String(z.d) }
+    })
+  ));
+}
+
+function soyunZorlukSec(d) {
+  soyunDerinlik = d;
+  state.saveGame('satranc-zorluk', d);
+  cizSoyunZorluk();
+}
 
 function soyunKareNode(kare, tasKod) {
   const { x, y } = kareCoz(kare);
@@ -1302,7 +1328,7 @@ function soyunBitir(durumu) {
 function soyunAiOyna() {
   if (!soyunDurum || soyunDurum.sira !== 's') return;
 
-  const hamle = enIyiHamle(soyunDurum, 2);
+  const hamle = enIyiHamle(soyunDurum, soyunDerinlik);
   if (!hamle) return;
 
   soyunDurum = satrancHamleUygula(soyunDurum, hamle);
@@ -1361,6 +1387,9 @@ function acSoyun() {
   soyunDurum = state.loadGame('satranc-oyun') || baslangicTahtasi();
   soyunSecili = null;
   soyunYasal = [];
+  const kayitliZorluk = state.loadGame('satranc-zorluk');
+  if ([1, 2, 3].includes(kayitliZorluk)) soyunDerinlik = kayitliZorluk;
+  cizSoyunZorluk();
   document.getElementById('satranc-oyun-mesaj').hidden = true;
   cizSoyun();
 
@@ -1724,6 +1753,12 @@ document.getElementById('app').addEventListener('click', (e) => {
   const satrancKare = e.target.closest('[data-satranc-kare]');
   if (satrancKare) {
     satrancKareTikla(satrancKare.dataset.satrancKare);
+    return;
+  }
+
+  const soyunZorluk = e.target.closest('[data-soyun-zorluk]');
+  if (soyunZorluk) {
+    soyunZorlukSec(Number(soyunZorluk.dataset.soyunZorluk));
     return;
   }
 
