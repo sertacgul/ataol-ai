@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildProblem, templatesFor, TEMPLATES } from '../src/engines/problems.js';
-import { VEHICLE_THEME } from '../src/data/themes.js';
+import { VEHICLE_THEME, VEHICLE_THEME_EN, themeFor } from '../src/data/themes.js';
 
 const sabit = (v) => () => v;
 
@@ -149,6 +149,40 @@ test('taksi duraga degil koseye birakir', () => {
     }
   }
   assert.ok(taksiGorulen > 0, 'taksi hic cikmadi, test bosuna geciyor');
+});
+
+test('EN: her islem icin Ingilizce problem uretir, dogru cevap + soru isareti', () => {
+  const ornekler = [
+    { op: '-', a: 9, b: 4, answer: 5 },
+    { op: '+', a: 5, b: 3, answer: 8 },
+    { op: 'x', a: 4, b: 3, answer: 12 },
+    { op: '/', a: 12, b: 3, answer: 4 }
+  ];
+  for (const f of ornekler) {
+    for (let i = 0; i < 40; i++) {
+      const p = buildProblem(f, themeFor('en'), () => i / 40, 'en');
+      assert.equal(p.answer, f.answer);
+      assert.ok(p.text.endsWith('?'), `soru isareti yok: ${p.text}`);
+      assert.ok(!p.text.includes('{') && !p.text.includes('}'), `doldurulmamis yer tutucu: ${p.text}`);
+      assert.ok(!/[çğışöüÇĞİŞÖÜ]/.test(p.text), `Turkce karakter sizdi: ${p.text}`);
+      assert.ok(p.text.includes(String(f.a)) && p.text.includes(String(f.b)), `sayilar yok: ${p.text}`);
+    }
+  }
+});
+
+test('EN: carpma yolcu araci secmez', () => {
+  const yolcuAdlari = VEHICLE_THEME_EN.nesneler.filter((n) => n.yolcu).map((n) => n.ad);
+  for (let i = 0; i < 200; i++) {
+    const p = buildProblem({ op: 'x', a: 9, b: 10, answer: 90 }, themeFor('en'), () => i / 200, 'en');
+    for (const ad of yolcuAdlari) {
+      assert.ok(!p.text.toLowerCase().includes(ad), `carpmada ${ad}: ${p.text}`);
+    }
+  }
+});
+
+test('themeFor dogru temayi verir', () => {
+  assert.equal(themeFor('en'), VEHICLE_THEME_EN);
+  assert.equal(themeFor('tr'), VEHICLE_THEME);
 });
 
 test('buyuk harf Turkce kurallarina uyar', () => {

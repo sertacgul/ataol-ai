@@ -821,8 +821,8 @@ function drillOnayla() {
 }
 
 function acDrill() {
-  // Sozel problemler yalniz TR'de; Ingilizce'de saf aritmetik gorunur.
-  drillSession = startSession(state.loadDrill(), Math.random, dil() === 'tr');
+  // Sozel problemler aktif dilin sablonuyla uretilir (TR/EN).
+  drillSession = startSession(state.loadDrill(), Math.random, dil());
   drillTyped = '';
   drillShownAt = performance.now();
   cizDrillPad();

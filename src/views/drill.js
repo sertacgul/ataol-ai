@@ -3,7 +3,7 @@ import {
   isLevelMastered, nextLevel
 } from '../engines/drill.js';
 import { buildProblem } from '../engines/problems.js';
-import { VEHICLE_THEME } from '../data/themes.js';
+import { themeFor } from '../data/themes.js';
 
 /**
  * Alistirma oturumu.
@@ -20,10 +20,9 @@ export const SESSION_LENGTH = 10;
 const SPEED_THRESHOLD_MS = 6000;
 const PROBLEM_COUNT = 2;
 
-// problemVar: sozel problemler yalniz bu acikken gorunur. Sozel problem
-// Turkce gramere gomulu (problems.js), Ingilizce'ye henuz cevrilmedi;
-// EN'de kapatilir, saf aritmetik (dilden bagimsiz) gorunur.
-function soruSec(drill, rng, kalan, haric = null, problemVar = true) {
+// dil: sozel problemler o dilin sablon+temasiyla uretilir (problems.js /
+// themes.js). Saf aritmetik zaten dilden bagimsiz.
+function soruSec(drill, rng, kalan, haric = null, dil = 'tr') {
   const facts = drill.byLevel[drill.level];
   let key = selectDrillFact(facts, rng);
 
@@ -35,19 +34,19 @@ function soruSec(drill, rng, kalan, haric = null, problemVar = true) {
   if (!key) return null;
   const f = { ...facts[key], key };
 
-  if (problemVar && kalan <= PROBLEM_COUNT) {
-    const p = buildProblem(f, VEHICLE_THEME, rng);
+  if (kalan <= PROBLEM_COUNT) {
+    const p = buildProblem(f, themeFor(dil), rng, dil);
     if (p) return { key, kind: 'problem', text: p.text, answer: p.answer };
   }
 
   return { key, kind: 'fact', text: formatQuestion(f), answer: f.answer };
 }
 
-export function startSession(drill, rng = Math.random, problemVar = true) {
+export function startSession(drill, rng = Math.random, dil = 'tr') {
   return {
     drill,
-    problemVar,
-    current: soruSec(drill, rng, SESSION_LENGTH, null, problemVar),
+    dil,
+    current: soruSec(drill, rng, SESSION_LENGTH, null, dil),
     remaining: SESSION_LENGTH,
     correctCount: 0,
     lastCorrect: null,
@@ -92,7 +91,7 @@ export function answerCurrent(session, verilen, ms, rng = Math.random) {
 
   return {
     drill,
-    current: finished ? null : soruSec(drill, rng, remaining, key, session.problemVar),
+    current: finished ? null : soruSec(drill, rng, remaining, key, session.dil),
     remaining,
     correctCount: session.correctCount + (dogru ? 1 : 0),
     lastCorrect: dogru,

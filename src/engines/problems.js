@@ -62,25 +62,74 @@ export const TEMPLATES = [
   }
 ];
 
-export function templatesFor(op) {
-  return TEMPLATES.filter((t) => t.op === op);
+// Ingilizce sablonlar. Turkce halleri yerine dogal Ingilizce dilbilgisi;
+// coklu ile cogul, bulunma edat obegi ("on a truck").
+export const TEMPLATES_EN = [
+  {
+    id: 'indirme',
+    op: '-',
+    yuk: true,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `There were ${a} ${birim} ${bulunma}. ${b} ${birim} were unloaded. How many ${birim} are left?`
+  },
+  {
+    id: 'inme',
+    op: '-',
+    yuk: false,
+    yaz: ({ bulunma, birim, a, b, inisYeri }) =>
+      `There were ${a} ${birim} ${bulunma}. ${inisYeri}, ${b} got off. How many ${birim} are left?`
+  },
+  {
+    id: 'yukleme',
+    op: '+',
+    yuk: true,
+    yaz: ({ bulunma, birim, a, b }) =>
+      `There were ${a} ${birim} ${bulunma}. ${b} more ${birim} were loaded. How many ${birim} in total?`
+  },
+  {
+    id: 'binme',
+    op: '+',
+    yuk: false,
+    yaz: ({ bulunma, birim, a, b, inisYeri }) =>
+      `There were ${a} ${birim} ${bulunma}. ${inisYeri}, ${b} more got on. How many ${birim} in total?`
+  },
+  {
+    id: 'filo',
+    op: 'x',
+    yuk: true,
+    yaz: ({ ad, coklu, birim, a, b }) =>
+      `${a} ${coklu} lined up. Each ${ad} carries ${b} ${birim}. How many ${birim} in total?`
+  },
+  {
+    id: 'paylastirma',
+    op: '/',
+    yuk: true,
+    yaz: ({ ad, coklu, birim, a, b }) =>
+      `${a} ${birim} were shared equally among ${b} ${coklu}. How many ${birim} does each ${ad} carry?`
+  }
+];
+
+export function templatesFor(op, dil = 'tr') {
+  const kaynak = dil === 'en' ? TEMPLATES_EN : TEMPLATES;
+  return kaynak.filter((t) => t.op === op);
 }
 
 function sec(liste, rng) {
   return liste[Math.min(liste.length - 1, Math.floor(rng() * liste.length))];
 }
 
-export function buildProblem(fact, theme, rng = Math.random) {
-  const sablonlar = templatesFor(fact.op);
+export function buildProblem(fact, theme, rng = Math.random, dil = 'tr') {
+  const sablonlar = templatesFor(fact.op, dil);
   if (sablonlar.length === 0) return null;
 
   const sablon = sec(sablonlar, rng);
 
   // Sablon yuk mu yolcu mu istiyorsa ona uygun arac secilir.
   // "Takside 8 palet vardi" ya da "Tirda 8 yolcu indi" olmasin diye.
+  // yolcu bayragi dil-bagimsiz (birim adiyla degil).
   const uygun = sablon.yuk === null
     ? theme.nesneler
-    : theme.nesneler.filter((n) => (sablon.yuk ? !n.birimler.includes('yolcu') : n.birimler.includes('yolcu')));
+    : theme.nesneler.filter((n) => (sablon.yuk ? !n.yolcu : n.yolcu));
 
   const taban = uygun.length > 0 ? uygun : theme.nesneler;
 
@@ -106,6 +155,7 @@ export function buildProblem(fact, theme, rng = Math.random) {
     answer: fact.answer,
     text: sablon.yaz({
       ad: nesne.ad,
+      coklu: nesne.coklu,
       bulunma: nesne.bulunma,
       yonelme: nesne.yonelme,
       inisYeri: nesne.inisYeri,
