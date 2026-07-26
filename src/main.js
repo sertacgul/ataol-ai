@@ -513,9 +513,27 @@ function amiralKareNode(board, x, y, bitti) {
   });
 }
 
-function cizAmiralTahta() {
-  const board = amiralDurum.enemy;
-  const bitti = amiralBitti(amiralDurum);
+// Senin filon: gemiler HER ZAMAN gorunur (cocuk kendi denizini gorsun),
+// uzerine rakibin atislari islenir. Tiklanmaz, yalniz gosterim; bu yuzden
+// buton degil div.
+function amiralKendiSinifi(board, cell) {
+  const gemi = board.ships.find((s) => s.cells.includes(cell));
+  const atis = board.shots[cell];
+  if (gemi) {
+    if (!atis) return 'amiral__kare amiral__kare--gemi';
+    const batik = gemi.hits.length === gemi.cells.length;
+    return batik ? 'amiral__kare amiral__kare--batik' : 'amiral__kare amiral__kare--isabet';
+  }
+  return atis === 'miss' ? 'amiral__kare amiral__kare--iska' : 'amiral__kare';
+}
+
+function amiralKendiNode(board, x, y) {
+  return el('div', { className: amiralKendiSinifi(board, cellId(x, y)) });
+}
+
+// Etiketli 8x8 izgarayi cizer. Kare dugumunu cagiran belirler: rakip
+// tahtasi tiklanabilir buton, senin filon gosterim amacli div.
+function cizTahta(board, hedefId, kareNodeFn) {
   const cocuklar = [el('span', { className: 'amiral__etiket' })];
 
   for (let x = 0; x < BOARD_SIZE; x++) {
@@ -525,11 +543,11 @@ function cizAmiralTahta() {
   for (let y = 0; y < BOARD_SIZE; y++) {
     cocuklar.push(el('span', { className: 'amiral__etiket', text: String(y + 1) }));
     for (let x = 0; x < BOARD_SIZE; x++) {
-      cocuklar.push(amiralKareNode(board, x, y, bitti));
+      cocuklar.push(kareNodeFn(board, x, y));
     }
   }
 
-  mount(document.getElementById('amiral-tahta'), cocuklar);
+  mount(document.getElementById(hedefId), cocuklar);
 }
 
 function cizAmiralDurum() {
@@ -550,7 +568,9 @@ function amiralMesajGizle() {
 }
 
 function cizAmiral() {
-  cizAmiralTahta();
+  const bitti = amiralBitti(amiralDurum);
+  cizTahta(amiralDurum.enemy, 'amiral-tahta', (b, x, y) => amiralKareNode(b, x, y, bitti));
+  cizTahta(amiralDurum.own, 'amiral-kendi', amiralKendiNode);
   cizAmiralDurum();
 }
 
