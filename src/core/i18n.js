@@ -148,7 +148,26 @@ const STRINGS = {
     'unit.min': 'dk',
     'cal.day.0': 'Pazartesi', 'cal.day.1': 'Salı', 'cal.day.2': 'Çarşamba', 'cal.day.3': 'Perşembe', 'cal.day.4': 'Cuma', 'cal.day.5': 'Cumartesi', 'cal.day.6': 'Pazar',
     'cal.month.0': 'Ocak', 'cal.month.1': 'Şubat', 'cal.month.2': 'Mart', 'cal.month.3': 'Nisan', 'cal.month.4': 'Mayıs', 'cal.month.5': 'Haziran', 'cal.month.6': 'Temmuz', 'cal.month.7': 'Ağustos', 'cal.month.8': 'Eylül', 'cal.month.9': 'Ekim', 'cal.month.10': 'Kasım', 'cal.month.11': 'Aralık',
-    'cal.season.0': 'Kış', 'cal.season.1': 'İlkbahar', 'cal.season.2': 'Yaz', 'cal.season.3': 'Sonbahar'
+    'cal.season.0': 'Kış', 'cal.season.1': 'İlkbahar', 'cal.season.2': 'Yaz', 'cal.season.3': 'Sonbahar',
+
+    'game.close': 'Kapat',
+    'game.newGame': 'Yeni oyun',
+    'amiral.win': 'Kazandın! Bütün rakip gemilerini batırdın.',
+    'amiral.lose': 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!',
+    'amiral.status': 'Rakip gemisi: {r} · Senin gemin: {s}',
+    'amiral.enemySea': 'Rakibin denizi — buraya ateş et',
+    'amiral.yourFleet': 'Senin filon',
+    'amiral.sunkEnemy': 'Rakibin bir gemisini batırdın!',
+    'amiral.sunkYours': 'Rakip senin bir gemini batırdı.',
+    'chessGame.yourTurn': 'Sıra sende',
+    'chessGame.inCheck': 'Şahın tehdit altında! Onu kurtar.',
+    'chessGame.thinking': 'Rakip düşünüyor...',
+    'chessGame.stalemate': 'Pat! Kimse kazanmadı, berabere.',
+    'chessGame.youMate': 'Şah mat! Kazandın, rakibin şahını kıstırdın.',
+    'chessGame.youLose': 'Şah mat! Bu sefer rakip kazandı. Yeni oyunla tekrar dene.',
+    'chessLearn.whichPiece': 'Hangi taşı öğrenelim?',
+    'chessLearn.newQuestion': 'Yeni soru',
+    'chessLearn.backToPieces': 'Taşlara dön'
   },
   en: {
     'nav.routine': 'Routine',
@@ -282,7 +301,26 @@ const STRINGS = {
     'unit.min': 'min',
     'cal.day.0': 'Monday', 'cal.day.1': 'Tuesday', 'cal.day.2': 'Wednesday', 'cal.day.3': 'Thursday', 'cal.day.4': 'Friday', 'cal.day.5': 'Saturday', 'cal.day.6': 'Sunday',
     'cal.month.0': 'January', 'cal.month.1': 'February', 'cal.month.2': 'March', 'cal.month.3': 'April', 'cal.month.4': 'May', 'cal.month.5': 'June', 'cal.month.6': 'July', 'cal.month.7': 'August', 'cal.month.8': 'September', 'cal.month.9': 'October', 'cal.month.10': 'November', 'cal.month.11': 'December',
-    'cal.season.0': 'Winter', 'cal.season.1': 'Spring', 'cal.season.2': 'Summer', 'cal.season.3': 'Autumn'
+    'cal.season.0': 'Winter', 'cal.season.1': 'Spring', 'cal.season.2': 'Summer', 'cal.season.3': 'Autumn',
+
+    'game.close': 'Close',
+    'game.newGame': 'New game',
+    'amiral.win': 'You won! You sank all the enemy ships.',
+    'amiral.lose': "You didn’t win this time, but you tried great. Try again with a new game!",
+    'amiral.status': 'Enemy ships: {r} · Your ships: {s}',
+    'amiral.enemySea': 'Enemy sea — fire here',
+    'amiral.yourFleet': 'Your fleet',
+    'amiral.sunkEnemy': 'You sank one of the enemy ships!',
+    'amiral.sunkYours': 'The enemy sank one of your ships.',
+    'chessGame.yourTurn': 'Your turn',
+    'chessGame.inCheck': 'Your king is in check! Save it.',
+    'chessGame.thinking': 'Opponent is thinking...',
+    'chessGame.stalemate': 'Stalemate! Nobody won, it’s a draw.',
+    'chessGame.youMate': 'Checkmate! You won, you cornered the opponent’s king.',
+    'chessGame.youLose': 'Checkmate! The opponent won this time. Try again with a new game.',
+    'chessLearn.whichPiece': 'Which piece shall we learn?',
+    'chessLearn.newQuestion': 'New question',
+    'chessLearn.backToPieces': 'Back to pieces'
   }
 };
 

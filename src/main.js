@@ -128,9 +128,6 @@ let drillShownAt = 0;
 
 let amiralDurum = null;
 
-const AMIRAL_KAZANMA = 'Kazandın! Bütün rakip gemilerini batırdın.';
-const AMIRAL_KAYBETME = 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!';
-
 // Oneri baloncuklari. Cocugun dokunup gonderdigi hazir cumleler.
 // Icinde isim GECMEZ: "${ad}'ya" gibi Turkce sevgi/durum eki kodla
 // uretilemez (ses uyumu bozulur), bu yuzden ada bagli oneri yok.
@@ -859,7 +856,7 @@ function cizTahta(board, hedefId, kareNodeFn) {
 
 function cizAmiralDurum() {
   document.getElementById('amiral-durum').textContent =
-    `Rakip gemisi: ${remainingShips(amiralDurum.enemy)} · Senin gemin: ${remainingShips(amiralDurum.own)}`;
+    ceviri('amiral.status', { r: remainingShips(amiralDurum.enemy), s: remainingShips(amiralDurum.own) });
 }
 
 function amiralMesajGoster(metin) {
@@ -890,8 +887,8 @@ function acAmiral() {
   amiralDurum = durum;
 
   cizAmiral();
-  if (isDefeated(amiralDurum.enemy)) amiralMesajGoster(AMIRAL_KAZANMA);
-  else if (isDefeated(amiralDurum.own)) amiralMesajGoster(AMIRAL_KAYBETME);
+  if (isDefeated(amiralDurum.enemy)) amiralMesajGoster(ceviri('amiral.win'));
+  else if (isDefeated(amiralDurum.own)) amiralMesajGoster(ceviri('amiral.lose'));
   else amiralMesajGizle();
 
   document.getElementById('amiral-modal').hidden = false;
@@ -918,12 +915,12 @@ function amiralAtis(cell) {
 
   const cocukAtis = fire(amiralDurum.enemy, cell);
   amiralDurum = { ...amiralDurum, enemy: cocukAtis.board };
-  if (cocukAtis.result === 'sunk') mesajlar.push('Rakibin bir gemisini batırdın!');
+  if (cocukAtis.result === 'sunk') mesajlar.push(ceviri('amiral.sunkEnemy'));
 
   if (isDefeated(amiralDurum.enemy)) {
     state.saveGame('amiral', amiralDurum);
     cizAmiral();
-    amiralMesajGoster(AMIRAL_KAZANMA);
+    amiralMesajGoster(ceviri('amiral.win'));
     return;
   }
 
@@ -931,14 +928,14 @@ function amiralAtis(cell) {
   if (hedef) {
     const rakipAtis = fire(amiralDurum.own, hedef);
     amiralDurum = { ...amiralDurum, own: rakipAtis.board };
-    if (rakipAtis.result === 'sunk') mesajlar.push('Rakip senin bir gemini batırdı.');
+    if (rakipAtis.result === 'sunk') mesajlar.push(ceviri('amiral.sunkYours'));
   }
 
   state.saveGame('amiral', amiralDurum);
   cizAmiral();
 
   if (isDefeated(amiralDurum.own)) {
-    amiralMesajGoster(AMIRAL_KAYBETME);
+    amiralMesajGoster(ceviri('amiral.lose'));
     return;
   }
 
@@ -1169,10 +1166,10 @@ function cizSoyunDurum() {
   const dEl = document.getElementById('satranc-oyun-durum');
   if (soyunDurum.sira === 'b') {
     dEl.textContent = sahTehditAltinda(soyunDurum.tahta, 'b')
-      ? 'Şahın tehdit altında! Onu kurtar.'
-      : 'Sıra sende';
+      ? ceviri('chessGame.inCheck')
+      : ceviri('chessGame.yourTurn');
   } else {
-    dEl.textContent = 'Rakip düşünüyor...';
+    dEl.textContent = ceviri('chessGame.thinking');
   }
 }
 
@@ -1193,11 +1190,11 @@ function cizSoyun() {
 function soyunBitir(durumu) {
   const mesaj = document.getElementById('satranc-oyun-mesaj');
   if (durumu === 'pat') {
-    mesaj.textContent = 'Pat! Kimse kazanmadı, berabere.';
+    mesaj.textContent = ceviri('chessGame.stalemate');
   } else {
     mesaj.textContent = soyunDurum.sira === 's'
-      ? 'Şah mat! Kazandın, rakibin şahını kıstırdın.'
-      : 'Şah mat! Bu sefer rakip kazandı. Yeni oyunla tekrar dene.';
+      ? ceviri('chessGame.youMate')
+      : ceviri('chessGame.youLose');
   }
   mesaj.hidden = false;
   document.getElementById('satranc-oyun-durum').textContent = '';
