@@ -18,6 +18,7 @@ import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiCh
 import { chessViewModel, cevapla as satrancCevapla, sonrakiDers } from './views/chess.js';
 import { soruUret } from './engines/chesspuzzle.js';
 import { kareId, TAHTA_BOYU } from './engines/chess.js';
+import { sistemIstemi, istekGovdesi, yanitAyikla } from './engines/ai.js';
 
 let state;
 let profile;
@@ -53,6 +54,7 @@ try {
   // Tasima ilk cizimden once calisir: yildiz toplami rutin basligina
   // yaziliyor, sonra calissa cocuk once eksik toplami gorurdu.
   tasimaSonucu = state.migrateOnce((anahtar) => window.localStorage.getItem(anahtar));
+  sohbetGecmis = state.loadSohbet();
 } catch (err) {
   profile = null;
   showRecovery();
@@ -77,6 +79,27 @@ let amiralDurum = null;
 
 const AMIRAL_KAZANMA = 'Kazandın! Bütün rakip gemilerini batırdın.';
 const AMIRAL_KAYBETME = 'Bu sefer kazanamadın ama harika denedin. Yeni oyunla tekrar dene!';
+
+// Sohbet. Gecmis cihazda saklanir, v1'den TASINMAZ (aile hatasi icerebilir).
+let sohbetGecmis = [];
+let sohbetBekliyor = false;
+
+// Oneri baloncuklari. Cocugun dokunup gonderdigi hazir cumleler.
+// Icinde isim GECMEZ: "${ad}'ya" gibi Turkce sevgi/durum eki kodla
+// uretilemez (ses uyumu bozulur), bu yuzden ada bagli oneri yok.
+const SOHBET_ONERILERI = [
+  'Bana bir soru sor',
+  'Bugün ne öğrensem?',
+  'Bana bir bilmece sor',
+  'Bugün çok iyiydim'
+];
+
+const SOHBET_ANAHTAR_YOK = 'Şu an seninle konuşamıyorum ama birazdan buradayım. Sen yine de yazmaya devam et.';
+const SOHBET_HATA = 'Şu an konuşmakta zorlanıyorum. Birazdan tekrar dener misin?';
+const SOHBET_BOS_YANIT = 'Şimdi biraz düşünmem gerek. Birazdan tekrar yazar mısın?';
+
+// v1 ile ayni uc nokta ve model.
+const SOHBET_MODEL = 'gemini-2.5-flash';
 
 function cardNode(card) {
   return el('li', {
@@ -149,10 +172,50 @@ function renderParent() {
               dataset: { approveCard: c.id }
             })
           ])
-        ))
+        )),
+
+    sohbetAyarBolumu()
   ];
 
   mount(target, bolumler);
+}
+
+// Sohbetin ebeveyn ayarlari: API anahtari ve sohbette anilan es adi.
+// Cocuk ekraninda degil ebeveyn sekmesinde durur.
+function sohbetAyarBolumu() {
+  const anahtarVar = Boolean(state.loadApiKey());
+  const esAdi = state.loadSohbetEs();
+
+  return el('section', { className: 'parent-sohbet' }, [
+    el('h2', { className: 'parent-guardians__title', text: 'Sohbet ayarları' }),
+
+    el('label', { className: 'parent-sohbet__label', text: 'ATAOL API Anahtarı' }),
+    el('input', {
+      className: 'parent-sohbet__input',
+      attrs: {
+        type: 'password',
+        id: 'sohbet-apikey',
+        placeholder: anahtarVar ? 'Anahtar kayıtlı — değiştirmek için yeni anahtar yaz' : 'Anahtarı buraya yapıştır'
+      }
+    }),
+
+    el('label', { className: 'parent-sohbet__label', text: 'Sohbette eş / bakım veren adı' }),
+    el('input', {
+      className: 'parent-sohbet__input',
+      attrs: { type: 'text', id: 'sohbet-esadi', value: esAdi, placeholder: 'örn. Feride Mama' }
+    }),
+    el('p', {
+      className: 'parent-sohbet__not',
+      text: 'Bu kişi çocuğun annesi ya da babası olarak değil, yalnızca adıyla anılır. Boş bırakırsanız aile bağı hiç konuşulmaz.'
+    }),
+
+    el('button', {
+      className: 'parent-sohbet__kaydet',
+      text: 'Kaydet',
+      attrs: { type: 'button' },
+      dataset: { sohbetAyarKaydet: 'yes' }
+    })
+  ]);
 }
 
 function renderGames() {
@@ -175,6 +238,7 @@ function render() {
   renderRoutine();
   renderParent();
   renderGames();
+  renderSohbet();
 }
 
 // v1'den tasinan emegin tek seferlik karsilamasi.
@@ -736,6 +800,118 @@ function kapatSatranc() {
   satrancMujde('');
 }
 
+// --- Sohbet ---
+
+// Karsilama gecmise YAZILMAZ: yalniz gecmis bosken gosterilir. Kayitli
+// olsaydi her istekte modele sahte bir "ai" turu olarak geri gonderilirdi.
+function sohbetKarsilama() {
+  const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
+  return `Merhaba ${vm.childName}, ben buradayım. Bana dilediğin her şeyi yazabilirsin.`;
+}
+
+function sohbetBaloncuk(m) {
+  return el('div', {
+    className: m.rol === 'cocuk'
+      ? 'sohbet__mesaj sohbet__mesaj--cocuk'
+      : 'sohbet__mesaj sohbet__mesaj--ai',
+    text: m.metin
+  });
+}
+
+function renderSohbet() {
+  const liste = document.getElementById('sohbet-liste');
+  if (!liste) return;
+
+  const balonlar = sohbetGecmis.length === 0
+    ? [el('div', { className: 'sohbet__mesaj sohbet__mesaj--ai', text: sohbetKarsilama() })]
+    : sohbetGecmis.map(sohbetBaloncuk);
+
+  if (sohbetBekliyor) {
+    balonlar.push(el('div', {
+      className: 'sohbet__mesaj sohbet__mesaj--ai sohbet__mesaj--bekliyor',
+      text: '•••'
+    }));
+  }
+
+  mount(liste, balonlar);
+  liste.scrollTop = liste.scrollHeight;
+
+  mount(document.getElementById('sohbet-oneriler'), SOHBET_ONERILERI.map((o) =>
+    el('button', {
+      className: 'sohbet__oneri',
+      text: o,
+      attrs: { type: 'button' },
+      dataset: { sohbetOneri: o }
+    })
+  ));
+
+  document.getElementById('sohbet-gonder').disabled = sohbetBekliyor;
+}
+
+// Agli tek yer. Motorlar (engines/) aga cikmaz; istek govdesini onlar
+// kurar, gonderme isi burada. v1 ile ayni Gemini uc noktasi.
+async function sohbetIste(anahtar, govde) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${SOHBET_MODEL}:generateContent?key=${encodeURIComponent(anahtar)}`;
+  const cevap = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(govde)
+  });
+  if (!cevap.ok) throw new Error(`API ${cevap.status}`);
+  return cevap.json();
+}
+
+async function sohbetGonder(metin) {
+  const temiz = String(metin ?? '').trim();
+  if (!temiz || sohbetBekliyor) return;
+
+  sohbetGecmis = [...sohbetGecmis, { rol: 'cocuk', metin: temiz }];
+  state.saveSohbet(sohbetGecmis);
+  document.getElementById('sohbet-metin').value = '';
+
+  // Anahtar yoksa cocuga teknik hata degil, sakin bir mesaj.
+  const anahtar = state.loadApiKey();
+  if (!anahtar) {
+    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: SOHBET_ANAHTAR_YOK }];
+    state.saveSohbet(sohbetGecmis);
+    renderSohbet();
+    return;
+  }
+
+  sohbetBekliyor = true;
+  renderSohbet();
+
+  try {
+    const vm = routineViewModel(profile, state.loadDayProgress(today()), now());
+    const baglam = {
+      cocukAdi: vm.childName,
+      bakimVerenAdi: state.loadSohbetEs(),
+      seviyeAdi: levelById(state.loadDrill().level)?.title ?? '',
+      gun: vm.today.dayName,
+      ay: vm.today.monthName,
+      mevsim: vm.today.season
+    };
+    // Son mesaj gecmisten cikarilir; istekGovdesi onu ayrica ekliyor.
+    const govde = istekGovdesi(sistemIstemi(baglam), sohbetGecmis.slice(0, -1), temiz);
+    const yanit = yanitAyikla(await sohbetIste(anahtar, govde)) ?? SOHBET_BOS_YANIT;
+    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: yanit }];
+  } catch (err) {
+    sohbetGecmis = [...sohbetGecmis, { rol: 'ai', metin: SOHBET_HATA }];
+  } finally {
+    sohbetBekliyor = false;
+    state.saveSohbet(sohbetGecmis);
+    renderSohbet();
+  }
+}
+
+function kaydetSohbetAyar() {
+  const anahtar = document.getElementById('sohbet-apikey').value.trim();
+  // Bos birakilan anahtar mevcut (tasinan ya da kayitli) anahtari SILMEZ.
+  if (anahtar) state.saveApiKey(anahtar);
+  state.saveSohbetEs(document.getElementById('sohbet-esadi').value.trim());
+  renderParent();
+}
+
 function openPinModal(cardId) {
   pendingCardId = cardId;
 
@@ -925,6 +1101,18 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const oneri = e.target.closest('[data-sohbet-oneri]');
+  if (oneri) {
+    sohbetGonder(oneri.dataset.sohbetOneri);
+    return;
+  }
+
+  const ayarKaydet = e.target.closest('[data-sohbet-ayar-kaydet]');
+  if (ayarKaydet) {
+    kaydetSohbetAyar();
+    return;
+  }
+
   const nav = e.target.closest('[data-nav]');
   if (nav) {
     for (const v of document.querySelectorAll('.v2-view')) v.classList.remove('active');
@@ -945,6 +1133,11 @@ document.getElementById('amiral-kapat').addEventListener('click', kapatAmiral);
 document.getElementById('satranc-devam').addEventListener('click', satrancYeniSoru);
 document.getElementById('satranc-taslara').addEventListener('click', satrancTaslaraDon);
 document.getElementById('satranc-kapat').addEventListener('click', kapatSatranc);
+
+document.getElementById('sohbet-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  sohbetGonder(document.getElementById('sohbet-metin').value);
+});
 
 if (profile) {
   document.addEventListener('visibilitychange', () => {

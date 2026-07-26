@@ -130,6 +130,63 @@ export function createAppState(storage) {
 
     saveGame(id, durum) {
       storage.set(`game:${id}`, durum);
+    },
+
+    /**
+     * Sohbet gecmisi. v1'den TASINMAZ: eski gecmis yanlis aile ifadeleri
+     * (bir es icin "annen" gibi) iceriyor ve o cumleler yeniden modele
+     * baglam olarak gonderilirse hata kendini tekrar eder.
+     *
+     * Kayit sekli motorun bekledigi sekildir: { rol: 'cocuk' | 'ai', metin }.
+     */
+    loadSohbet() {
+      const kayit = storage.get('sohbet', null);
+      if (!Array.isArray(kayit)) return [];
+      return kayit.filter((m) => m && typeof m.metin === 'string' && (m.rol === 'cocuk' || m.rol === 'ai'));
+    },
+
+    saveSohbet(gecmis) {
+      storage.set('sohbet', gecmis);
+    },
+
+    /**
+     * Sohbetin anahtari. Once v1'den tasinan anahtar kullanilir, boylece
+     * ebeveyn hicbir sey yazmadan sohbet calisir.
+     *
+     * Ayarlardan girilen anahtar tasinana ustun gelir: tasinan anahtar
+     * gecersizse ebeveynin duzeltebilecegi baska bir yol yok. Ayarlar
+     * alani zaten gecerli anahtarla dolu aciliyor, yani ebeveyn bilerek
+     * degistirmedikce iki kaynak ayni degeri tasir.
+     */
+    loadApiKey() {
+      const kendi = storage.get('apikey', '');
+      if (typeof kendi === 'string' && kendi.trim()) return kendi.trim();
+      const miras = okuMiras().apiKey;
+      return typeof miras === 'string' ? miras.trim() : '';
+    },
+
+    saveApiKey(anahtar) {
+      storage.set('apikey', String(anahtar ?? '').trim());
+    },
+
+    /**
+     * Sohbette anilan es / bakim veren adi.
+     *
+     * guardian listesinden ayridir: guardian listesi duz, icinde kimin es
+     * oldugu belli degil. "AILE GERCEGI" kurali yalnizca bu kisi icin
+     * calisir ("annen degildir"), yanlis kisiye baglanirsa cocugu incitir.
+     * Bu yuzden ayri ve bilerek ebeveynin girdigi bir alan.
+     *
+     * Bos ise istem jenerik aile dalini kullanir; kimseye "annen degil"
+     * denmez.
+     */
+    loadSohbetEs() {
+      const kayit = storage.get('sohbet-es', '');
+      return typeof kayit === 'string' ? kayit.trim() : '';
+    },
+
+    saveSohbetEs(ad) {
+      storage.set('sohbet-es', String(ad ?? '').trim());
     }
   };
 }

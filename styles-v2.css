@@ -1107,3 +1107,162 @@
   border: none;
   border-radius: 12px;
 }
+
+/* --- Ebeveyn: sohbet ayarlari --- */
+
+.parent-sohbet {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
+  margin-top: 16px;
+}
+
+.parent-sohbet__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 12px 0 4px;
+}
+
+.parent-sohbet__input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text-dark);
+}
+
+.parent-sohbet__not {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+.parent-sohbet__kaydet {
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 0 20px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 12px;
+}
+
+/* --- Sohbet ekrani --- */
+
+/* Alt cubugun ustunde tam ekran: liste kayar, giris altta sabit durur.
+   72px + guvenli alan #app'in nav icin ayirdigi payin aynisi. */
+#view-sohbet.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 72px - var(--safe-bottom));
+  padding: calc(8px + var(--safe-top)) 12px 0;
+}
+
+.sohbet__liste {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 2px 12px;
+}
+
+.sohbet__mesaj {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sohbet__mesaj--cocuk {
+  align-self: flex-end;
+  background: var(--bubble-user);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+
+.sohbet__mesaj--ai {
+  align-self: flex-start;
+  background: var(--bubble-ai);
+  color: var(--text-dark);
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sohbet__mesaj--bekliyor {
+  color: var(--text-muted);
+  letter-spacing: 3px;
+}
+
+.sohbet__oneriler {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 2px;
+  flex-shrink: 0;
+}
+
+.sohbet__oneri {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border: 1px solid var(--primary-light);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.sohbet__giris {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px 10px;
+  flex-shrink: 0;
+}
+
+.sohbet__giris input {
+  flex: 1;
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 23px;
+  background: #fff;
+  font-family: var(--font-body);
+  /* 16px: iOS odaklaninca ekrani yakinlastirmasin. */
+  font-size: 16px;
+  color: var(--text-dark);
+}
+
+.sohbet__gonder {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+}
+
+.sohbet__gonder:disabled {
+  opacity: 0.5;
+}

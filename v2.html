@@ -30,6 +30,16 @@
         <main id="view-routine" class="v2-view active"></main>
         <main id="view-parent" class="v2-view"></main>
         <main id="view-games" class="v2-view"></main>
+        <main id="view-sohbet" class="v2-view">
+            <div id="sohbet-liste" class="sohbet__liste"></div>
+            <div id="sohbet-oneriler" class="sohbet__oneriler"></div>
+            <form id="sohbet-form" class="sohbet__giris" autocomplete="off">
+                <input type="text" id="sohbet-metin" placeholder="Bana bir şey yaz..." autocomplete="off">
+                <button type="submit" id="sohbet-gonder" class="sohbet__gonder" aria-label="Gönder">
+                    <span class="material-symbols-rounded">send</span>
+                </button>
+            </form>
+        </main>
 
         <nav class="v2-nav">
             <button type="button" class="active" data-nav="routine">
@@ -43,6 +53,10 @@
             <button type="button" data-nav="games">
                 <span class="material-symbols-rounded">sports_esports</span>
                 <span>Oyun</span>
+            </button>
+            <button type="button" data-nav="sohbet">
+                <span class="material-symbols-rounded">chat</span>
+                <span>Sohbet</span>
             </button>
         </nav>
 
