@@ -66,6 +66,13 @@ test('istek govdesi gecmisi sirasiyla tasir', () => {
   assert.deepEqual(JSON.parse(json), g, 'govde JSON guvenli olmali');
 });
 
+test('istek govdesi dusunmeyi kapatir (yanit yarida kesilmesin)', () => {
+  // 2.5-flash dusunme jetonlari maxOutputTokens'a sayilir; acik kalirsa
+  // gorunur cumle yarida kesiliyordu. Bu kapali kalmali.
+  const g = istekGovdesi('SISTEM', [], 'selam');
+  assert.equal(g.generationConfig.thinkingConfig.thinkingBudget, 0);
+});
+
 test('yanit ayiklama bozuk cevapta cokmez', () => {
   assert.equal(yanitAyikla(null), null);
   assert.equal(yanitAyikla({}), null);

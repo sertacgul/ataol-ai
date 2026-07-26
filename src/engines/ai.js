@@ -134,7 +134,16 @@ export function istekGovdesi(sistem, gecmis = [], mesaj = '') {
   return {
     contents,
     systemInstruction: { parts: [{ text: String(sistem ?? '') }] },
-    generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 500,
+      // gemini-2.5-flash bir dusunme modeli ve dusunme jetonlari da
+      // maxOutputTokens tavanina sayilir. Acik kalirsa dusunme butcenin
+      // buyuk kismini yiyip gorunur yaniti yarida kesiyordu; cocuga eksik
+      // cumle geliyordu. 1-2 cumlelik sicak bir yanit icin dusunmeye
+      // gerek yok: kapatinca yanit hem tam gelir hem daha hizli.
+      thinkingConfig: { thinkingBudget: 0 }
+    }
   };
 }
 
