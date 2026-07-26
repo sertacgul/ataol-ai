@@ -61,11 +61,15 @@ const STRINGS = {
     'parent.language': 'Dil',
     'parent.save': 'Kaydet',
 
+    'games.matematik': 'Matematik',
     'games.amiral': 'Amiral Battı',
     'games.satrancLearn': 'Satranç Taşları',
     'games.satranc': 'Satranç',
     'games.atolye': 'Çizim Atölyesi',
     'games.muhendislik': 'Mühendislik',
+    'games.geometri': 'Geometri',
+    'games.kahramanlar': 'Kahramanlar',
+    'kahraman.another': 'Başka kahraman', 'kahraman.lesson': 'Sen de:',
     'games.kurucu': 'Makine Kur',
 
     'kur.hint': 'Parçaları seç, makineyi kur',
@@ -83,6 +87,7 @@ const STRINGS = {
     'muh.cat.gorunus': 'Görünüş',
     'muh.cat.kavram': 'Kavram',
     'muh.cat.makine': 'Basit Makine',
+    'geo.cat.sekil': 'Şekil', 'geo.cat.kenar': 'Kenar', 'geo.cat.kavram': 'Kavram',
 
     'atolye.pen': 'Kalem',
     'atolye.ruler': 'Cetvel',
@@ -289,11 +294,15 @@ const STRINGS = {
     'parent.language': 'Language',
     'parent.save': 'Save',
 
+    'games.matematik': 'Math',
     'games.amiral': 'Battleship',
     'games.satrancLearn': 'Chess Pieces',
     'games.satranc': 'Chess',
     'games.atolye': 'Drawing Studio',
     'games.muhendislik': 'Engineering',
+    'games.geometri': 'Geometry',
+    'games.kahramanlar': 'Heroes',
+    'kahraman.another': 'Another hero', 'kahraman.lesson': 'You too:',
     'games.kurucu': 'Build a Machine',
 
     'kur.hint': 'Tap the parts to build the machine',
@@ -311,6 +320,7 @@ const STRINGS = {
     'muh.cat.gorunus': 'View',
     'muh.cat.kavram': 'Concept',
     'muh.cat.makine': 'Simple machine',
+    'geo.cat.sekil': 'Shape', 'geo.cat.kenar': 'Side', 'geo.cat.kavram': 'Concept',
 
     'atolye.pen': 'Pen',
     'atolye.ruler': 'Ruler',

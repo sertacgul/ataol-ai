@@ -2305,3 +2305,84 @@
   border-color: var(--primary);
   color: #fff;
 }
+
+/* --- Kahramanlar ve hikayeler --- */
+
+.kahraman__ust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.kahraman__emoji {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.kahraman__ad {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.kahraman__unvan {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.kahraman__hikaye {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0 0 12px;
+}
+
+.kahraman__soz {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+}
+
+.kahraman__soz[hidden], .kahraman__ders[hidden] { display: none; }
+
+.kahraman__ders {
+  font-size: 14px;
+  color: var(--primary-dark);
+  background: rgba(0, 206, 201, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 14px;
+}
+
+#kahraman-baska,
+#kahraman-kapat {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+#kahraman-baska {
+  background: var(--primary);
+  color: #fff;
+}
+
+#kahraman-kapat {
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+  margin-bottom: 0;
+}

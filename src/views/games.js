@@ -18,10 +18,13 @@
  */
 
 export const GAMES = [
+  { id: 'matematik', title: 'Matematik', icon: 'calculate' },
   { id: 'amiral', title: 'Amiral Battı', icon: 'sailing' },
   { id: 'satranc', title: 'Satranç Taşları', icon: 'grid_on' },
   { id: 'satranc-oyun', title: 'Satranç', icon: 'castle' },
   { id: 'atolye', title: 'Çizim Atölyesi', icon: 'draw' },
   { id: 'muhendislik', title: 'Mühendislik', icon: 'engineering' },
+  { id: 'geometri', title: 'Geometri', icon: 'category' },
+  { id: 'kahramanlar', title: 'Kahramanlar', icon: 'auto_stories' },
   { id: 'kurucu', title: 'Makine Kur', icon: 'construction' }
 ];

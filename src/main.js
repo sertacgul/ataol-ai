@@ -8,6 +8,8 @@ import { DAYS, MONTHS, SEASONS } from './engines/calendar.js';
 import { rewardProgress } from './engines/rewards.js';
 import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
 import { SORULAR as MUH_SORULAR, soruMetni as muhSoruMetni } from './data/muhendislik.js';
+import { GEOMETRI_SORULAR } from './data/geometri.js';
+import { KAHRAMANLAR } from './data/kahramanlar.js';
 import { MAKINELER, makineById } from './views/kurucu.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
 import { routineViewModel } from './views/routine.js';
@@ -142,6 +144,7 @@ let quizSonuclari = [];
 let drillSession = null;
 let drillTyped = '';
 let drillShownAt = 0;
+let drillSerbest = false;   // Oyun sekmesinden serbest matematik: rutin kartini tamamlamaz
 
 let amiralDurum = null;
 
@@ -568,7 +571,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', kurucu: 'games.kurucu' };
+  const OYUN_ANAHTAR = { matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -703,6 +706,7 @@ function renderIfStale() {
   if (document.getElementById('odul-modal').hidden === false) return;
   if (document.getElementById('atolye').hidden === false) return;
   if (document.getElementById('muh-modal').hidden === false) return;
+  if (document.getElementById('kahraman-modal').hidden === false) return;
   if (document.getElementById('kurucu').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
@@ -871,9 +875,14 @@ function drillOnayla() {
   geri.hidden = false;
 
   if (sonraki.finished) {
+    // Seviye ilerlemesi her durumda kaydedilir (serbest oyunda da cocuk
+    // ilerlesin). Rutin karti yalniz rutinden gelen oturumda tamamlanir;
+    // Oyun sekmesinden serbest matematik yildiz kazandirmaz.
     state.saveDrill(sonraki.drill);
-    const dp = state.loadDayProgress(today());
-    state.saveDayProgress(today(), completeCard(profile, dp, 'ogle-matematik', now()));
+    if (!drillSerbest) {
+      const dp = state.loadDayProgress(today());
+      state.saveDayProgress(today(), completeCard(profile, dp, 'ogle-matematik', now()));
+    }
 
     if (sonraki.levelUp) drillKutlama();
     else kapatDrill();
@@ -883,7 +892,8 @@ function drillOnayla() {
   cizDrill();
 }
 
-function acDrill() {
+function acDrill(serbest = false) {
+  drillSerbest = serbest;
   // Sozel problemler aktif dilin sablonuyla uretilir (TR/EN).
   drillSession = startSession(state.loadDrill(), Math.random, dil());
   drillTyped = '';
@@ -1826,6 +1836,9 @@ let muhSoru = null;
 let muhSecenekler = [];
 let muhDogruDeger = '';
 let muhCevaplandi = false;
+// Ayni quiz motoru hem Muhendislik hem Geometri icin; kategori rozeti
+// hangi bankaya aitse o onekle cevrilir.
+let quizCatOnek = 'muh.cat.';
 
 function muhKaristir(dizi) {
   const c = [...dizi];
@@ -1838,7 +1851,7 @@ function muhKaristir(dizi) {
 
 function cizMuh() {
   const m = muhSoruMetni(muhSoru, dil());
-  document.getElementById('muh-kategori').textContent = ceviri('muh.cat.' + muhSoru.kategori);
+  document.getElementById('muh-kategori').textContent = ceviri(quizCatOnek + muhSoru.kategori);
   document.getElementById('muh-progress').textContent =
     `${MUH_OTURUM - muhKalan.length} / ${MUH_OTURUM}`;
   document.getElementById('muh-soru').textContent = m.soru;
@@ -1897,14 +1910,64 @@ function muhSonraki() {
   muhSonrakiSoru();
 }
 
-function acMuhendislik() {
-  muhKalan = muhKaristir(MUH_SORULAR).slice(0, MUH_OTURUM);
+function quizBaslat(sorular, catOnek) {
+  quizCatOnek = catOnek;
+  muhKalan = muhKaristir(sorular).slice(0, MUH_OTURUM);
   document.getElementById('muh-modal').hidden = false;
   muhSonrakiSoru();
 }
 
+function acMuhendislik() {
+  quizBaslat(MUH_SORULAR, 'muh.cat.');
+}
+
+function acGeometri() {
+  quizBaslat(GEOMETRI_SORULAR, 'geo.cat.');
+}
+
 function kapatMuhendislik() {
   document.getElementById('muh-modal').hidden = true;
+}
+
+// --- Kahramanlar ve hikayeler ---
+//
+// v1'den tasinan ilham veren kisiler (data/kahramanlar.js). Karisik sirada
+// gezilir; "Baska kahraman" siradakini gosterir, tur bitince yeniden
+// karistirir. Icerik Turkce (100 kahraman); arayuz iki dilli.
+let kahramanSira = [];
+let kahramanIndex = 0;
+
+function kahramanGoster() {
+  const k = KAHRAMANLAR[kahramanSira[kahramanIndex]];
+  document.getElementById('kahraman-emoji').textContent = k.emoji || '⭐';
+  document.getElementById('kahraman-ad').textContent = k.name;
+  document.getElementById('kahraman-unvan').textContent = k.title;
+  document.getElementById('kahraman-hikaye').textContent = k.story;
+  document.getElementById('kahraman-soz').textContent = k.quote ? `“${k.quote}”` : '';
+  document.getElementById('kahraman-soz').hidden = !k.quote;
+  document.getElementById('kahraman-ders').textContent = k.lesson ? `${ceviri('kahraman.lesson')} ${k.lesson}` : '';
+  document.getElementById('kahraman-ders').hidden = !k.lesson;
+  document.querySelector('#kahraman-modal .v2-modal__box').scrollTop = 0;
+}
+
+function acKahraman() {
+  kahramanSira = muhKaristir(KAHRAMANLAR.map((_, i) => i));
+  kahramanIndex = 0;
+  document.getElementById('kahraman-modal').hidden = false;
+  kahramanGoster();
+}
+
+function kahramanBaska() {
+  kahramanIndex += 1;
+  if (kahramanIndex >= kahramanSira.length) {
+    kahramanSira = muhKaristir(kahramanSira);
+    kahramanIndex = 0;
+  }
+  kahramanGoster();
+}
+
+function kapatKahraman() {
+  document.getElementById('kahraman-modal').hidden = true;
 }
 
 // --- Is makinesi kurucu ---
@@ -2328,11 +2391,14 @@ document.getElementById('app').addEventListener('click', (e) => {
 
   const oyunKart = e.target.closest('[data-game]');
   if (oyunKart) {
+    if (oyunKart.dataset.game === 'matematik') acDrill(true);
     if (oyunKart.dataset.game === 'amiral') acAmiral();
     if (oyunKart.dataset.game === 'satranc') acSatranc();
     if (oyunKart.dataset.game === 'satranc-oyun') acSoyun();
     if (oyunKart.dataset.game === 'atolye') acAtolye();
     if (oyunKart.dataset.game === 'muhendislik') acMuhendislik();
+    if (oyunKart.dataset.game === 'geometri') acGeometri();
+    if (oyunKart.dataset.game === 'kahramanlar') acKahraman();
     if (oyunKart.dataset.game === 'kurucu') acKurucu();
     return;
   }
@@ -2472,6 +2538,8 @@ document.getElementById('atolye-kapat').addEventListener('click', kapatAtolye);
 document.getElementById('atolye-geri').addEventListener('click', atolyeGeriAl);
 document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
 document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
+document.getElementById('kahraman-baska').addEventListener('click', kahramanBaska);
+document.getElementById('kahraman-kapat').addEventListener('click', kapatKahraman);
 document.getElementById('kurucu-yeni').addEventListener('click', kurucuYeni);
 document.getElementById('kurucu-kapat').addEventListener('click', kapatKurucu);
 
