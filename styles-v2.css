@@ -2465,6 +2465,72 @@
   color: var(--text-dark);
 }
 
+/* Fen deneyleri */
+.deney__ust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.deney__emoji { font-size: 34px; line-height: 1; }
+
+.deney__ad {
+  font-family: var(--font-head);
+  font-size: 18px;
+  margin: 0;
+}
+
+.deney__baslik {
+  font-family: var(--font-head);
+  font-size: 14px;
+  color: var(--primary-dark);
+  margin: 12px 0 4px;
+}
+
+.deney__liste, .deney__adimlar {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.deney__liste li, .deney__adimlar li { margin-bottom: 3px; }
+
+.deney__neden {
+  font-size: 14px;
+  color: var(--primary-dark);
+  background: rgba(0, 206, 201, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+}
+
+.deney__uyari {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(253, 203, 110, 0.18);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 0 0 14px;
+}
+
+#deney-baska,
+#deney-kapat {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+#deney-baska { background: var(--primary); color: #fff; }
+#deney-kapat { background: rgba(131, 149, 167, 0.15); color: var(--text-dark); margin-bottom: 0; }
+
 /* Kodlama oyunu */
 .kodlama {
   position: fixed;

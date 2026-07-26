@@ -10,6 +10,8 @@ import { ilerlemeSerisi, ilerlemeOzeti } from './views/report.js';
 import { SORULAR as MUH_SORULAR, soruMetni as muhSoruMetni } from './data/muhendislik.js';
 import { GEOMETRI_SORULAR } from './data/geometri.js';
 import { KELIME_SORULAR } from './data/kelime.js';
+import { BILIM_SORULAR } from './data/bilim.js';
+import { DENEYLER } from './data/deneyler.js';
 import { KAHRAMANLAR } from './data/kahramanlar.js';
 import { MAKINELER, makineById } from './views/kurucu.js';
 import { dayKey, completeCard, approveCard } from './engines/routine.js';
@@ -596,7 +598,7 @@ function dilSec(d) {
 function renderGames() {
   const target = document.getElementById('view-games');
 
-  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', kodlama: 'games.kodlama', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kelime: 'games.kelime', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
+  const OYUN_ANAHTAR = { rozetler: 'games.rozetler', kodlama: 'games.kodlama', matematik: 'games.matematik', amiral: 'games.amiral', satranc: 'games.satrancLearn', 'satranc-oyun': 'games.satranc', atolye: 'games.atolye', muhendislik: 'games.muhendislik', geometri: 'games.geometri', kelime: 'games.kelime', bilim: 'games.bilim', deneyler: 'games.deneyler', kahramanlar: 'games.kahramanlar', kurucu: 'games.kurucu' };
 
   mount(target, GAMES.map((g) =>
     el('button', {
@@ -735,6 +737,7 @@ function renderIfStale() {
   if (document.getElementById('kurucu').hidden === false) return;
   if (document.getElementById('kodlama').hidden === false) return;
   if (document.getElementById('rozet-modal').hidden === false) return;
+  if (document.getElementById('deney-modal').hidden === false) return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 
@@ -1958,6 +1961,10 @@ function acKelime() {
   quizBaslat(KELIME_SORULAR, 'kelime.cat.');
 }
 
+function acBilim() {
+  quizBaslat(BILIM_SORULAR, 'bilim.cat.');
+}
+
 function kapatMuhendislik() {
   document.getElementById('muh-modal').hidden = true;
 }
@@ -2004,6 +2011,44 @@ function kahramanBaska() {
 
 function kapatKahraman() {
   document.getElementById('kahraman-modal').hidden = true;
+}
+
+// --- Fen deneyleri ---
+//
+// Kahraman kartlari gibi tek tek gezilir. Her deney malzeme, adim ve "neden"
+// gosterir; veri iki dilli (deneyler.js), aktif dile gore secilir.
+let deneySira = [];
+let deneyIndex = 0;
+
+function deneyGoster() {
+  const d = DENEYLER[deneySira[deneyIndex]];
+  const icerik = d[dil()] ?? d.tr;
+  document.getElementById('deney-emoji').textContent = d.emoji;
+  document.getElementById('deney-ad').textContent = icerik.ad;
+  mount(document.getElementById('deney-malzemeler'), icerik.malzemeler.map((m) => el('li', { text: m })));
+  mount(document.getElementById('deney-adimlar'), icerik.adimlar.map((a) => el('li', { text: a })));
+  document.getElementById('deney-neden').textContent = icerik.neden;
+  document.querySelector('#deney-modal .v2-modal__box').scrollTop = 0;
+}
+
+function acDeney() {
+  deneySira = muhKaristir(DENEYLER.map((_, i) => i));
+  deneyIndex = 0;
+  document.getElementById('deney-modal').hidden = false;
+  deneyGoster();
+}
+
+function deneyBaska() {
+  deneyIndex += 1;
+  if (deneyIndex >= deneySira.length) {
+    deneySira = muhKaristir(deneySira);
+    deneyIndex = 0;
+  }
+  deneyGoster();
+}
+
+function kapatDeney() {
+  document.getElementById('deney-modal').hidden = true;
 }
 
 // --- Basarim rozetleri ---
@@ -2636,6 +2681,8 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (oyunKart.dataset.game === 'muhendislik') acMuhendislik();
     if (oyunKart.dataset.game === 'geometri') acGeometri();
     if (oyunKart.dataset.game === 'kelime') acKelime();
+    if (oyunKart.dataset.game === 'bilim') acBilim();
+    if (oyunKart.dataset.game === 'deneyler') acDeney();
     if (oyunKart.dataset.game === 'kahramanlar') acKahraman();
     if (oyunKart.dataset.game === 'kurucu') acKurucu();
     return;
@@ -2778,6 +2825,8 @@ document.getElementById('muh-sonraki').addEventListener('click', muhSonraki);
 document.getElementById('muh-kapat').addEventListener('click', kapatMuhendislik);
 document.getElementById('kahraman-baska').addEventListener('click', kahramanBaska);
 document.getElementById('kahraman-kapat').addEventListener('click', kapatKahraman);
+document.getElementById('deney-baska').addEventListener('click', deneyBaska);
+document.getElementById('deney-kapat').addEventListener('click', kapatDeney);
 document.getElementById('rozet-kapat').addEventListener('click', kapatRozetler);
 document.getElementById('kodlama-calistir').addEventListener('click', kodCalistirBaslat);
 document.getElementById('kodlama-sil').addEventListener('click', kodSil);

@@ -28,6 +28,8 @@ export const GAMES = [
   { id: 'muhendislik', title: 'Mühendislik', icon: 'engineering' },
   { id: 'geometri', title: 'Geometri', icon: 'category' },
   { id: 'kelime', title: 'Türkçe & Kelime', icon: 'spellcheck' },
+  { id: 'bilim', title: 'Bilim', icon: 'science' },
+  { id: 'deneyler', title: 'Fen Deneyleri', icon: 'experiment' },
   { id: 'kahramanlar', title: 'Kahramanlar', icon: 'auto_stories' },
   { id: 'kurucu', title: 'Makine Kur', icon: 'construction' }
 ];

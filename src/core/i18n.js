@@ -97,6 +97,16 @@ const STRINGS = {
     'kelime.cat.zit': 'Zıt Anlam', 'kelime.cat.esanlam': 'Eş Anlam',
     'kelime.cat.okuma': 'Okuma-Anlama', 'kelime.cat.bilgi': 'Kelime Bilgisi',
 
+    'games.bilim': 'Bilim',
+    'bilim.cat.canli': 'Canlılar', 'bilim.cat.madde': 'Madde',
+    'bilim.cat.kuvvet': 'Kuvvet ve Hareket', 'bilim.cat.uzay': 'Uzay',
+
+    'games.deneyler': 'Fen Deneyleri',
+    'deney.materials': 'Malzemeler', 'deney.steps': 'Adımlar',
+    'deney.why': 'Neden oluyor?',
+    'deney.safety': 'Bu deneyi bir büyüğünle birlikte yap.',
+    'deney.another': 'Başka deney',
+
     'kur.hint': 'Parçaları seç, makineyi kur',
     'kur.done': '{ad} hazır! 🎉',
     'kur.m.ekskavator': 'Ekskavatör', 'kur.m.vinc': 'Vinç', 'kur.m.kamyon': 'Kamyon',
@@ -354,6 +364,16 @@ const STRINGS = {
     'games.kelime': 'Words & Language',
     'kelime.cat.zit': 'Opposites', 'kelime.cat.esanlam': 'Synonyms',
     'kelime.cat.okuma': 'Reading', 'kelime.cat.bilgi': 'Word Knowledge',
+
+    'games.bilim': 'Science',
+    'bilim.cat.canli': 'Living Things', 'bilim.cat.madde': 'Matter',
+    'bilim.cat.kuvvet': 'Force and Motion', 'bilim.cat.uzay': 'Space',
+
+    'games.deneyler': 'Science Experiments',
+    'deney.materials': 'Materials', 'deney.steps': 'Steps',
+    'deney.why': 'Why does it happen?',
+    'deney.safety': 'Do this experiment together with a grown-up.',
+    'deney.another': 'Another experiment',
 
     'kur.hint': 'Tap the parts to build the machine',
     'kur.done': '{ad} is ready! 🎉',

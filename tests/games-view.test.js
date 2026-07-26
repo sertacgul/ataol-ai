@@ -8,7 +8,7 @@ const kaynak = readFileSync(new URL('../src/views/games.js', import.meta.url), '
 
 test('oyunlar listede ve kimlikleri sabit', () => {
   // main.js oyunu id ile aciyor; id degisirse dugme calismaz.
-  assert.deepEqual(GAMES.map((g) => g.id).sort(), ['amiral', 'atolye', 'geometri', 'kahramanlar', 'kelime', 'kodlama', 'kurucu', 'matematik', 'muhendislik', 'rozetler', 'satranc', 'satranc-oyun']);
+  assert.deepEqual(GAMES.map((g) => g.id).sort(), ['amiral', 'atolye', 'bilim', 'deneyler', 'geometri', 'kahramanlar', 'kelime', 'kodlama', 'kurucu', 'matematik', 'muhendislik', 'rozetler', 'satranc', 'satranc-oyun']);
   assert.ok(GAMES.every((g) => g.title && g.icon));
 });
 
