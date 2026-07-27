@@ -1,6 +1,19 @@
 /* ATAOL v2 - yeni bilesenler. Renkler ve fontlar styles.css'teki
    degiskenlerden gelir, burada yeni renk tanimlanmaz. */
 
+/* v2.html hem styles.css (v1) hem bunu yukler. v1'in body kurali
+   (display:flex; align-items:center; overflow:hidden) sayfayi ortalar ve
+   TUM kaydirmayi kilitler; iPhone 12'de ekrandan tasan icerik ve dugmeler
+   erisilemez oluyordu. v2 dogal belge akisi ister: body normal aksin ve
+   gerektiginde dikey/yatay kaysin. Bu ezme yalniz v2'yi etkiler; index.html
+   bu dosyayi yuklemez. */
+body {
+  display: block;
+  overflow: visible;
+  min-height: 100dvh;
+  background: var(--bg-app);
+}
+
 #app {
   min-height: 100vh;
   min-height: 100dvh;
