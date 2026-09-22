@@ -63,6 +63,11 @@ const STRINGS = {
     'ders.exampleSkip': 'Geç',
     'ders.exampleShow': 'Sonraki adımı göster',
     'ders.exampleDone': 'Anladım, kendim deneyeyim',
+    'ders.practice': 'Alıştırma',
+    'ders.correct': 'Doğru!',
+    'ders.wrong': 'Bu değil, bak bakalım:',
+    'ders.nextQuestion': 'Devam',
+    'ders.practiceCount': 'Doğru cevap: {n}',
 
     'routine.greeting': 'Merhaba {ad}',
     'routine.total': 'Toplam {n}★',
@@ -373,6 +378,11 @@ const STRINGS = {
     'ders.exampleSkip': 'Skip',
     'ders.exampleShow': 'Show the next step',
     'ders.exampleDone': "Got it, let me try",
+    'ders.practice': 'Practice',
+    'ders.correct': 'Correct!',
+    'ders.wrong': "Not this one, let's look:",
+    'ders.nextQuestion': 'Continue',
+    'ders.practiceCount': 'Correct answers: {n}',
 
     'routine.greeting': 'Hi {ad}',
     'routine.total': 'Total {n}★',

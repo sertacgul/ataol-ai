@@ -22,7 +22,7 @@ import { validateCardInput, validateRewardInput, ICON_OPTIONS, EMOJI_OPTIONS } f
 import { renderSignature } from './views/clock.js';
 import { el, mount } from './ui/dom.js';
 import { buildQuestion, recordTimeAnswer, QUESTION_KINDS } from './engines/timequiz.js';
-import { selectWeighted } from './engines/leitner.js';
+import { selectWeighted, newBox, promote, demote } from './engines/leitner.js';
 import { startSession, answerCurrent, SESSION_LENGTH } from './views/drill.js';
 import { levelById } from './engines/drill.js';
 import { GAMES } from './views/games.js';
@@ -45,11 +45,11 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli } from './views/ders.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
-import { haftaKaydi, adimTamamla, etkilesimTamamla } from './engines/ders.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap } from './engines/ders.js';
 import { createSes } from './ui/ses.js';
 
 let state;
@@ -78,6 +78,11 @@ let dersGorulenHafta = null;
 let dersEkran = 'hafta';
 let dersAdimIndex = 0;
 let dersOrnekAdim = 0;
+
+// Ekranda duran alistirma sorusu. Cevaplanana kadar degismez; her
+// render'da yeni soru uretmek cocugun okudugu soruyu degistirirdi.
+let dersSoru = null;
+let dersSecildi = null;
 
 // Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
 // dinleyicileri birikir ve uygulama zamanla yavaslar.
@@ -754,6 +759,33 @@ function renderDers() {
     // hic kapatilmadan birikir.
     dersWidgetKapat();
     dersEkran = 'hafta';
+  }
+
+  if (dersEkran === 'alistirma') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      const ilerleme = state.loadDersIlerleme();
+      const kayit = haftaKaydi(ilerleme, hafta.hafta);
+      if (!dersSoru) {
+        dersSoru = alistirmaSorusu(hafta, KONULAR, kayit, Math.random);
+        dersSecildi = null;
+      }
+      if (dersSoru) {
+        soruEkrani(kok, {
+          baslik: ceviri('ders.practice'),
+          ustBilgi: ceviri('ders.practiceCount', { n: kayit.alistirmaDogru }),
+          soru: dersSoru.soru,
+          secildi: dersSecildi,
+          dogruMu: dersSecildi === dersSoru.soru.dogru,
+          cozumGoster: true,
+          devamEtiketi: ceviri('ders.nextQuestion'),
+          kapatVar: true
+        }, ceviri);
+        return;
+      }
+      dersEkran = 'hafta';
+    }
   }
 
   haftaEkrani(kok, dersModeli(), ceviri);
@@ -3137,6 +3169,46 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersAdimIndex = 0;
     renderDers();
     if (dersEkran === 'anlatim') dersAdimiSeslendir();
+    return;
+  }
+
+  const secenekDugme = e.target.closest('[data-ders-secenek]');
+  if (secenekDugme && dersEkran === 'alistirma') {
+    if (dersSecildi !== null) return;   // ayni soruya iki kez cevap yok
+
+    dersSecildi = Number(secenekDugme.dataset.dersSecenek);
+    const dogruMu = dersSecildi === dersSoru.soru.dogru;
+    const hafta = dersAktifHafta();
+    const kayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
+    const tip = dersSoru.soru.tip;
+    const onceki = kayit.alistirma[tip] ?? newBox();
+    const yeniKutu = dogruMu ? promote(onceki) : demote(onceki);
+
+    const sonuc = alistirmaCevap(kayit, tip, {
+      ...yeniKutu,
+      seen: (onceki.seen ?? 0) + 1,
+      correct: (onceki.correct ?? 0) + (dogruMu ? 1 : 0),
+      wrong: (onceki.wrong ?? 0) + (dogruMu ? 0 : 1)
+    }, dogruMu);
+
+    dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+    ses.efekt(dogruMu ? 'dogru' : 'yanlis');
+    renderDers();
+    return;
+  }
+
+  const soruDugme = e.target.closest('[data-ders-soru]');
+  if (soruDugme && dersEkran === 'alistirma') {
+    if (soruDugme.dataset.dersSoru === 'kapat') {
+      dersSoru = null;
+      dersSecildi = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    dersSoru = null;
+    dersSecildi = null;
+    renderDers();
     return;
   }
 

@@ -231,6 +231,70 @@ export function ornekEkrani(kok, model, ceviri) {
   ]);
 }
 
+/**
+ * Soru ekrani. Alistirma, quiz ve sinav ayni ekrani kullanir.
+ *
+ * model: {
+ *   baslik, ustBilgi, soru, secildi, dogruMu, cozumGoster,
+ *   devamEtiketi, kapatVar
+ * }
+ *
+ * secildi null ise henuz cevaplanmamistir. Cevaplandiktan sonra
+ * secenekler yeniden cizilir ve dogru olan isaretlenir; yanlis secilen
+ * ayrica kirmizi gosterilir ki cocuk neyi sectigini gorsun.
+ */
+export function soruEkrani(kok, model, ceviri) {
+  const secenekler = model.soru.secenekler.map((metin, i) => {
+    let sinif = 'soru__secenek';
+    if (model.secildi !== null && model.cozumGoster) {
+      if (i === model.soru.dogru) sinif += ' soru__secenek--dogru';
+      else if (i === model.secildi) sinif += ' soru__secenek--yanlis';
+    }
+    return el('button', {
+      className: sinif,
+      text: metin,
+      attrs: { type: 'button' },
+      dataset: { dersSecenek: String(i) }
+    });
+  });
+
+  const cozum = model.cozumGoster && model.secildi !== null
+    ? el('div', { className: 'soru__cozum' }, [
+        el('p', {
+          className: model.dogruMu ? 'soru__geri soru__geri--dogru' : 'soru__geri soru__geri--yanlis',
+          text: model.dogruMu ? ceviri('ders.correct') : ceviri('ders.wrong')
+        }),
+        ...model.soru.cozum.map((adim) => el('p', { className: 'soru__cozum-adim', text: adim }))
+      ])
+    : null;
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      model.kapatVar
+        ? el('button', {
+            className: 'anlatim__kapat',
+            text: ceviri('ders.close'),
+            attrs: { type: 'button' },
+            dataset: { dersSoru: 'kapat' }
+          })
+        : null,
+      el('p', { className: 'anlatim__sayac', text: model.ustBilgi })
+    ]),
+    el('p', { className: 'soru__baslik', text: model.baslik }),
+    el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    el('div', { className: 'soru__secenekler' }, secenekler),
+    cozum,
+    model.secildi !== null
+      ? el('button', {
+          className: 'anlatim__gez anlatim__gez--vurgu',
+          text: model.devamEtiketi,
+          attrs: { type: 'button' },
+          dataset: { dersSoru: 'devam' }
+        })
+      : null
+  ]);
+}
+
 // 'serbest' modda geometri-tuval'in arac secimi icin donen bir arac
 // dugmesi yok; cocuk nokta, dogru parcasi ve isin arasinda secim
 // yapabilsin diye bu ekran ayri bir arac cubugu cizer. Diger modlarda

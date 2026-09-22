@@ -10,6 +10,8 @@
 
 import { haftaKaydi, haftaDurumu } from '../engines/ders.js';
 import { haftaBul, aktifHafta, haftaGezin } from '../engines/mufredat.js';
+import { soruUret } from '../engines/uretici/index.js';
+import { selectWeighted } from '../engines/leitner.js';
 
 export const adimKimligi = (konuId, seviye, adimId) => `${konuId}-${seviye}-${adimId}`;
 
@@ -203,4 +205,40 @@ export function ornekModeli(hafta, konular, acikAdim) {
   }
 
   return { ornek: null, konuAd: '', acik: [], toplam: 0, bitti: false };
+}
+
+/**
+ * Bir alistirma sorusu secer.
+ *
+ * Once hangi konudan soru gelecegi belirlenir (hafta iki konuya
+ * bagliysa rastgele biri), sonra uretici calistirilir.
+ *
+ * Leitner agirligi soru URETILDIKTEN sonra uygulanir: uretici rastgele
+ * bir tip seciyor, biz de zayif kutudaki tip cikana kadar birkac kez
+ * deniyoruz. Ureticiyi tip zorlamak icin degistirmek her ureticiye
+ * ayni karmasikligi tasirdi; burada tek yerde duruyor.
+ */
+export function alistirmaSorusu(hafta, konular, kayit, rng) {
+  const hazirDersler = hafta.dersler.filter((d) => {
+    const sev = seviyeBul(konular[d.konu], d.seviye);
+    return Boolean(sev);
+  });
+  if (hazirDersler.length === 0) return null;
+
+  const ders = hazirDersler[Math.floor(rng() * hazirDersler.length)];
+
+  const zayifTip = Object.keys(kayit.alistirma).length > 0
+    ? selectWeighted(kayit.alistirma, rng)
+    : null;
+
+  let soru = soruUret(ders.konu, ders.seviye, rng);
+  if (zayifTip) {
+    // En fazla 12 deneme: zayif tip bulunamazsa elde olanla devam
+    // edilir, cocugu bekletmenin anlami yok.
+    for (let i = 0; i < 12 && soru.tip !== zayifTip; i++) {
+      soru = soruUret(ders.konu, ders.seviye, rng);
+    }
+  }
+
+  return { soru, ureticiId: ders.konu, seviye: ders.seviye };
 }
