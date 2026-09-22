@@ -58,3 +58,25 @@ test('ayni tohum ayni soruyu uretir', () => {
   const b = alistirmaSorusu(HAFTA1, KONULAR, bosHafta(), tohumluRng(7));
   assert.deepEqual(a, b);
 });
+
+// Fix 1 icin: aci-olcme ureticisi bazi sorulara gorsel ekler (bkz.
+// engines/uretici/aci-olcme.js). Ekran katmani (src/ui/, main.js) test
+// edilmiyor - main.js'in export'u yok ve document'e dokunuyor, bu
+// yuzden gorselin GERCEKTEN cizildigini burada PINLEYEMEYIZ. Ama
+// alistirmaSorusu (soru ekraninin modelini kuran son saf katman
+// fonksiyonu) soruyu ekrana ULASTIRAN tek yerdir; bu test onun
+// soru.gorsel'i KAYBETMEDEN model'e tasidigini dogrular.
+test('alistirmaSorusu gorsel tasiyan bir soruyu degistirmeden modele tasir', () => {
+  const hafta3 = TAKVIM.find((h) => h.hafta === 3); // aci-olcme seviye 1
+  let bulundu = false;
+  for (let t = 1; t <= 200; t++) {
+    const s = alistirmaSorusu(hafta3, KONULAR, bosHafta(), tohumluRng(t));
+    if (s.soru.gorsel) {
+      bulundu = true;
+      assert.equal(s.soru.gorsel.widget, 'aciolcer');
+      assert.ok(['goster', 'olc'].includes(s.soru.gorsel.mod), `beklenmeyen mod: ${s.soru.gorsel.mod}`);
+      assert.equal(typeof s.soru.gorsel.derece, 'number');
+    }
+  }
+  assert.ok(bulundu, '200 tohumda gorsel tasiyan soru hic gelmedi');
+});

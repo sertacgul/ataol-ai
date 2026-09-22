@@ -300,9 +300,18 @@ function secenekListesi(soru, secildi, cozumGoster) {
  * }
  *
  * secildi null ise henuz cevaplanmamistir.
+ *
+ * soru.gorsel varsa (bkz. engines/uretici/aci-olcme.js, cokgenler-cember.js)
+ * bir tuval dugumu de cizilir ve geri dondurulur; widget'i o tuvale kurmak
+ * main.js'in isidir (widgetKur cagrisi ve yasam donguisu orada, tipki
+ * etkilesimEkrani'nin donen tuvali gibi).
  */
 export function soruEkrani(kok, model, ceviri) {
   const secenekler = secenekListesi(model.soru, model.secildi, model.cozumGoster);
+
+  const gorselTuval = model.soru.gorsel
+    ? el('canvas', { className: 'etkilesim__tuval', attrs: { id: 'ders-soru-tuval' } })
+    : null;
 
   const cozum = model.cozumGoster && model.secildi !== null
     ? el('div', { className: 'soru__cozum' }, [
@@ -328,6 +337,7 @@ export function soruEkrani(kok, model, ceviri) {
     ]),
     el('p', { className: 'soru__baslik', text: model.baslik }),
     el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    gorselTuval,
     el('div', { className: 'soru__secenekler' }, secenekler),
     cozum,
     model.secildi !== null
@@ -339,6 +349,8 @@ export function soruEkrani(kok, model, ceviri) {
         })
       : null
   ]);
+
+  return gorselTuval;
 }
 
 // 'serbest' modda geometri-tuval'in arac secimi icin donen bir arac
@@ -370,9 +382,17 @@ function aracCubugu(secili, ceviri) {
  *   1. Cevaptan sonra cozum GOSTERILMEZ (olcme araci)
  *   2. Sorular arasinda ileri geri gezinilebilir
  *   3. Bitirmek ayri bir dugme ve bos soru varsa uyarir
+ *
+ * soru.gorsel varsa soruEkrani ile AYNI kuralla tuval doner (bkz. orada).
+ * Unite sinavi ayni ureticilerden soru cektigi icin bu ekran da gorseli
+ * cizmezse sinav soruEkrani ile ayni acikligi tasirdi.
  */
 export function sinavEkrani(kok, model, ceviri) {
   const secenekler = secenekListesi(model.soru, model.secildi, false);
+
+  const gorselTuval = model.soru.gorsel
+    ? el('canvas', { className: 'etkilesim__tuval', attrs: { id: 'ders-soru-tuval' } })
+    : null;
 
   mount(kok, [
     el('div', { className: 'anlatim__ust' }, [
@@ -387,6 +407,7 @@ export function sinavEkrani(kok, model, ceviri) {
     el('p', { className: 'soru__baslik', text: ceviri('ders.unitExam') }),
     el('p', { className: 'sinav__not', text: ceviri('ders.examNote') }),
     el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    gorselTuval,
     el('div', { className: 'soru__secenekler' }, secenekler),
     model.uyari ? el('p', { className: 'sinav__uyari', text: model.uyari }) : null,
     el('div', { className: 'etkilesim__alt' }, [
@@ -411,6 +432,8 @@ export function sinavEkrani(kok, model, ceviri) {
           })
     ])
   ]);
+
+  return gorselTuval;
 }
 
 /**

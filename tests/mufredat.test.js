@@ -23,6 +23,20 @@ test('hafta sonu bir sonraki haftaya sayilir', () => {
   assert.equal(s.hafta.hafta, 2);
 });
 
+test('cuma gecesi biten hafta ile cumartesi farkli haftaya duser', () => {
+  // Fix 2 icin kok neden: 8. hafta 2026-11-02..11-06 (pazartesi-cuma).
+  // Bir quiz cuma 23:5x'te acilip gece yarisindan sonra bitince
+  // bugununTarihi() '2026-11-07' (cumartesi) doner; bu tarih 9. haftaya
+  // sayilir. Ayni oturumda acilis (8) ve bitis (9) FARKLI hafta
+  // numarasina cozulur - main.js bu yuzden haftayi acilista yakalayip
+  // bitiste TEKRAR HESAPLAMAMALI.
+  const acilis = haftaBul(TAKVIM, TATILLER, '2026-11-06');
+  const kapanis = haftaBul(TAKVIM, TATILLER, '2026-11-07');
+  assert.equal(acilis.hafta.hafta, 8);
+  assert.equal(kapanis.hafta.hafta, 9);
+  assert.notEqual(acilis.hafta.hafta, kapanis.hafta.hafta);
+});
+
 test('tatil gunu tatil dondurur', () => {
   const s = haftaBul(TAKVIM, TATILLER, '2026-11-18');
   assert.equal(s.tip, 'tatil');

@@ -95,6 +95,14 @@ let dersSinavSonuc = null;
 let dersSinavIndex = 0;
 let dersSinavUyari = '';
 
+// Etkilesim/alistirma/quiz ACILIRKEN yakalanan hafta numarasi.
+// Bitirme (finish) dersAktifHafta()'yi TEKRAR CAGIRMAZ, bu degeri
+// kullanir: dersAktifHafta() tarihe (ya da ebeveynin sabitledigi
+// haftaya) gore degisir, gece yarisini asan bir quiz ya da ortasinda
+// hafta degistirilen bir sinav aksi halde sonucu YANLIS haftaya yazar.
+// null ise (tatil, okul yili disi) yazacak bir hafta yok demektir.
+let dersYaziliHaftaNo = null;
+
 // Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
 // dinleyicileri birikir ve uygulama zamanla yavaslar.
 let dersWidget = null;
@@ -108,6 +116,30 @@ let dersEtkilesimArac = null;
 // sey gercekten degisti mi" sorusunu cevaplamak icin tutulur; widget
 // kapatilinca dersWidgetKapat() bunu da sifirlar.
 let dersWidgetAnahtar = null;
+
+// Soru ekranlarinin (alistirma/quiz/sinav) gorsel widget'i. soru.gorsel
+// tasiyan bir soru gosterildiginde kurulur; dersWidget/dersWidgetAnahtar
+// (yukarida) etkilesim ekraninindir, bu ondan BAGIMSIZDIR - farkli
+// tuval dugumlerine baglanirlar ve hicbir zaman ayni anda ikisi de
+// gosterilmez ama bagimsiz kalmalari yasam dongusunu netlestirir.
+// dersSoruWidgetModel, widget'in EN SON hangi model ile kuruldugudur;
+// ayni model (soru dahil TUM alanlar) render'dan render'a (renderIfStale,
+// sekme gecisi, vs.) TEKRAR gelirse widget'a DOKUNULMAZ, cocugun
+// surukledigi acilolcer sifirlanmaz. soru alani REFERANSLA (===)
+// karsilastirilir (bkz. dersSoruModelAyni); tek bir alan bile degisirse
+// (cevaplandi, sinav uyarisi cikti, vs.) eskisi yikilip yenisi kurulur.
+let dersSoruWidget = null;
+let dersSoruWidgetModel = null;
+
+// dersSoruEkraniCiz icin: iki modelin TUM alanlari (===) ayniysa true.
+// soru alani da buradan gecer, yani nesne REFERANSI karsilastirilir -
+// farkli bir soru nesnesi (ayni icerikte olsa bile) hep farkli sayilir.
+function dersSoruModelAyni(a, b) {
+  if (!a || !b) return false;
+  const aAnahtarlar = Object.keys(a);
+  if (aAnahtarlar.length !== Object.keys(b).length) return false;
+  return aAnahtarlar.every((k) => a[k] === b[k]);
+}
 
 // AI aciklamasi yalniz anahtar varken ve cevrimici iken teklif edilir.
 // Yoksa dugme hic gorunmez; calismayan bir dugme cocugu bosuna
@@ -766,6 +798,15 @@ function dersAktifHafta() {
   return model.tip === 'ders' ? haftaNo(TAKVIM, model.kart.no) : null;
 }
 
+// Etkilesim/alistirma/quiz acilirken cagirilir: hafta numarasini
+// dersYaziliHaftaNo'ya YAKALAR. Bitirme kodu bunu tekrar hesaplamak
+// yerine okur (bkz. dersYaziliHaftaNo yorumu).
+function dersHaftaYakala() {
+  const hafta = dersAktifHafta();
+  dersYaziliHaftaNo = hafta ? hafta.hafta : null;
+  return hafta;
+}
+
 function renderDers() {
   const kok = document.getElementById('view-ders');
 
@@ -834,7 +875,7 @@ function renderDers() {
 
   if (dersEkran === 'alistirma') {
     const hafta = dersAktifHafta();
-    if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; }
+    if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; dersSoruWidgetKapat(); }
     else {
       const ilerleme = state.loadDersIlerleme();
       const kayit = haftaKaydi(ilerleme, hafta.hafta);
@@ -843,7 +884,7 @@ function renderDers() {
         dersSecildi = null;
       }
       if (dersSoru) {
-        soruEkrani(kok, {
+        dersSoruEkraniCiz(soruEkrani, kok, {
           baslik: ceviri('ders.practice'),
           ustBilgi: ceviri('ders.practiceCount', { n: kayit.alistirmaDogru }),
           soru: dersSoru.soru,
@@ -852,34 +893,36 @@ function renderDers() {
           cozumGoster: true,
           devamEtiketi: ceviri('ders.nextQuestion'),
           kapatVar: true
-        }, ceviri);
+        });
         return;
       }
       dersEkran = 'hafta';
       dersAiMetin = '';
+      dersSoruWidgetKapat();
     }
   }
 
   if (dersEkran === 'sinav' && dersSinav && !dersSinavSonuc) {
-    sinavEkrani(kok, {
+    dersSoruEkraniCiz(sinavEkrani, kok, {
       soru: dersSinav.sorular[dersSinavIndex],
       secildi: dersSinav.cevaplar[dersSinavIndex],
       index: dersSinavIndex,
       toplam: dersSinav.sorular.length,
       uyari: dersSinavUyari
-    }, ceviri);
+    });
     return;
   }
 
   if (dersEkran === 'quiz' || dersEkran === 'sinav') {
     if (dersSinavSonuc) {
+      dersSoruWidgetKapat();
       sonucEkrani(kok, dersSinavSonuc, ceviri);
       return;
     }
     if (dersSinav) {
       const i = dersSinav.cevaplar.findIndex((c) => c === null);
       const index = i === -1 ? dersSinav.sorular.length - 1 : i;
-      soruEkrani(kok, {
+      dersSoruEkraniCiz(soruEkrani, kok, {
         baslik: dersEkran === 'quiz' ? ceviri('ders.quiz') : ceviri('ders.unitExam'),
         ustBilgi: ceviri('ders.quizOf', { n: index + 1, t: dersSinav.sorular.length }),
         soru: dersSinav.sorular[index],
@@ -888,10 +931,11 @@ function renderDers() {
         cozumGoster: dersSinav.aninda,
         devamEtiketi: ceviri('ders.nextQuestion'),
         kapatVar: true
-      }, ceviri);
+      });
       return;
     }
     dersEkran = 'hafta';
+    dersSoruWidgetKapat();
     dersAiMetin = '';
   }
 
@@ -907,6 +951,48 @@ function dersWidgetKapat() {
   // sonraki ayni (hafta, konu, seviye) icin gelen bir kurulum, hala acik
   // bir widget varmis gibi yanlislikla atlanabilirdi.
   dersWidgetAnahtar = null;
+}
+
+function dersSoruWidgetKapat() {
+  if (dersSoruWidget) {
+    dersSoruWidget.yokEt();
+    dersSoruWidget = null;
+  }
+  dersSoruWidgetModel = null;
+}
+
+// Soru ekranlarinin (alistirma/quiz/sinav) TEK kurulum noktasi (R26):
+// soru.gorsel tasiyan bir soru zaten AYNI modelle gosteriliyorsa
+// ekranFn hic cagrilmaz, widget'a dokunulmaz - aksi halde
+// renderIfStale/visibilitychange/pageshow gibi ilgisiz bir tetikleyici
+// cocugun surukledigi acilolceri sifirlardi. Modelin herhangi bir alani
+// (secildi, sinav uyarisi, vs.) degistiyse bu "ilgisiz" sayilmaz,
+// yeniden cizilir. Soru gorsel tasimiyorsa (cogu soru) eskisi gibi her
+// render'da yeniden cizilir, yikilacak bir widget zaten yoktur.
+function dersSoruEkraniCiz(ekranFn, kok, model) {
+  const soru = model.soru;
+
+  if (!soru.gorsel) {
+    dersSoruWidgetKapat();
+    ekranFn(kok, model, ceviri);
+    return;
+  }
+
+  if (dersSoruWidget && dersSoruModelAyni(dersSoruWidgetModel, model)) return;
+
+  dersSoruWidgetKapat();
+  dersSoruWidgetModel = model;
+
+  const canvas = ekranFn(kok, model, ceviri);
+  // Tuvalin cizim cozunurlugu CSS boyutundan ayridir; retina ekranda
+  // bulanik cikmasin diye oranla carpilir (etkilesimEkrani ile ayni).
+  const oran = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * oran;
+  canvas.height = Math.round(canvas.clientWidth * 0.75) * oran;
+  // mod uretecinin verdigi moddur (orn. 'olc'); 'goster' ile
+  // DEGISTIRILMEZ, cunku 'goster' cevabi tuvale yazar.
+  dersSoruWidget = widgetKur(soru.gorsel.widget, canvas, { mod: soru.gorsel.mod, veri: soru.gorsel, ses });
+  dersSoruWidget?.ciz();
 }
 
 // Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
@@ -1001,10 +1087,10 @@ function konuHaftasiBul(uniteId, konuId) {
 // ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
 // verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
 function dersSinavBitir() {
+  if (dersYaziliHaftaNo === null) return;
   const p = puanla(dersSinav);
-  const hafta = dersAktifHafta();
-  const sonuc = quizBitir(haftaKaydi(state.loadDersIlerleme(), hafta.hafta), p.yuzde);
-  dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+  const sonuc = quizBitir(haftaKaydi(state.loadDersIlerleme(), dersYaziliHaftaNo), p.yuzde);
+  dersIlerlemeYaz(dersYaziliHaftaNo, sonuc.kayit);
   if (sonuc.kazanilanYildiz > 0) {
     dersYildizVer(sonuc.kazanilanYildiz);
     ses.efekt('kutlama');
@@ -3377,6 +3463,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersOrnekAdim = 0;
     dersEkran = eylem === 'gec' ? 'etkilesim' : 'hafta';
     dersAiMetin = '';
+    if (dersEkran === 'etkilesim') dersHaftaYakala();
     renderDers();
     return;
   }
@@ -3403,9 +3490,9 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersEtkilesimMesaj = sonuc.mesaj;
 
     if (sonuc.tamam) {
-      const hafta = dersAktifHafta();
-      const kayit = etkilesimTamamla(haftaKaydi(state.loadDersIlerleme(), hafta.hafta));
-      dersIlerlemeYaz(hafta.hafta, kayit.kayit);
+      if (dersYaziliHaftaNo === null) return;
+      const kayit = etkilesimTamamla(haftaKaydi(state.loadDersIlerleme(), dersYaziliHaftaNo));
+      dersIlerlemeYaz(dersYaziliHaftaNo, kayit.kayit);
       if (kayit.kazanilanYildiz > 0) {
         dersYildizVer(kayit.kazanilanYildiz);
         ses.efekt('kutlama');
@@ -3448,9 +3535,12 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersAiMetin = '';
 
     if (dersEkran === 'quiz') {
-      const hafta = dersAktifHafta();
+      const hafta = dersHaftaYakala();
+      if (!hafta) { dersEkran = 'hafta'; renderDers(); return; }
       dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
       dersSinavSonuc = null;
+    } else if (dersEkran === 'etkilesim' || dersEkran === 'alistirma') {
+      dersHaftaYakala();
     }
 
     renderDers();
@@ -3480,11 +3570,11 @@ document.getElementById('app').addEventListener('click', (e) => {
   const secenekDugme = e.target.closest('[data-ders-secenek]');
   if (secenekDugme && dersEkran === 'alistirma') {
     if (dersSecildi !== null) return;   // ayni soruya iki kez cevap yok
+    if (dersYaziliHaftaNo === null) return;
 
     dersSecildi = Number(secenekDugme.dataset.dersSecenek);
     const dogruMu = dersSecildi === dersSoru.soru.dogru;
-    const hafta = dersAktifHafta();
-    const kayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
+    const kayit = haftaKaydi(state.loadDersIlerleme(), dersYaziliHaftaNo);
     const tip = dersSoru.soru.tip;
     const onceki = kayit.alistirma[tip] ?? newBox();
     const yeniKutu = dogruMu ? promote(onceki) : demote(onceki);
@@ -3496,7 +3586,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       wrong: (onceki.wrong ?? 0) + (dogruMu ? 0 : 1)
     }, dogruMu);
 
-    dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+    dersIlerlemeYaz(dersYaziliHaftaNo, sonuc.kayit);
     ses.efekt(dogruMu ? 'dogru' : 'yanlis');
     renderDers();
     return;
@@ -3509,6 +3599,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSecildi = null;
       dersEkran = 'hafta';
       dersAiMetin = '';
+      dersSoruWidgetKapat();
       render();
       return;
     }
@@ -3545,6 +3636,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSinavSonuc = null;
       dersEkran = 'hafta';
       dersAiMetin = '';
+      dersSoruWidgetKapat();
       render();
       return;
     }
@@ -3565,6 +3657,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSinavSonuc = null;
       dersEkran = 'hafta';
       dersAiMetin = '';
+      dersSoruWidgetKapat();
       render();
       return;
     }
@@ -3612,12 +3705,14 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSecildi = null;
       dersEkran = 'alistirma';
       dersAiMetin = '';
+      dersHaftaYakala();
       renderDers();
       return;
     }
     if (eylem === 'tekrar') {
       dersSinavSonuc = null;
-      const hafta = dersAktifHafta();
+      const hafta = dersHaftaYakala();
+      if (!hafta) { dersEkran = 'hafta'; renderDers(); return; }
       // dersEkran, bitiren fonksiyon tarafindan degistirilmedigi icin
       // 'quiz' ya da 'sinav' olarak kalir; hangisi bitmisse onu tekrar kurar.
       if (dersEkran === 'sinav') {
