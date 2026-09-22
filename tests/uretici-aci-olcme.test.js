@@ -30,12 +30,43 @@ test('aci turu sorusunun cevabi bagimsiz hesapla dogrulanir', () => {
   }
 });
 
-test('aciolcer okuma sorusunda cevap gorsel verideki derecedir', () => {
+// okumaSorusu icin cizilen derece araligi (derece(rng, 15, 165)). Bu
+// sinirlari burada literal tutuyoruz ki uretici sessizce degisirse bu
+// test kirilsin, uyumlu bir hesaplamayla kendi kendini dogrulamasin.
+const OKUMA_EN = 15;
+const OKUMA_ENCOK = 165;
+
+test('aciolcer okuma sorusunda gorsel ve secenekler gercek kisitlari saglar', () => {
   for (let t = 1; t <= 300; t++) {
     const soru = uret(1, tohumluRng(t));
     if (soru.tip !== 'aci-olcme-okuma') continue;
-    assert.ok(soru.gorsel && soru.gorsel.widget === 'aciolcer', 'gorsel verisi yok');
-    assert.equal(soru.secenekler[soru.dogru], String(soru.gorsel.derece));
+
+    assert.ok(soru.gorsel && soru.gorsel.widget === 'aciolcer', 'gorsel widget aciolcer degil');
+    assert.equal(soru.gorsel.mod, 'olc', 'gorsel modu olc olmali');
+
+    const d = soru.gorsel.derece;
+    assert.ok(Number.isInteger(d), `derece tam sayi degil: ${d}`);
+    assert.equal(d % 5, 0, `derece besin kati degil: ${d}`);
+    assert.ok(d >= OKUMA_EN && d <= OKUMA_ENCOK, `derece ${d} cizim araligi disinda`);
+
+    for (const secenek of soru.secenekler) {
+      const n = Number(secenek);
+      assert.equal(n % 5, 0, `secenek besin kati degil: ${secenek}`);
+      assert.ok(n > 0 && n < 180, `secenek aciolcerde okunamaz: ${secenek}`);
+    }
+
+    // Aciolcerin ters skalasini okuma hatasi: cocuk sifirin basladigi
+    // skala yerine oteki skaladan okursa 180 - derece'yi bulur. d = 90
+    // oldugunda bu deger dogru cevaba esit oldugundan ayirt edici
+    // degildir, o durumda kontrol atlanir.
+    const tersSkala = 180 - d;
+    if (tersSkala !== d) {
+      assert.ok(soru.secenekler.includes(String(tersSkala)),
+        `ters skala hatasi (${tersSkala}) secenekler arasinda yok`);
+    }
+
+    // Ic tutarlilik: dogru cevap gorsel verideki dereceyle ayni olmali.
+    assert.equal(soru.secenekler[soru.dogru], String(d));
   }
 });
 

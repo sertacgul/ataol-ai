@@ -111,7 +111,7 @@ function tumlerSorusu(rng) {
 
   return secmeliKur({
     tip: 'aci-olcme-tumler',
-    soru: `Bir dik açı ${d} derece ve başka bir açıya bölünmüş. Diğer açı kaç derecedir?`,
+    soru: `Bir dik açı, biri ${d} derece olacak şekilde iki açıya bölünmüş. Diğer açı kaç derecedir?`,
     dogruCevap: String(dogru),
     celdiriciler: karistir(celdiriciler, rng),
     cozum: [
