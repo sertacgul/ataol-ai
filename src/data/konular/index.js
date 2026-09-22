@@ -1,8 +1,16 @@
 /**
  * Konu kayit defteri. Icerik dosyalari yazildikca buraya eklenir.
  *
- * Faz 0'da bos: iskeletin icerik olmadan calistigini gormek istiyoruz.
- * Hafta karti icerigi olmayan haftayi "hazirlaniyor" diye gosterir.
+ * Faz 1: Geometrik Sekiller unitesi (1-8. haftalar).
+ * Faz 2-5'te kalan 12 konu eklenecek.
  */
 
-export const KONULAR = {};
+import temelCizimler from './temel-cizimler.js';
+import aciOlcme from './aci-olcme.js';
+import cokgenlerCember from './cokgenler-cember.js';
+
+export const KONULAR = {
+  'temel-cizimler': temelCizimler,
+  'aci-olcme': aciOlcme,
+  'cokgenler-cember': cokgenlerCember
+};
