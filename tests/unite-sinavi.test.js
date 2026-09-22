@@ -35,6 +35,12 @@ test('unitenin tum haftalarinin quizi gecilince acilir', () => {
   assert.equal(d.sinavId, 'unite-geometrik-sekiller');
 });
 
+test('tam bir hafta eksikken sinir durumu: hala kapalidir ve tek haftayi soyler', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'geometrik-sekiller', quizleriGec([1, 2, 3, 4, 5, 6, 7]), KONULAR);
+  assert.equal(d.acik, false);
+  assert.equal(d.sebep, 'Sınav için 1 haftanın quizini daha geçmen gerekiyor.');
+});
+
 test('daha once girilmis sinavin puani dondurulur', () => {
   const ilerleme = quizleriGec([1, 2, 3, 4, 5, 6, 7, 8]);
   ilerleme.sinavlar['unite-geometrik-sekiller'] = { puan: 84, gecti: true, tip: 'unite', yildizAlindi: true };

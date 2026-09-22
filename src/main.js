@@ -897,6 +897,23 @@ function haftaninKaynaklari(hafta) {
     .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
 }
 
+// Zayif konunun, verilen unite icinde en yuksek seviyeyle gorulmus
+// oldugu haftayi bulur. Unite sinavi sonucundaki "bu konuyu calis"
+// dugmesi konuya gore acilir; o konu unitenin herhangi bir haftasinda
+// olabilir, cocugu o haftaya goturmek gerekir. Eslesme yoksa null
+// doner; cagiran bu durumda mevcut haftada kalir.
+function konuHaftasiBul(uniteId, konuId) {
+  const adaylar = TAKVIM.filter((h) =>
+    h.unite === uniteId && h.dersler.some((d) => d.konu === konuId)
+  );
+  if (adaylar.length === 0) return null;
+
+  const enYuksekSeviye = (h) =>
+    Math.max(...h.dersler.filter((d) => d.konu === konuId).map((d) => d.seviye));
+
+  return adaylar.reduce((enIyi, h) => (enYuksekSeviye(h) > enYuksekSeviye(enIyi) ? h : enIyi)).hafta;
+}
+
 // Quizi bitirir: puanlar, ilerlemeye yazar, yildiz kazanildiysa verir
 // ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
 // verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
@@ -3367,6 +3384,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (secenekDugme && dersEkran === 'sinav') {
     dersSinav = sinavCevapla(dersSinav, dersSinavIndex, Number(secenekDugme.dataset.dersSecenek));
     ses.efekt('tik');   // dogru/yanlis SOYLENMEZ, bu bir olcme
+    dersSinavUyari = '';
     renderDers();
     return;
   }
@@ -3439,6 +3457,16 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (sonucDugme) {
     const eylem = sonucDugme.dataset.dersSonuc;
     if (eylem === 'calis') {
+      // Unite sinavinda zayif konu haftaya degil KONUYA baglidir; o
+      // konu unitenin herhangi bir haftasinda olabilir. Quiz'de ise
+      // konu zaten aktif haftadadir, bu yuzden yol yalniz sinav
+      // baglaminda degisir (quiz aynen eskisi gibi davranir).
+      const konuId = sonucDugme.dataset.dersKonu;
+      if (dersEkran === 'sinav' && konuId) {
+        const uniteId = dersAktifHafta()?.unite ?? null;
+        const hedefHafta = uniteId ? konuHaftasiBul(uniteId, konuId) : null;
+        if (hedefHafta !== null) dersGorulenHafta = hedefHafta;
+      }
       dersSinav = null;
       dersSinavSonuc = null;
       dersSoru = null;
