@@ -34,6 +34,8 @@ export function karistir(dizi, rng) {
  *
  * Celdiriciler once benzersizlestirilir ve dogru cevapla cakisanlar
  * elenir; yoksa ayni sik iki kez cikar ve cocuk hakli olarak sasirir.
+ * En az 2 benzersiz ve dogru cevaptan farkli celdirici gerekir;
+ * yoksa sozlesme icin yeterli (3-5) secenek olusmaz.
  * En fazla 3 celdirici alinir, yani 4 sik olur.
  *
  * dogru indeksi karistirmadan SONRA bulunur, sabit tutulmaz. Sabit
@@ -45,6 +47,14 @@ export function secmeliKur({ tip, soru, dogruCevap, celdiriciler, cozum, gorsel 
   for (const c of celdiriciler.map(String)) {
     if (c !== dogruMetin && !temiz.includes(c)) temiz.push(c);
     if (temiz.length === 3) break;
+  }
+
+  if (temiz.length < 2) {
+    throw new Error(
+      `secmeliKur: "${tip}" icin yeterli celdirici yok (${temiz.length}). ` +
+      'En az 2 benzersiz ve dogru cevaptan farkli celdirici gerekir; ' +
+      'sozlesme 3-5 secenek istiyor.'
+    );
   }
 
   const secenekler = karistir([dogruMetin, ...temiz], rng);

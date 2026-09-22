@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { soruUret, karistir, secmeliKur } from '../src/engines/uretici/index.js';
+import { soruUret, ureticiVarMi, karistir, secmeliKur } from '../src/engines/uretici/index.js';
 import { tohumluRng, sozlesmeyiDogrula } from './yardim/soru-sozlesmesi.js';
 
 test('bilinmeyen uretici null dondurur, atmaz', () => {
   assert.equal(soruUret('boyle-bir-konu-yok', 1, tohumluRng(1)), null);
+  assert.equal(ureticiVarMi('boyle-bir-konu-yok'), false);
 });
 
 test('karistir tum ogeleri korur', () => {
@@ -57,4 +58,32 @@ test('secmeliKur tekrar eden celdiriciyi eler', () => {
 
   assert.equal(new Set(soru.secenekler).size, soru.secenekler.length);
   assert.ok(soru.secenekler.includes('42'));
+});
+
+test('secmeliKur yetersiz celdiriciyle patlar', () => {
+  assert.throws(
+    () => {
+      secmeliKur({
+        tip: 'test-yetersiz',
+        soru: 'Yetersiz celdirici testine',
+        dogruCevap: '42',
+        celdiriciler: ['42'],
+        cozum: ['Dogru cevap ile ayni']
+      }, tohumluRng(1));
+    },
+    /yeterli celdirici yok/
+  );
+
+  assert.throws(
+    () => {
+      secmeliKur({
+        tip: 'test-bir-celdirici',
+        soru: 'Tek celdirici testine',
+        dogruCevap: '42',
+        celdiriciler: ['41'],
+        cozum: ['Tek celdirici']
+      }, tohumluRng(1));
+    },
+    /yeterli celdirici yok/
+  );
 });
