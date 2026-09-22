@@ -183,6 +183,7 @@ test('acikAdim arttikca adimlar sirayla acilir', () => {
   assert.equal(m.acik.length, 2);
   assert.equal(m.acik[0], m.ornek.adimlar[0]);
   assert.equal(m.acik[1], m.ornek.adimlar[1]);
+  assert.equal(m.bitti, false);
 });
 
 test('tum adimlar acilinca bitti olur', () => {
