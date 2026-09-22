@@ -43,6 +43,12 @@ import {
 } from './engines/chessgame.js';
 import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
+import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
+import { KONULAR } from './data/konular/index.js';
+import { haftaKarti, ekranDurumu } from './views/ders.js';
+import { haftaGezin, haftaNo } from './engines/mufredat.js';
+import { haftaEkrani } from './ui/ders-dom.js';
+import { createSes } from './ui/ses.js';
 
 let state;
 let profile;
@@ -60,6 +66,17 @@ let sohbetBekliyor = false;
 // Icerik kisisellestirme modallarinda secili simge/emoji.
 let seciliGorevSimge = null;
 let seciliOdulEmoji = null;
+
+// Ders sekmesi. Gorulen hafta ekranda gezinmeyle degisir; null ise
+// tarihten (ya da ebeveynin sabitledigi haftadan) bulunur.
+let dersGorulenHafta = null;
+
+const ses = createSes({
+  speechSynthesis: window.speechSynthesis,
+  SpeechSynthesisUtterance: window.SpeechSynthesisUtterance,
+  AudioContext: window.AudioContext ?? window.webkitAudioContext,
+  Audio: window.Audio
+});
 
 function showRecovery() {
   const app = document.getElementById('app');
@@ -612,12 +629,51 @@ function renderGames() {
   ));
 }
 
+// Ders sekmesinin tarihi rutinle ayni gun tanimini kullanir. dayKey'e
+// resetHour 0 verilir: burada istedigimiz sey yerel takvim gunudur,
+// rutinin sabaha sarkan gun tanimi degil. toISOString kullanilmaz,
+// cunku o UTC verir ve Turkiye'de gece yarisindan sonra bir onceki
+// gunu gosterirdi.
+function bugununTarihi() {
+  return dayKey(now(), 0);
+}
+
+function dersModeli() {
+  const ilerleme = state.loadDersIlerleme();
+  const sabit = ilerleme.ayar.sabitHafta;
+  const sonHaftaNo = TAKVIM[TAKVIM.length - 1].hafta;
+
+  const hafta = dersGorulenHafta === null
+    ? null
+    : haftaNo(TAKVIM, dersGorulenHafta);
+
+  const durum = hafta
+    ? { tip: 'ders', hafta }
+    : ekranDurumu(TAKVIM, TATILLER, bugununTarihi(), sabit);
+
+  if (durum.tip !== 'ders') {
+    return { ...durum, sonHaftaNo, dilTr: dil() === 'tr' };
+  }
+
+  const unite = UNITELER.find((u) => u.id === durum.hafta.unite);
+  return {
+    tip: 'ders',
+    kart: haftaKarti(durum.hafta, KONULAR, unite?.ad ?? '', ilerleme),
+    dilTr: dil() === 'tr'
+  };
+}
+
+function renderDers() {
+  haftaEkrani(document.getElementById('view-ders'), dersModeli(), ceviri);
+}
+
 function render() {
   uygulaDil();
   lastSignature = renderSignature(profile, now());
   renderRoutine();
   renderParent();
   renderGames();
+  renderDers();
   renderSohbet();
 }
 
@@ -2781,6 +2837,26 @@ document.getElementById('app').addEventListener('click', (e) => {
   const dilDugme = e.target.closest('[data-dil-sec]');
   if (dilDugme) {
     dilSec(dilDugme.dataset.dilSec);
+    return;
+  }
+
+  const dersGezin = e.target.closest('[data-ders-gezin]');
+  if (dersGezin) {
+    const su = Number(dersGezin.dataset.dersHafta);
+    const yon = dersGezin.dataset.dersGezin === 'ileri' ? 1 : -1;
+    const hedef = haftaGezin(TAKVIM, su, yon);
+    if (hedef) {
+      dersGorulenHafta = hedef.hafta;
+      renderDers();
+    }
+    return;
+  }
+
+  const dersBasla = e.target.closest('[data-ders-basla]');
+  if (dersBasla) {
+    // iOS'ta ses ancak kullanici dokunusunun icinde baslatilabilir.
+    ses.hazirla();
+    // Anlatim ekrani Task 13'te baglanacak.
     return;
   }
 
