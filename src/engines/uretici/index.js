@@ -12,11 +12,15 @@
  * cagiranlar tek yerden import edebilsin diye.
  */
 
+import { uret as temelCizimler } from './temel-cizimler.js';
+
 export { BICIMLER, sec, karistir, secmeliKur } from './ortak.js';
 
 // Uretici kayit defteri. Her uretici kendi gorevinde buraya eklenir:
 // once import satiri, sonra bu nesneye bir giris.
-export const URETICILER = {};
+export const URETICILER = {
+  'temel-cizimler': temelCizimler
+};
 
 export function ureticiVarMi(id) {
   return typeof URETICILER[id] === 'function';
