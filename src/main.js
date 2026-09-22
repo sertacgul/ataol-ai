@@ -83,6 +83,8 @@ let dersOrnekAdim = 0;
 // dinleyicileri birikir ve uygulama zamanla yavaslar.
 let dersWidget = null;
 let dersEtkilesimMesaj = '';
+// 'serbest' modda secili arac; diger modlarda null (arac cubugu yok).
+let dersEtkilesimArac = null;
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -711,7 +713,11 @@ function renderDers() {
 
     if (sev) {
       dersWidgetKapat();
-      const canvas = etkilesimEkrani(kok, { gorev: sev.etkilesim.gorev, mesaj: dersEtkilesimMesaj }, ceviri);
+      // Sadece 'serbest' modda arac secimi anlamli (bkz. ders-dom.js
+      // aracCubugu yorumu); widget her acilista kendi varsayilanina
+      // donuyor, o yuzden secim burada da varsayilana sifirlanir.
+      dersEtkilesimArac = sev.etkilesim.mod === 'serbest' ? 'dogru-parcasi' : null;
+      const canvas = etkilesimEkrani(kok, { gorev: sev.etkilesim.gorev, mesaj: dersEtkilesimMesaj, arac: dersEtkilesimArac }, ceviri);
       // Tuvalin cizim cozunurlugu CSS boyutundan ayridir; retina
       // ekranda bulanik cikmasin diye oranla carpilir.
       const oran = window.devicePixelRatio || 1;
@@ -725,6 +731,11 @@ function renderDers() {
       dersWidget?.ciz();
       return;
     }
+    // sev bulunamadi: hafta karti ekranina dusuluyor. Widget acik
+    // kalmis olabilir (ders icerigi ilerleme sirasinda degisti gibi
+    // uc bir durumda); dusmeden once kapatilmali, yoksa dinleyiciler
+    // hic kapatilmadan birikir.
+    dersWidgetKapat();
     dersEkran = 'hafta';
   }
 
@@ -3076,8 +3087,25 @@ document.getElementById('app').addEventListener('click', (e) => {
       return;
     }
 
+    // renderDers() cagirmiyoruz: o dersWidgetKapat + widgetKur ile
+    // tuvali sifirdan kurar, cocugun cizdigi her sey silinir. Bunun
+    // yerine mesaj dugumunun metnini dogrudan degistiriyoruz; tuval
+    // ve widget dokunulmadan kaliyor.
     ses.efekt('yanlis');
-    renderDers();
+    document.getElementById('ders-etkilesim-mesaj').textContent = sonuc.mesaj;
+    return;
+  }
+
+  const aracDugme = e.target.closest('[data-ders-arac]');
+  if (aracDugme) {
+    // renderDers() yok: item 1 ile ayni sebep, arac secimi tuvali
+    // sifirlamamali. Yalniz widget'in ic durumunu ve dugmelerin
+    // aktif sinifini guncelliyoruz.
+    dersEtkilesimArac = aracDugme.dataset.dersArac;
+    dersWidget?.aracSec?.(dersEtkilesimArac);
+    for (const b of document.querySelectorAll('[data-ders-arac]')) {
+      b.classList.toggle('etkilesim__arac--aktif', b.dataset.dersArac === dersEtkilesimArac);
+    }
     return;
   }
 

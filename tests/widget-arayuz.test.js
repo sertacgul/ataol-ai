@@ -111,3 +111,21 @@ test('aciolcer olc modunda hedef aciya ulasmadan tamam demez', () => {
   assert.equal(w.dogrula().tamam, false, 'hic olculmeden tamam olmamali');
   w.yokEt();
 });
+
+test('geometri-tuval cokgen modunda uc nokta kenar sayilmaz', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'cokgen', veri: {} });
+  const basla = dinleyiciler.find(([ad]) => ad === 'pointerdown')[1];
+  const bitir = dinleyiciler.find(([ad]) => ad === 'pointerup')[1];
+
+  // Her tikla-birak ayni noktada: surukleme uzunlugu 6px altinda kalir,
+  // bu yuzden widget bunlari 'nokta' olarak kaydeder, kenar olarak degil.
+  for (const [x, y] of [[10, 10], [50, 50], [100, 100]]) {
+    basla({ clientX: x, clientY: y });
+    bitir({ clientX: x, clientY: y });
+  }
+
+  const sonuc = w.dogrula();
+  assert.equal(sonuc.tamam, false, 'uc nokta bir cokgen olusturmamali');
+  w.yokEt();
+});

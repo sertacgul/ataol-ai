@@ -231,13 +231,45 @@ export function ornekEkrani(kok, model, ceviri) {
   ]);
 }
 
+// 'serbest' modda geometri-tuval'in arac secimi icin donen bir arac
+// dugmesi yok; cocuk nokta, dogru parcasi ve isin arasinda secim
+// yapabilsin diye bu ekran ayri bir arac cubugu cizer. Diger modlarda
+// (dikme, cokgen, cember, cember-ucgen) widget'in kendi varsayilan
+// araci yeterlidir, bu yuzden cagiran yalniz 'serbest' modda gecer.
+const ARACLAR = [
+  ['nokta', 'ders.toolPoint'],
+  ['dogru-parcasi', 'ders.toolSegment'],
+  ['isin', 'ders.toolRay']
+];
+
+function aracCubugu(secili, ceviri) {
+  return el('div', { className: 'etkilesim__araclar' },
+    ARACLAR.map(([ad, anahtar]) =>
+      el('button', {
+        className: `etkilesim__arac ${ad === secili ? 'etkilesim__arac--aktif' : ''}`,
+        text: ceviri(anahtar),
+        attrs: { type: 'button' },
+        dataset: { dersArac: ad }
+      })
+    )
+  );
+}
+
 /**
  * "Kendin dene" ekrani. Widget'i canvas'a kurar; widget'in kendisini
  * kurmaz, o isi main.js yapar cunku yokEt cagrisinin sahibi odur.
  *
+ * arac: 'serbest' moddaki secili arac id'si, diger modlarda null.
+ * null ise arac cubugu hic cizilmez.
+ *
+ * Mesaj paragrafi mesaj bos olsa da hep cizilir ve sabit bir id tasir:
+ * basarisiz "Kontrol et" sonrasi main.js tuvali ve widget'i yikip
+ * yeniden kurmadan yalniz bu dugumun metnini degistirir. Aksi halde
+ * cocugun cizdigi her sey basarisiz her denemede silinirdi.
+ *
  * Doner: olusturulan canvas. Cagiran bunu widget'a verir.
  */
-export function etkilesimEkrani(kok, { gorev, mesaj }, ceviri) {
+export function etkilesimEkrani(kok, { gorev, mesaj, arac = null }, ceviri) {
   const canvas = el('canvas', { className: 'etkilesim__tuval', attrs: { id: 'ders-tuval' } });
 
   mount(kok, [
@@ -251,8 +283,9 @@ export function etkilesimEkrani(kok, { gorev, mesaj }, ceviri) {
       el('p', { className: 'anlatim__sayac', text: ceviri('ders.tryIt') })
     ]),
     el('p', { className: 'etkilesim__gorev', text: gorev }),
+    arac ? aracCubugu(arac, ceviri) : null,
     canvas,
-    mesaj ? el('p', { className: 'etkilesim__mesaj', text: mesaj }) : null,
+    el('p', { className: 'etkilesim__mesaj', text: mesaj ?? '', attrs: { id: 'ders-etkilesim-mesaj' } }),
     el('div', { className: 'etkilesim__alt' }, [
       el('button', {
         className: 'anlatim__gez',

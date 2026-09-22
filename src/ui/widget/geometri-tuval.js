@@ -184,8 +184,11 @@ export function geometriTuval(canvas, { mod = 'serbest', veri = {}, ses = null }
 
   function dogrula() {
     if (mod === 'cokgen') {
-      return sekiller.length >= 3
-        ? { tamam: true, mesaj: `${sekiller.length} kenarlı bir çokgen kurdun.` }
+      // sekiller nokta ve cemberi de tutar; kenar sayisi yalniz
+      // dogru cizen sekillerden (nokta ve cember disindakilerden) sayilir.
+      const kenarlar = sekiller.filter((s) => s.tip !== 'nokta' && s.tip !== 'cember');
+      return kenarlar.length >= 3
+        ? { tamam: true, mesaj: `${kenarlar.length} kenarlı bir çokgen kurdun.` }
         : { tamam: false, mesaj: 'Çokgen için en az 3 doğru gerekir.' };
     }
     if (mod === 'serbest') {
