@@ -75,6 +75,11 @@ test('gunluk modulu ag cagrisi icermez', () => {
 });
 
 test('DOM sadece main.js ve ui altinda kullanilir', () => {
-  const domlu = TUM.filter(({ src }) => src.includes('document')).map(({ yol }) => yol).sort();
-  assert.deepEqual(domlu, ['main.js', 'ui/dom.js']);
+  for (const { yol, src } of TUM) {
+    if (!src.includes('document')) continue;
+    assert.ok(
+      yol === 'main.js' || yol.startsWith('ui/'),
+      `${yol} DOM kullanamaz; DOM yalniz main.js ve ui/ altinda yasar`
+    );
+  }
 });
