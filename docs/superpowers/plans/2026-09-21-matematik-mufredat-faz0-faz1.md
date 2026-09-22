@@ -5780,3 +5780,1020 @@ her ureticiye ayni karmasikligi tasirdi, burada tek yerde duruyor ve
 Ekrandaki soru cevaplanana kadar sabit; her render'da yeni soru
 uretmek cocugun okudugu soruyu degistirirdi."
 ```
+
+---
+
+## Task 16: Sinav motoru ve hafta quizi
+
+Quiz ve sinav ayni motoru kullanir, farki kapsam ve geri bildirim
+zamanidir. Quiz her soruda aninda geri bildirim verir cunku ogretme
+aracidir; sinav sonda verir cunku olcme aracidir.
+
+**Files:**
+- Create: `src/engines/sinav.js`
+- Modify: `src/main.js`, `src/core/i18n.js`, `sw.js`
+- Test: `tests/sinav.test.js`
+
+**Interfaces:**
+- Consumes: `soruUret` (Task 8)
+- Produces:
+  - `sinavKur({ kaynaklar, soruSayisi, gecmeNotu, aninda }, rng)` -> sinav
+  - `kaynaklar[n]` -> `{ ureticiId, seviye, agirlik }`
+  - `cevapla(sinav, index, secilen)` -> yeni sinav
+  - `puanla(sinav)` -> `{ dogru, toplam, yuzde, gecti, konuBazli }`
+  - `konuBazli` -> `{ [ureticiId]: { dogru, toplam } }`
+  - `agirlikHesapla(takvim, uniteId)` -> `kaynaklar` dizisi
+  - `sinav` -> `{ sorular, kaynaklar, cevaplar, gecmeNotu, aninda, bitti }`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/sinav.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { sinavKur, cevapla, puanla, agirlikHesapla } from '../src/engines/sinav.js';
+import { TAKVIM } from '../src/data/mufredat.js';
+import { sozlesmeyiDogrula, tohumluRng } from './yardim/soru-sozlesmesi.js';
+
+const KAYNAK = [
+  { ureticiId: 'temel-cizimler', seviye: 1, agirlik: 1 },
+  { ureticiId: 'aci-olcme', seviye: 1, agirlik: 1 }
+];
+
+const kur = (ust = {}) => sinavKur({
+  kaynaklar: KAYNAK, soruSayisi: 10, gecmeNotu: 70, aninda: true, ...ust
+}, tohumluRng(1));
+
+test('sinavKur istenen sayida soru uretir', () => {
+  assert.equal(kur().sorular.length, 10);
+  assert.equal(kur({ soruSayisi: 20 }).sorular.length, 20);
+});
+
+test('uretilen tum sorular sozlesmeye uyar', () => {
+  for (let t = 1; t <= 50; t++) {
+    const s = sinavKur({ kaynaklar: KAYNAK, soruSayisi: 10, gecmeNotu: 70 }, tohumluRng(t));
+    s.sorular.forEach((soru, i) => sozlesmeyiDogrula(soru, `tohum ${t} soru ${i}`));
+  }
+});
+
+test('sinav basladiginda cevaplar bostur', () => {
+  const s = kur();
+  assert.equal(s.cevaplar.length, 10);
+  assert.ok(s.cevaplar.every((c) => c === null));
+  assert.equal(s.bitti, false);
+});
+
+test('cevapla yalniz ilgili indeksi degistirir', () => {
+  const s = cevapla(kur(), 3, 2);
+  assert.equal(s.cevaplar[3], 2);
+  assert.equal(s.cevaplar[0], null);
+});
+
+test('cevapla girdiyi degistirmez', () => {
+  const s = kur();
+  cevapla(s, 0, 1);
+  assert.equal(s.cevaplar[0], null);
+});
+
+test('cevapla sinir disi indeksi yok sayar', () => {
+  const s = kur();
+  assert.deepEqual(cevapla(s, 99, 1).cevaplar, s.cevaplar);
+  assert.deepEqual(cevapla(s, -1, 1).cevaplar, s.cevaplar);
+});
+
+test('cevap degistirilebilir', () => {
+  let s = cevapla(kur(), 0, 1);
+  s = cevapla(s, 0, 3);
+  assert.equal(s.cevaplar[0], 3);
+});
+
+test('hepsi dogru cevaplaninca 100 alinir', () => {
+  let s = kur();
+  s.sorular.forEach((soru, i) => { s = cevapla(s, i, soru.dogru); });
+  const p = puanla(s);
+  assert.equal(p.dogru, 10);
+  assert.equal(p.yuzde, 100);
+  assert.equal(p.gecti, true);
+});
+
+test('hic cevaplanmayinca 0 alinir ve gecilemez', () => {
+  const p = puanla(kur());
+  assert.equal(p.dogru, 0);
+  assert.equal(p.yuzde, 0);
+  assert.equal(p.gecti, false);
+});
+
+test('yuzde gecme notuyla karsilastirilir', () => {
+  let s = kur();
+  s.sorular.forEach((soru, i) => { s = cevapla(s, i, i < 7 ? soru.dogru : (soru.dogru + 1) % soru.secenekler.length); });
+  const p = puanla(s);
+  assert.equal(p.yuzde, 70);
+  assert.equal(p.gecti, true, 'gecme notuna esit puan gecer');
+});
+
+test('gecme notunun bir altinda gecilemez', () => {
+  let s = kur();
+  s.sorular.forEach((soru, i) => { s = cevapla(s, i, i < 6 ? soru.dogru : (soru.dogru + 1) % soru.secenekler.length); });
+  assert.equal(puanla(s).gecti, false);
+});
+
+test('konu bazli kirilim her kaynak icin sayi verir', () => {
+  let s = kur();
+  s.sorular.forEach((soru, i) => { s = cevapla(s, i, soru.dogru); });
+  const p = puanla(s);
+  const toplam = Object.values(p.konuBazli).reduce((n, k) => n + k.toplam, 0);
+  assert.equal(toplam, 10);
+  for (const k of Object.values(p.konuBazli)) {
+    assert.equal(k.dogru, k.toplam, 'hepsi dogruyken kirilim da tam olmali');
+  }
+});
+
+test('agirlikli kaynak daha cok soru alir', () => {
+  const s = sinavKur({
+    kaynaklar: [
+      { ureticiId: 'temel-cizimler', seviye: 1, agirlik: 4 },
+      { ureticiId: 'aci-olcme', seviye: 1, agirlik: 1 }
+    ],
+    soruSayisi: 20, gecmeNotu: 60
+  }, tohumluRng(3));
+
+  const sayim = {};
+  for (const soru of s.sorular) {
+    const k = soru.tip.startsWith('temel-cizimler') ? 'tc' : 'ao';
+    sayim[k] = (sayim[k] ?? 0) + 1;
+  }
+  assert.ok(sayim.tc > sayim.ao, `agirlikli kaynak az soru aldi: ${JSON.stringify(sayim)}`);
+  assert.ok(sayim.ao >= 1, 'dusuk agirlikli kaynak hic soru almamis');
+});
+
+test('agirlikHesapla unitenin konu seviyelerini sayar', () => {
+  const k = agirlikHesapla(TAKVIM, 'geometrik-sekiller');
+  const toplamAgirlik = k.reduce((n, x) => n + x.agirlik, 0);
+  assert.equal(toplamAgirlik, 8, 'unite 1 de 8 konu-seviye var');
+  assert.equal(k.filter((x) => x.ureticiId === 'cokgenler-cember').length, 4);
+  assert.equal(k.filter((x) => x.ureticiId === 'temel-cizimler').length, 2);
+});
+
+test('ayni tohum ayni sinavi kurar', () => {
+  assert.deepEqual(
+    sinavKur({ kaynaklar: KAYNAK, soruSayisi: 10, gecmeNotu: 70 }, tohumluRng(9)),
+    sinavKur({ kaynaklar: KAYNAK, soruSayisi: 10, gecmeNotu: 70 }, tohumluRng(9))
+  );
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/sinav.test.js`
+Expected: FAIL, modul yok.
+
+- [ ] **Step 3: `src/engines/sinav.js` yaz**
+
+```js
+/**
+ * Quiz ve sinav motoru. Saf: rng disaridan gelir.
+ *
+ * Quiz ve sinav ayni motoru kullanir. Tek fark 'aninda' bayragidir:
+ * quiz her soruda geri bildirim verir cunku OGRETME aracidir, sinav
+ * sonda verir cunku OLCME aracidir. Ikisini ayni ekranin iki modu
+ * yapmak, iki ayri sistem yazmaktan hem az kod hem az hata demek.
+ *
+ * Sure siniri BILEREK yoktur. 10 yasinda bir cocuk kronometreyle
+ * paniklerse olculen sey matematik degil kaygi olur.
+ */
+
+import { soruUret } from './uretici/index.js';
+
+/**
+ * Sorulari kaynaklara agirlikla dagitir.
+ *
+ * Once her kaynaga agirligi oraninda tam sayi pay verilir, sonra
+ * yuvarlamadan artan sorular en buyuk agirliktan baslayarak dagitilir.
+ * Her kaynak en az 1 soru alir: bir konu sinavda hic cikmazsa o konuyu
+ * olcmemis oluruz.
+ */
+function dagit(kaynaklar, soruSayisi) {
+  const toplamAgirlik = kaynaklar.reduce((n, k) => n + k.agirlik, 0);
+  const paylar = kaynaklar.map((k) => ({
+    kaynak: k,
+    pay: Math.max(1, Math.floor((k.agirlik / toplamAgirlik) * soruSayisi))
+  }));
+
+  let dagitilan = paylar.reduce((n, p) => n + p.pay, 0);
+
+  // Fazla dagittiysak en cok payi olandan geri al (1'in altina inmeden).
+  while (dagitilan > soruSayisi) {
+    const enBuyuk = paylar.filter((p) => p.pay > 1).sort((a, b) => b.pay - a.pay)[0];
+    if (!enBuyuk) break;
+    enBuyuk.pay -= 1;
+    dagitilan -= 1;
+  }
+
+  // Eksik kaldiysa agirligi en buyuk olana ver.
+  let i = 0;
+  const sirali = [...paylar].sort((a, b) => b.kaynak.agirlik - a.kaynak.agirlik);
+  while (dagitilan < soruSayisi) {
+    sirali[i % sirali.length].pay += 1;
+    dagitilan += 1;
+    i += 1;
+  }
+
+  return paylar;
+}
+
+export function sinavKur({ kaynaklar, soruSayisi, gecmeNotu, aninda = false }, rng) {
+  const paylar = dagit(kaynaklar, soruSayisi);
+
+  const sorular = [];
+  const soruKaynagi = [];
+  for (const { kaynak, pay } of paylar) {
+    for (let n = 0; n < pay; n++) {
+      sorular.push(soruUret(kaynak.ureticiId, kaynak.seviye, rng));
+      soruKaynagi.push(kaynak.ureticiId);
+    }
+  }
+
+  // Konular bloklar halinde degil karisik gelsin; art arda ayni konu
+  // gelirse cocuk sinavi "bitti mi" diye degil "hala mi" diye yasar.
+  const sira = sorular.map((_, i) => i);
+  for (let i = sira.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [sira[i], sira[j]] = [sira[j], sira[i]];
+  }
+
+  return {
+    sorular: sira.map((i) => sorular[i]),
+    soruKaynagi: sira.map((i) => soruKaynagi[i]),
+    cevaplar: sira.map(() => null),
+    gecmeNotu,
+    aninda,
+    bitti: false
+  };
+}
+
+export function cevapla(sinav, index, secilen) {
+  if (!Number.isInteger(index) || index < 0 || index >= sinav.sorular.length) return sinav;
+  const cevaplar = [...sinav.cevaplar];
+  cevaplar[index] = secilen;
+  return { ...sinav, cevaplar };
+}
+
+export function puanla(sinav) {
+  const konuBazli = {};
+  let dogru = 0;
+
+  sinav.sorular.forEach((soru, i) => {
+    const kaynak = sinav.soruKaynagi[i];
+    if (!konuBazli[kaynak]) konuBazli[kaynak] = { dogru: 0, toplam: 0 };
+    konuBazli[kaynak].toplam += 1;
+
+    if (sinav.cevaplar[i] === soru.dogru) {
+      dogru += 1;
+      konuBazli[kaynak].dogru += 1;
+    }
+  });
+
+  const toplam = sinav.sorular.length;
+  const yuzde = toplam === 0 ? 0 : Math.round((dogru / toplam) * 100);
+
+  return { dogru, toplam, yuzde, gecti: yuzde >= sinav.gecmeNotu, konuBazli };
+}
+
+/**
+ * Bir unitenin kaynak listesi: o unitedeki her konu-seviye cifti bir
+ * kaynaktir ve agirligi 1'dir. Boylece 5 seviyeli bir konu, 2 seviyeli
+ * bir konudan iki buçuk kat fazla soru alir; unitede ne kadar zaman
+ * gecirdiyse sinavda o kadar yer kaplar.
+ */
+export function agirlikHesapla(takvim, uniteId) {
+  const kaynaklar = [];
+  for (const hafta of takvim) {
+    if (hafta.unite !== uniteId) continue;
+    for (const ders of hafta.dersler) {
+      kaynaklar.push({ ureticiId: ders.konu, seviye: ders.seviye, agirlik: 1 });
+    }
+  }
+  return kaynaklar;
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/sinav.test.js`
+Expected: PASS, 15 test gecer.
+
+- [ ] **Step 5: i18n anahtarlari**
+
+TR:
+
+```js
+    'ders.quiz': 'Hafta quizi',
+    'ders.quizOf': 'Soru {n} / {t}',
+    'ders.quizResult': '{n} / {t} doğru',
+    'ders.quizPassed': 'Geçtin! {y} yıldız kazandın.',
+    'ders.quizFailed': 'Geçmek için {g} puan gerekiyor. Tekrar dene.',
+    'ders.quizBest': 'En iyi puanın: {n}',
+    'ders.retry': 'Tekrar dene',
+    'ders.backToWeek': 'Haftaya dön',
+```
+
+EN:
+
+```js
+    'ders.quiz': 'Weekly quiz',
+    'ders.quizOf': 'Question {n} / {t}',
+    'ders.quizResult': '{n} / {t} correct',
+    'ders.quizPassed': 'You passed! You earned {y} stars.',
+    'ders.quizFailed': 'You need {g} points to pass. Try again.',
+    'ders.quizBest': 'Your best score: {n}',
+    'ders.retry': 'Try again',
+    'ders.backToWeek': 'Back to the week',
+```
+
+- [ ] **Step 6: `ui/ders-dom.js` icine `sonucEkrani` ekle**
+
+```js
+/**
+ * Quiz ve sinav sonuc ekrani.
+ *
+ * Not tek basina ise yaramaz; nereye gidilecegini soylemesi gerekir.
+ * Bu yuzden konu bazli kirilim ve zayif konunun yaninda dogrudan o
+ * konunun alistirmasina goturen bir dugme var.
+ */
+export function sonucEkrani(kok, model, ceviri) {
+  const kirilim = model.konular.map((k) =>
+    el('div', { className: 'sonuc__konu' }, [
+      el('p', { className: 'sonuc__konu-ad', text: `${k.ad}: ${k.dogru} / ${k.toplam}` }),
+      k.zayif
+        ? el('button', {
+            className: 'sonuc__calis',
+            text: ceviri('ders.stage.alistirma'),
+            attrs: { type: 'button' },
+            dataset: { dersSonuc: 'calis', dersKonu: k.id }
+          })
+        : null
+    ])
+  );
+
+  mount(kok, [
+    el('p', { className: 'sonuc__baslik', text: model.baslik }),
+    el('p', { className: 'sonuc__puan', text: ceviri('ders.quizResult', { n: model.dogru, t: model.toplam }) }),
+    el('p', {
+      className: model.gecti ? 'sonuc__durum sonuc__durum--gecti' : 'sonuc__durum',
+      text: model.gecti
+        ? ceviri('ders.quizPassed', { y: model.yildiz })
+        : ceviri('ders.quizFailed', { g: model.gecmeNotu })
+    }),
+    el('div', { className: 'sonuc__kirilim' }, kirilim),
+    el('div', { className: 'sonuc__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.retry'),
+        attrs: { type: 'button' },
+        dataset: { dersSonuc: 'tekrar' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ders.backToWeek'),
+        attrs: { type: 'button' },
+        dataset: { dersSonuc: 'kapat' }
+      })
+    ])
+  ]);
+}
+```
+
+- [ ] **Step 7: `main.js` icine quiz akisini bagla**
+
+Import:
+
+```js
+import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
+import { sonucEkrani } from './ui/ders-dom.js';
+import { quizBitir, QUIZ_GECME } from './engines/ders.js';
+```
+
+Modul durumu:
+
+```js
+// Acik quiz ya da sinav. null ise yok. dersSinavSonuc dolu ise sonuc
+// ekrani gosteriliyordur.
+let dersSinav = null;
+let dersSinavSonuc = null;
+```
+
+`renderDers` icine, `alistirma` blogundan sonra:
+
+```js
+  if (dersEkran === 'quiz' || dersEkran === 'sinav') {
+    if (dersSinavSonuc) {
+      sonucEkrani(kok, dersSinavSonuc, ceviri);
+      return;
+    }
+    if (dersSinav) {
+      const i = dersSinav.cevaplar.findIndex((c) => c === null);
+      const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+      soruEkrani(kok, {
+        baslik: dersEkran === 'quiz' ? ceviri('ders.quiz') : ceviri('ders.unitExam'),
+        ustBilgi: ceviri('ders.quizOf', { n: index + 1, t: dersSinav.sorular.length }),
+        soru: dersSinav.sorular[index],
+        secildi: dersSinav.cevaplar[index],
+        dogruMu: dersSinav.cevaplar[index] === dersSinav.sorular[index].dogru,
+        cozumGoster: dersSinav.aninda,
+        devamEtiketi: ceviri('ders.next'),
+        kapatVar: true
+      }, ceviri);
+      return;
+    }
+    dersEkran = 'hafta';
+  }
+```
+
+Quiz baslatma, `data-ders-asama` blogunun icine:
+
+```js
+    if (dersEkran === 'quiz') {
+      const hafta = dersAktifHafta();
+      const kaynaklar = hafta.dersler
+        .filter((d) => KONULAR[d.konu])
+        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
+      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      dersSinavSonuc = null;
+    }
+```
+
+Quiz icindeki secenek ve devam olaylari (alistirma bloklarinin altina):
+
+```js
+  if (secenekDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
+    const i = dersSinav.cevaplar.findIndex((c) => c === null);
+    const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+    if (dersSinav.cevaplar[index] !== null) return;
+
+    dersSinav = sinavCevapla(dersSinav, index, Number(secenekDugme.dataset.dersSecenek));
+    if (dersSinav.aninda) {
+      ses.efekt(dersSinav.cevaplar[index] === dersSinav.sorular[index].dogru ? 'dogru' : 'yanlis');
+    }
+    renderDers();
+    return;
+  }
+
+  if (soruDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
+    if (soruDugme.dataset.dersSoru === 'kapat') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    if (dersSinav.cevaplar.every((c) => c !== null)) {
+      dersSinavBitir();
+      return;
+    }
+    renderDers();
+    return;
+  }
+```
+
+Bitirme ve sonuc:
+
+```js
+function dersSinavBitir() {
+  const p = puanla(dersSinav);
+  const hafta = dersAktifHafta();
+  const sonuc = quizBitir(haftaKaydi(state.loadDersIlerleme(), hafta.hafta), p.yuzde);
+  dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+  }
+
+  dersSinavSonuc = {
+    baslik: ceviri('ders.quiz'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: dersSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: Object.entries(p.konuBazli).map(([id, k]) => ({
+      id,
+      ad: KONULAR[id]?.ad?.tr ?? id,
+      dogru: k.dogru,
+      toplam: k.toplam,
+      zayif: k.dogru / k.toplam < 0.7
+    }))
+  };
+  renderDers();
+}
+```
+
+Sonuc ekrani olaylari:
+
+```js
+  const sonucDugme = e.target.closest('[data-ders-sonuc]');
+  if (sonucDugme) {
+    const eylem = sonucDugme.dataset.dersSonuc;
+    if (eylem === 'calis') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersSoru = null;
+      dersSecildi = null;
+      dersEkran = 'alistirma';
+      renderDers();
+      return;
+    }
+    if (eylem === 'tekrar') {
+      dersSinavSonuc = null;
+      dersEkran = 'quiz';
+      const hafta = dersAktifHafta();
+      const kaynaklar = hafta.dersler
+        .filter((d) => KONULAR[d.konu])
+        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
+      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      renderDers();
+      return;
+    }
+    dersSinav = null;
+    dersSinavSonuc = null;
+    dersEkran = 'hafta';
+    render();
+    return;
+  }
+```
+
+- [ ] **Step 8: `sw.js` guncelle**
+
+`CACHE_NAME` -> `'ataol-ai-v41'`, ASSETS'e `'./src/engines/sinav.js',` ekle.
+
+- [ ] **Step 9: Tum testleri ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: "Quiz" rozeti 10 soruluk quizi aciyor, her soruda aninda
+geri bildirim var, son soruda "Devam" sonuc ekranini getiriyor, gecince
+6 yildiz geliyor, tam puanda 10 geliyor, ikinci kez gecince yildiz
+gelmiyor ama en iyi puan guncelleniyor.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add src/engines/sinav.js src/ui/ders-dom.js src/main.js src/core/i18n.js sw.js tests/sinav.test.js
+git commit -m "feat(ders): sinav motoru ve hafta quizi
+
+Quiz ve sinav ayni motoru kullaniyor; tek fark 'aninda' bayragi. Quiz
+her soruda geri bildirim veriyor (ogretme araci), sinav sonda veriyor
+(olcme araci).
+
+Sorular kaynaklara agirlikla dagitiliyor ve her kaynak en az 1 soru
+aliyor: bir konu sinavda hic cikmazsa o konuyu olcmemis oluruz.
+Sorular karistiriliyor, yoksa ayni konu blok blok gelir ve cocuk
+sinavi 'hala mi' diye yasar.
+
+Sure siniri bilerek yok."
+```
+
+---
+
+## Task 17: Unite sinavi
+
+Unite bitince acilan 20 soruluk sinav. Quiz'den farki: kapsam tum unite,
+geri bildirim sonda, sorular arasinda ileri geri gezinilebiliyor.
+
+**Files:**
+- Modify: `src/views/ders.js` (`uniteSinaviDurumu`)
+- Modify: `src/ui/ders-dom.js` (`sinavEkrani`)
+- Modify: `src/main.js`, `src/core/i18n.js`
+- Test: `tests/unite-sinavi.test.js`
+
+**Interfaces:**
+- Consumes: `agirlikHesapla`, `sinavKur`, `puanla` (Task 16);
+  `sinavBitir`, `SINAV_GECME` (Task 6); `UNITELER`, `TAKVIM` (Task 2)
+- Produces:
+  - `uniteSinaviDurumu(takvim, uniteler, uniteId, ilerleme, konular)` -> `{ acik, sebep, sinavId, puan, gecti }`
+  - `sinavEkrani(kok, model, ceviri)` -> void
+  - `data-ders-sinav="ileri" | "geri" | "bitir" | "kapat"`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/unite-sinavi.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { TAKVIM, UNITELER } from '../src/data/mufredat.js';
+import { KONULAR } from '../src/data/konular/index.js';
+import { uniteSinaviDurumu } from '../src/views/ders.js';
+
+const bosIlerleme = { haftalar: {}, sinavlar: {} };
+
+// 1-8. haftalarin quizini gecmis bir ilerleme uretir.
+function quizleriGec(haftalar) {
+  const out = { haftalar: {}, sinavlar: {} };
+  for (const h of haftalar) {
+    out.haftalar[String(h)] = {
+      anlatim: [], etkilesimBitti: true, alistirma: {}, alistirmaDogru: 10,
+      quiz: { enIyi: 80, denemeler: 1 }, yildizAlinan: ['anlatim', 'etkilesim', 'quiz']
+    };
+  }
+  return out;
+}
+
+test('hicbir hafta bitmemisken unite sinavi kapalidir', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'geometrik-sekiller', bosIlerleme, KONULAR);
+  assert.equal(d.acik, false);
+  assert.ok(d.sebep.length > 0, 'neden kapali oldugu soylenmelidir');
+});
+
+test('bazi haftalar bitmisken hala kapalidir', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'geometrik-sekiller', quizleriGec([1, 2, 3]), KONULAR);
+  assert.equal(d.acik, false);
+});
+
+test('unitenin tum haftalarinin quizi gecilince acilir', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'geometrik-sekiller', quizleriGec([1, 2, 3, 4, 5, 6, 7, 8]), KONULAR);
+  assert.equal(d.acik, true);
+  assert.equal(d.sinavId, 'unite-geometrik-sekiller');
+});
+
+test('daha once girilmis sinavin puani dondurulur', () => {
+  const ilerleme = quizleriGec([1, 2, 3, 4, 5, 6, 7, 8]);
+  ilerleme.sinavlar['unite-geometrik-sekiller'] = { puan: 84, gecti: true, tip: 'unite', yildizAlindi: true };
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'geometrik-sekiller', ilerleme, KONULAR);
+  assert.equal(d.puan, 84);
+  assert.equal(d.gecti, true);
+});
+
+test('icerigi yazilmamis unite icin sinav acilmaz', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'sayilar-2', quizleriGec([19, 20, 21, 22, 23, 24, 25]), KONULAR);
+  assert.equal(d.acik, false);
+});
+
+test('bilinmeyen unite kimliginde kapali doner, atmaz', () => {
+  const d = uniteSinaviDurumu(TAKVIM, UNITELER, 'boyle-bir-unite-yok', bosIlerleme, KONULAR);
+  assert.equal(d.acik, false);
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/unite-sinavi.test.js`
+Expected: FAIL, `uniteSinaviDurumu is not a function`.
+
+- [ ] **Step 3: `views/ders.js` icine ekle**
+
+```js
+import { QUIZ_GECME } from '../engines/ders.js';
+
+/**
+ * Unite sinavinin acik olup olmadigi.
+ *
+ * Kosul: unitedeki TUM haftalarin quizi gecilmis olmali. Sinav bir
+ * ozettir; konuyu hic calismadan sinava girmek cocugu bosuna
+ * basarisizliga ugratir ve sinavdan sogutur.
+ *
+ * Icerigi henuz yazilmamis unitede (Faz 2-5) sinav hic acilmaz.
+ */
+export function uniteSinaviDurumu(takvim, uniteler, uniteId, ilerleme, konular) {
+  const unite = uniteler.find((u) => u.id === uniteId);
+  if (!unite) return { acik: false, sebep: 'Ünite bulunamadı.', sinavId: null, puan: null, gecti: false };
+
+  const haftalar = takvim.filter((h) => h.unite === uniteId && h.dersler.length > 0);
+
+  const icerikHazir = haftalar.every((h) =>
+    h.dersler.every((d) => konular[d.konu]?.seviyeler.some((s) => s.seviye === d.seviye))
+  );
+  if (!icerikHazir) {
+    return { acik: false, sebep: 'Bu ünitenin içeriği henüz hazırlanıyor.', sinavId: null, puan: null, gecti: false };
+  }
+
+  const eksik = haftalar.filter((h) => {
+    const kayit = ilerleme.haftalar?.[String(h.hafta)];
+    return !(kayit?.quiz?.enIyi >= QUIZ_GECME);
+  });
+
+  const sinavId = `unite-${uniteId}`;
+  const gecmis = ilerleme.sinavlar?.[sinavId] ?? null;
+
+  if (eksik.length > 0) {
+    return {
+      acik: false,
+      sebep: `Sınav için ${eksik.length} haftanın quizini daha geçmen gerekiyor.`,
+      sinavId,
+      puan: gecmis?.puan ?? null,
+      gecti: gecmis?.gecti ?? false
+    };
+  }
+
+  return { acik: true, sebep: '', sinavId, puan: gecmis?.puan ?? null, gecti: gecmis?.gecti ?? false };
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/unite-sinavi.test.js`
+Expected: PASS, 6 test gecer.
+
+- [ ] **Step 5: i18n anahtarlari**
+
+TR:
+
+```js
+    'ders.unitExam': 'Ünite sınavı',
+    'ders.unitExamLocked': 'Ünite sınavı kilitli',
+    'ders.unitExamStart': 'Ünite sınavına gir',
+    'ders.unitExamScore': 'Ünite sınavı: {n} puan',
+    'ders.finishExam': 'Sınavı bitir',
+    'ders.unanswered': '{n} soru boş. Yine de bitirmek istiyor musun?',
+    'ders.examNote': 'Bu sınavda cevaplar sonunda gösterilir. İstediğin soruya geri dönebilirsin.',
+```
+
+EN:
+
+```js
+    'ders.unitExam': 'Unit exam',
+    'ders.unitExamLocked': 'Unit exam locked',
+    'ders.unitExamStart': 'Take the unit exam',
+    'ders.unitExamScore': 'Unit exam: {n} points',
+    'ders.finishExam': 'Finish the exam',
+    'ders.unanswered': '{n} questions are blank. Finish anyway?',
+    'ders.examNote': 'Answers are shown at the end. You can go back to any question.',
+```
+
+- [ ] **Step 6: `ui/ders-dom.js` icine `sinavEkrani` ekle ve hafta kartina sinav bolumu koy**
+
+```js
+/**
+ * Sinav ekrani. Quiz'den uc farki var:
+ *   1. Cevaptan sonra cozum GOSTERILMEZ (olcme araci)
+ *   2. Sorular arasinda ileri geri gezinilebilir
+ *   3. Bitirmek ayri bir dugme ve bos soru varsa uyarir
+ */
+export function sinavEkrani(kok, model, ceviri) {
+  const secenekler = model.soru.secenekler.map((metin, i) =>
+    el('button', {
+      className: model.secildi === i ? 'soru__secenek soru__secenek--secili' : 'soru__secenek',
+      text: metin,
+      attrs: { type: 'button' },
+      dataset: { dersSecenek: String(i) }
+    })
+  );
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersSinav: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.quizOf', { n: model.index + 1, t: model.toplam }) })
+    ]),
+    el('p', { className: 'soru__baslik', text: ceviri('ders.unitExam') }),
+    el('p', { className: 'sinav__not', text: ceviri('ders.examNote') }),
+    el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    el('div', { className: 'soru__secenekler' }, secenekler),
+    model.uyari ? el('p', { className: 'sinav__uyari', text: model.uyari }) : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.back'),
+        attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+        dataset: { dersSinav: 'geri' }
+      }),
+      model.index === model.toplam - 1
+        ? el('button', {
+            className: 'anlatim__gez anlatim__gez--vurgu',
+            text: ceviri('ders.finishExam'),
+            attrs: { type: 'button' },
+            dataset: { dersSinav: 'bitir' }
+          })
+        : el('button', {
+            className: 'anlatim__gez anlatim__gez--vurgu',
+            text: ceviri('ders.forward'),
+            attrs: { type: 'button' },
+            dataset: { dersSinav: 'ileri' }
+          })
+    ])
+  ]);
+}
+```
+
+`haftaEkrani` icinde, `model.tip === 'ders'` dalinda `gezinme`'den ONCE
+sinav bolumunu ekle:
+
+```js
+  if (model.tip === 'ders' && model.sinav) {
+    parcalar.push(
+      el('div', { className: 'ders-sinav' }, [
+        el('p', {
+          className: 'ders-sinav__baslik',
+          text: model.sinav.puan !== null
+            ? ceviri('ders.unitExamScore', { n: model.sinav.puan })
+            : ceviri('ders.unitExam')
+        }),
+        model.sinav.acik
+          ? el('button', {
+              className: 'ders-sinav__gir',
+              text: ceviri('ders.unitExamStart'),
+              attrs: { type: 'button' },
+              dataset: { dersSinavBasla: model.sinav.sinavId }
+            })
+          : el('p', { className: 'ders-kart__not', text: model.sinav.sebep })
+      ])
+    );
+  }
+```
+
+Bu blok `parcalar.push(haftaKartiDom(...))` ile `parcalar.push(gezinme(...))`
+arasina girer.
+
+- [ ] **Step 7: `main.js` icine bagla**
+
+Import:
+
+```js
+import { uniteSinaviDurumu } from './views/ders.js';
+import { sinavEkrani } from './ui/ders-dom.js';
+import { sinavBitir, SINAV_GECME } from './engines/ders.js';
+```
+
+Modul durumu:
+
+```js
+// Sinavda gorulen soru. Quiz'de ilk bos soruya otomatik gidilir ama
+// sinavda cocuk istedigi soruya donebilmeli, bu yuzden ayri tutulur.
+let dersSinavIndex = 0;
+let dersSinavUyari = '';
+```
+
+`dersModeli` icinde `tip === 'ders'` donusune sinav durumunu ekle:
+
+```js
+  const ilerlemeSinav = state.loadDersIlerleme();
+  return {
+    tip: 'ders',
+    kart: haftaKarti(durum.hafta, KONULAR, unite?.ad ?? '', ilerleme),
+    sinav: unite ? uniteSinaviDurumu(TAKVIM, UNITELER, unite.id, ilerlemeSinav, KONULAR) : null,
+    dilTr: dil() === 'tr'
+  };
+```
+
+`renderDers` icinde `dersEkran === 'sinav'` dalini quiz dalindan ayir:
+
+```js
+  if (dersEkran === 'sinav' && dersSinav && !dersSinavSonuc) {
+    sinavEkrani(kok, {
+      soru: dersSinav.sorular[dersSinavIndex],
+      secildi: dersSinav.cevaplar[dersSinavIndex],
+      index: dersSinavIndex,
+      toplam: dersSinav.sorular.length,
+      uyari: dersSinavUyari
+    }, ceviri);
+    return;
+  }
+```
+
+Bu blok `dersEkran === 'quiz' || dersEkran === 'sinav'` blogundan ONCE
+gelmelidir.
+
+Sinav baslatma olayi:
+
+```js
+  const sinavBaslaDugme = e.target.closest('[data-ders-sinav-basla]');
+  if (sinavBaslaDugme) {
+    const uniteId = sinavBaslaDugme.dataset.dersSinavBasla.replace(/^unite-/, '');
+    ses.hazirla();
+    dersSinav = sinavKur({
+      kaynaklar: agirlikHesapla(TAKVIM, uniteId),
+      soruSayisi: 20,
+      gecmeNotu: SINAV_GECME,
+      aninda: false
+    }, Math.random);
+    dersSinavIndex = 0;
+    dersSinavUyari = '';
+    dersSinavSonuc = null;
+    dersEkran = 'sinav';
+    renderDers();
+    return;
+  }
+```
+
+Sinav gezinme ve bitirme:
+
+```js
+  const sinavDugme = e.target.closest('[data-ders-sinav]');
+  if (sinavDugme) {
+    const eylem = sinavDugme.dataset.dersSinav;
+
+    if (eylem === 'kapat') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    if (eylem === 'geri') {
+      dersSinavIndex = Math.max(0, dersSinavIndex - 1);
+      dersSinavUyari = '';
+      renderDers();
+      return;
+    }
+    if (eylem === 'ileri') {
+      dersSinavIndex = Math.min(dersSinav.sorular.length - 1, dersSinavIndex + 1);
+      dersSinavUyari = '';
+      renderDers();
+      return;
+    }
+
+    // 'bitir': bos soru varsa once uyar, ikinci basista bitir.
+    const bos = dersSinav.cevaplar.filter((c) => c === null).length;
+    if (bos > 0 && !dersSinavUyari) {
+      dersSinavUyari = ceviri('ders.unanswered', { n: bos });
+      renderDers();
+      return;
+    }
+    dersUniteSinaviBitir();
+    return;
+  }
+```
+
+Sinavda secenek secimi (quiz blogundan ONCE):
+
+```js
+  if (secenekDugme && dersEkran === 'sinav') {
+    dersSinav = sinavCevapla(dersSinav, dersSinavIndex, Number(secenekDugme.dataset.dersSecenek));
+    ses.efekt('tik');   // dogru/yanlis SOYLENMEZ, bu bir olcme
+    renderDers();
+    return;
+  }
+```
+
+Bitirme:
+
+```js
+function dersUniteSinaviBitir() {
+  const p = puanla(dersSinav);
+  const model = dersModeli();
+  const sinavId = model.sinav?.sinavId ?? 'unite-bilinmeyen';
+  const ilerleme = state.loadDersIlerleme();
+
+  const sonuc = sinavBitir(ilerleme.sinavlar, sinavId, {
+    puan: p.yuzde,
+    tarih: bugununTarihi(),
+    tip: 'unite'
+  });
+  state.saveDersIlerleme({ ...ilerleme, sinavlar: sonuc.sinavlar });
+
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+  }
+
+  dersSinavSonuc = {
+    baslik: ceviri('ders.unitExam'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: dersSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: Object.entries(p.konuBazli).map(([id, k]) => ({
+      id,
+      ad: KONULAR[id]?.ad?.tr ?? id,
+      dogru: k.dogru,
+      toplam: k.toplam,
+      zayif: k.dogru / k.toplam < 0.6
+    }))
+  };
+  dersSinavUyari = '';
+  renderDers();
+}
+```
+
+- [ ] **Step 8: Tum testleri ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: 1-8. haftalarin quizini gecmeden sinav kilitli ve kac hafta
+kaldigini soyluyor. Hepsi gecilince "Ünite sınavına gir" cikiyor. Sinavda
+cevaptan sonra cozum GORUNMUYOR, sorular arasinda gezinilebiliyor, bos
+soru varken "Sınavı bitir" once uyariyor, ikinci basista bitiriyor.
+Gecince 15 yildiz geliyor.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/views/ders.js src/ui/ders-dom.js src/main.js src/core/i18n.js tests/unite-sinavi.test.js
+git commit -m "feat(ders): unite sinavi
+
+Unitedeki tum haftalarin quizi gecilmeden acilmiyor; konuyu hic
+calismadan sinava girmek cocugu bosuna basarisizliga ugratir ve
+sinavdan sogutur. Kilitliyken kac hafta kaldigini soyluyor.
+
+Sinavda cevaptan sonra cozum gosterilmiyor ve dogru/yanlis sesi
+calmiyor: bu bir olcme araci. Sorular arasinda gezinilebiliyor, bos
+soru varsa bitirmeden once bir kez uyariyor.
+
+Sonuc ekrani konu bazli kirilim ve zayif konunun alistirmasina
+goturen dugme veriyor; not tek basina nereye gidilecegini soylemez."
+```
