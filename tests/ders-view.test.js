@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TAKVIM, TATILLER } from '../src/data/mufredat.js';
-import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli } from '../src/views/ders.js';
+import { KONULAR } from '../src/data/konular/index.js';
+import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli } from '../src/views/ders.js';
 
 const SAHTE_KONULAR = {
   'temel-cizimler': {
@@ -159,4 +160,42 @@ test('anlatimModeli icerigi olmayan haftada bos doner', () => {
   const m = anlatimModeli(hafta, SAHTE_KONULAR, { haftalar: {} }, 0);
   assert.equal(m.toplam, 0);
   assert.equal(m.aktif, null);
+});
+
+const HAFTA1 = TAKVIM[0];
+
+test('ornekModeli haftanin ilk ornegini verir', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 0);
+  assert.ok(m.ornek, 'ornek yok');
+  assert.ok(m.ornek.soru.length > 15);
+  assert.equal(m.konuAd, 'Temel Geometrik Çizimler');
+  assert.ok(m.toplam >= 2, 'ornek en az iki adimli olmali');
+});
+
+test('acikAdim 0 iken hicbir cozum adimi gorunmez', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 0);
+  assert.deepEqual(m.acik, []);
+  assert.equal(m.bitti, false);
+});
+
+test('acikAdim arttikca adimlar sirayla acilir', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 2);
+  assert.equal(m.acik.length, 2);
+  assert.equal(m.acik[0], m.ornek.adimlar[0]);
+  assert.equal(m.acik[1], m.ornek.adimlar[1]);
+});
+
+test('tum adimlar acilinca bitti olur', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 99);
+  assert.equal(m.acik.length, m.toplam);
+  assert.equal(m.bitti, true);
+});
+
+test('negatif acikAdim sifira kirpilir', () => {
+  assert.deepEqual(ornekModeli(HAFTA1, KONULAR, -5).acik, []);
+});
+
+test('icerigi olmayan haftada ornek null doner', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 20);
+  assert.equal(ornekModeli(hafta, KONULAR, 0).ornek, null);
 });

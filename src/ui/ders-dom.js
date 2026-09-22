@@ -180,3 +180,52 @@ export function anlatimEkrani(kok, model, ceviri) {
 
   mount(kok, [ust, govde, dinle, alt]);
 }
+
+/**
+ * Ornek cozum ekrani. Adimlar tek tek acilir.
+ *
+ * Cevap yalniz tum adimlar acildiktan sonra gorunur; once cevabi
+ * gostermek cozum adimlarini okunmaz kilardi.
+ */
+export function ornekEkrani(kok, model, ceviri) {
+  if (!model.ornek) {
+    mount(kok, [el('p', { className: 'ders-kart__not', text: ceviri('ders.notReady') })]);
+    return;
+  }
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.example') })
+    ]),
+    el('p', { className: 'ornek__konu', text: model.konuAd }),
+    el('p', { className: 'ornek__soru', text: model.ornek.soru }),
+    el('div', { className: 'ornek__adimlar' },
+      model.acik.map((adim, i) =>
+        el('p', { className: 'ornek__adim', text: `${i + 1}. ${adim}` })
+      )
+    ),
+    model.bitti
+      ? el('p', { className: 'ornek__cevap', text: ceviri('ders.answer', { c: model.ornek.cevap }) })
+      : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.exampleSkip'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: 'gec' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: model.bitti ? ceviri('ders.exampleDone') : ceviri('ders.exampleShow'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: model.bitti ? 'gec' : 'adim' }
+      })
+    ])
+  ]);
+}

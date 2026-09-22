@@ -171,3 +171,36 @@ export function anlatimModeli(hafta, konular, ilerleme, index) {
     tamamlanan: kayit.anlatim
   };
 }
+
+/**
+ * Ornek cozum ekraninin modeli.
+ *
+ * Cozum adimlari tek tek acilir. Tamami bir anda ekranda olursa cocuk
+ * okumaz, dogrudan cevaba bakar; adim adim acilinca her adimda durup
+ * dusunme sansi olur.
+ *
+ * Hafta iki konuya bagliysa ilk hazir konunun ilk ornegi gosterilir.
+ * Iki ornegi birden gostermek bu ekrani uzatirdi; asil is zaten
+ * alistirmada.
+ */
+export function ornekModeli(hafta, konular, acikAdim) {
+  for (const d of hafta.dersler) {
+    const konu = konular[d.konu];
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev || sev.ornekler.length === 0) continue;
+
+    const ornek = sev.ornekler[0];
+    const toplam = ornek.adimlar.length;
+    const n = Math.max(0, Math.min(acikAdim, toplam));
+
+    return {
+      ornek,
+      konuAd: konu.ad.tr,
+      acik: ornek.adimlar.slice(0, n),
+      toplam,
+      bitti: n === toplam
+    };
+  }
+
+  return { ornek: null, konuAd: '', acik: [], toplam: 0, bitti: false };
+}

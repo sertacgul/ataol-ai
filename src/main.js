@@ -45,9 +45,9 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli } from './views/ders.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani } from './ui/ders-dom.js';
 import { haftaKaydi, adimTamamla } from './engines/ders.js';
 import { createSes } from './ui/ses.js';
 
@@ -76,6 +76,7 @@ let dersGorulenHafta = null;
 // gorunumdur; icindeki ekranlar bu degiskene gore degisir.
 let dersEkran = 'hafta';
 let dersAdimIndex = 0;
+let dersOrnekAdim = 0;
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -684,6 +685,15 @@ function renderDers() {
     if (!hafta) { dersEkran = 'hafta'; }
     else {
       anlatimEkrani(kok, anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex), ceviri);
+      return;
+    }
+  }
+
+  if (dersEkran === 'ornek') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      ornekEkrani(kok, ornekModeli(hafta, KONULAR, dersOrnekAdim), ceviri);
       return;
     }
   }
@@ -2967,8 +2977,8 @@ document.getElementById('app').addEventListener('click', (e) => {
 
     if (eylem === 'bitir') {
       ses.dur();
-      dersEkran = 'hafta';
-      dersAdimIndex = 0;
+      dersEkran = 'ornek';
+      dersOrnekAdim = 0;
       render();
       return;
     }
@@ -2976,6 +2986,21 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersAdimIndex += 1;
     renderDers();
     dersAdimiSeslendir();
+    return;
+  }
+
+  const ornekDugme = e.target.closest('[data-ders-ornek]');
+  if (ornekDugme) {
+    const eylem = ornekDugme.dataset.dersOrnek;
+    if (eylem === 'adim') {
+      dersOrnekAdim += 1;
+      ses.efekt('tik');
+      renderDers();
+      return;
+    }
+    dersOrnekAdim = 0;
+    dersEkran = eylem === 'gec' ? 'etkilesim' : 'hafta';
+    renderDers();
     return;
   }
 

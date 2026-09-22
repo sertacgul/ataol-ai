@@ -52,6 +52,11 @@ const STRINGS = {
     'ders.finishLesson': 'Anlatımı bitir',
     'ders.starsEarned': '{n} yıldız kazandın!',
     'ders.explainAgain': 'Anlamadım, başka türlü anlat',
+    'ders.example': 'Örnek çözüm',
+    'ders.answer': 'Cevap: {c}',
+    'ders.exampleSkip': 'Geç',
+    'ders.exampleShow': 'Sonraki adımı göster',
+    'ders.exampleDone': 'Anladım, kendim deneyeyim',
 
     'routine.greeting': 'Merhaba {ad}',
     'routine.total': 'Toplam {n}★',
@@ -351,6 +356,11 @@ const STRINGS = {
     'ders.finishLesson': 'Finish the lesson',
     'ders.starsEarned': 'You earned {n} stars!',
     'ders.explainAgain': "I didn't get it, explain differently",
+    'ders.example': 'Worked example',
+    'ders.answer': 'Answer: {c}',
+    'ders.exampleSkip': 'Skip',
+    'ders.exampleShow': 'Show the next step',
+    'ders.exampleDone': "Got it, let me try",
 
     'routine.greeting': 'Hi {ad}',
     'routine.total': 'Total {n}★',
