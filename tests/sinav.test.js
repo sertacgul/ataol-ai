@@ -97,6 +97,33 @@ test('konu bazli kirilim her kaynak icin sayi verir', () => {
   }
 });
 
+// Uniform (hepsi dogru) bir cevap deseni yanlis atfetmeyi gizleyebilir:
+// her sey tek bir yanlis anahtar altinda toplansa bile toplamlar yine
+// dogru cikardi. Bu yuzden burada kaynaklari BAGIMSIZ bir isaretten
+// (soru.tip onekinden, sinavin kendi soruKaynagi'ndan degil) ayirt edip
+// ASIMETRIK cevapliyoruz: bir kaynak hep dogru, digeri hep yanlis. Yanlis
+// atfetme (orn. her soruyu ilk kaynaga yazmak) bu deseni cignetir.
+test('konu bazli kirilim her soruyu gercek kaynagina atfeder', () => {
+  let s = kur();
+  s.sorular.forEach((soru, i) => {
+    const gercekKaynak = soru.tip.startsWith('temel-cizimler') ? 'temel-cizimler' : 'aci-olcme';
+    const cevap = gercekKaynak === 'temel-cizimler'
+      ? soru.dogru
+      : (soru.dogru + 1) % soru.secenekler.length;
+    s = cevapla(s, i, cevap);
+  });
+
+  const p = puanla(s);
+  const tc = p.konuBazli['temel-cizimler'];
+  const ao = p.konuBazli['aci-olcme'];
+
+  assert.ok(tc && tc.toplam > 0, 'temel-cizimler hic soru almamis');
+  assert.ok(ao && ao.toplam > 0, 'aci-olcme hic soru almamis');
+  assert.equal(tc.toplam + ao.toplam, 10, 'iki kaynagin toplami soru sayisina esit olmali');
+  assert.equal(tc.dogru, tc.toplam, 'temel-cizimler sorularinin hepsi dogru cevaplandi, kirilim bunu gostermeli');
+  assert.equal(ao.dogru, 0, 'aci-olcme sorularinin hepsi yanlis cevaplandi, kirilim bunu gostermeli');
+});
+
 test('agirlikli kaynak daha cok soru alir', () => {
   const s = sinavKur({
     kaynaklar: [
