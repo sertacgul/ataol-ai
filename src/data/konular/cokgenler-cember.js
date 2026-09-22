@@ -99,7 +99,7 @@ export default {
         },
         {
           id: 'a5',
-          metin: 'Yere döşenen fayanslara bak. Kare fayanslar yan yana geldiğinde aralarında boşluk kalmaz, çünkü her birleşme yerinde dört tane dik açı buluşur ve tam bir dönüş tamamlanır. Altıgen fayanslar da boşluksuz döşenir; arılar peteğini bu yüzden altıgen yapar.',
+          metin: 'Yere döşenen fayanslara bakarsan bunu kendin görürsün. Kare fayanslar yan yana geldiğinde aralarında boşluk kalmaz, çünkü her birleşme yerinde dört tane dik açı buluşur ve tam bir dönüş tamamlanır. Altıgen fayanslar da boşluksuz döşenir; arılar peteğini bu yüzden altıgen yapar.',
           gorsel: 'fayans'
         }
       ],
@@ -137,7 +137,7 @@ export default {
       anlatim: [
         {
           id: 'a1',
-          metin: 'Bir nokta seç ve ona merkez de. Şimdi bu merkeze uzaklığı hep aynı olan bütün noktaları işaretle. Ortaya kapalı ve yuvarlak bir eğri çıkar, buna çember denir. Bisiklet tekerleğinin dış kenarı böyledir: her noktası göbeğe eşit uzaklıktadır.',
+          metin: 'Bir nokta seçip ona merkez dersin. Sonra bu merkeze uzaklığı hep aynı olan bütün noktaları işaretlersin. Ortaya kapalı ve yuvarlak bir eğri çıkar, buna çember denir. Bisiklet tekerleğinin dış kenarı böyledir: her noktası göbeğe eşit uzaklıktadır.',
           gorsel: 'cember'
         },
         {
@@ -157,7 +157,7 @@ export default {
         },
         {
           id: 'a5',
-          metin: 'İki çemberi biraz üst üste binecek biçimde çizersen birbirlerini iki noktada keserler. İki merkezi ve kesişim noktalarından birini doğru parçalarıyla birleştirirsen bir üçgen elde edersin. Bu üçgenin kenarları iki yarıçap ile merkezler arası uzaklıktır; bir sonraki derste bunu kullanacaksın.',
+          metin: 'İki çemberi biraz üst üste binecek biçimde çizersen birbirlerini iki noktada keserler. İki merkezi ve kesişim noktalarından birini doğru parçalarıyla birleştirirsen bir üçgen elde edersin. Bu üçgenin kenarları iki yarıçap ile merkezler arası uzaklıktır; şimdi bunu birlikte kullanacaksın.',
           gorsel: 'iki-cember'
         },
         {
@@ -214,7 +214,7 @@ export default {
         },
         {
           id: 'a2',
-          metin: 'İki tabağı masanın üstünde biraz üst üste bindirdiğinde kenarlarının iki yerde çakıştığını görürsün. İşte o iki yer kesişim noktalarıdır. Şimdi birinci merkezi, ikinci merkezi ve bu kesişim noktalarından birini doğru parçalarıyla birleştir: ortaya bir üçgen çıkar.',
+          metin: 'İki tabağı masanın üstünde biraz üst üste bindirdiğinde kenarlarının iki yerde çakıştığını görürsün. İşte o iki yer kesişim noktalarıdır. Birinci merkezi, ikinci merkezi ve bu kesişim noktalarından birini doğru parçalarıyla birleştirirsen ortaya bir üçgen çıkar.',
           gorsel: 'cember-ucgen'
         },
         {
@@ -234,7 +234,7 @@ export default {
         },
         {
           id: 'a6',
-          metin: 'Kendin dene: iki çemberin yarıçapını eşit seçersen üçgenin iki kenarı zaten eşit olur, yani en az ikizkenar çıkar. Merkezler arası uzaklığı da aynı sayıya ayarlarsan üç kenar birden eşitlenir ve karşına eşkenar üçgen çıkar.',
+          metin: 'Bunu kendin de denersin. İki çemberin yarıçapını eşit seçersen üçgenin iki kenarı zaten eşit olur, yani en az ikizkenar çıkar. Merkezler arası uzaklığı da aynı sayıya ayarlarsan üç kenar birden eşitlenir ve karşına eşkenar üçgen çıkar.',
           gorsel: 'esit-yaricap'
         }
       ],

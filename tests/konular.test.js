@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { KONULAR } from '../src/data/konular/index.js';
 import { TAKVIM } from '../src/data/mufredat.js';
-import { ureticiVarMi } from '../src/engines/uretici/index.js';
+import { ureticiVarMi, soruUret } from '../src/engines/uretici/index.js';
+import { tohumluRng } from './yardim/soru-sozlesmesi.js';
 
 const FAZ1 = ['temel-cizimler', 'aci-olcme', 'cokgenler-cember'];
 
@@ -139,6 +140,57 @@ test('kullanilan widget kimlikleri Faz 1 de var olanlardir', () => {
     for (const s of KONULAR[id].seviyeler) {
       assert.ok(mevcut.includes(s.etkilesim.widget),
         `${id} seviye ${s.seviye}: "${s.etkilesim.widget}" Faz 1 de yok`);
+    }
+  }
+});
+
+// --- Ders metni ile soru ureticisinin eslesmesi ---------------------
+//
+// Bu testin varlik nedeni: bir uretici tablosuna yeni bir kavram
+// eklendiginde (ornegin VARLIKLAR'a yeni bir sekil) ders metni sessizce
+// geride kalir ve cocuk hic ogretilmemis bir seyden sinava girer.
+// Baska hicbir test bunu yakalamaz.
+//
+// Yalniz KATEGORIK cevaplar aranir. Sayisal cevaplar ("115", "7")
+// disarida birakilir, cunku bir sayinin ders metninde harfiyen gecmesi
+// beklenmez; sayisal sorularda ogretilmesi gereken sey kuraldir ve o
+// kural zaten kategorik terimlerle anlatilir.
+//
+// Arama KUMULATIFTIR: 6. hafta 5. haftanin metnine yaslanabilir.
+
+const KUCUK = (s) => String(s).toLocaleLowerCase('tr');
+
+const sayisalMi = (cevap) => /^[0-9]+$/.test(String(cevap).trim());
+
+function seviyeMetni(seviye) {
+  const parcalar = [seviye.baslik];
+  for (const a of seviye.anlatim) parcalar.push(a.metin);
+  for (const o of seviye.ornekler) {
+    parcalar.push(o.soru, String(o.cevap), ...o.adimlar);
+  }
+  return KUCUK(parcalar.join(' '));
+}
+
+function kategorikCevaplar(konuId, seviyeNo, tur = 300) {
+  const cevaplar = new Set();
+  for (let tohum = 1; tohum <= tur; tohum++) {
+    const soru = soruUret(konuId, seviyeNo, tohumluRng(tohum));
+    const cevap = soru.bicim === 'secmeli' ? soru.secenekler[soru.dogru] : soru.cevap;
+    if (!sayisalMi(cevap)) cevaplar.add(String(cevap).trim());
+  }
+  return cevaplar;
+}
+
+test('uretici cevaplari o haftaya kadarki ders metninde gecer', () => {
+  for (const id of FAZ1) {
+    let birikmis = '';
+    for (const s of KONULAR[id].seviyeler) {
+      birikmis += ' ' + seviyeMetni(s);
+      for (const cevap of kategorikCevaplar(id, s.seviye)) {
+        assert.ok(birikmis.includes(KUCUK(cevap)),
+          `${id} seviye ${s.seviye}: uretici "${cevap}" cevabini soruyor ` +
+          'ama bu terim o haftaya kadarki ders metninde hic gecmiyor');
+      }
     }
   }
 });

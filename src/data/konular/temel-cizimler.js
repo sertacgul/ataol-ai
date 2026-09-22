@@ -95,7 +95,7 @@ export default {
         },
         {
           id: 'a5',
-          metin: 'Dik kesişen iki doğru, kesiştikleri yerde dört tane açı oluşturur ve bu dört açının dördü de 90 derecedir. Biri 90 ise diğerleri de 90 olmak zorundadır, çünkü dört açı birlikte tam bir dönüşü, yani 360 dereceyi eşit olarak paylaşır.',
+          metin: 'Dik kesişen iki doğru, kesiştikleri yerde dört tane açı oluşturur ve bu dört açının dördü de 90 derecedir. Gönyeni dört köşeye de sırayla yaslarsan dördünde de boşluk kalmadığını görürsün. Bunun neden böyle olduğunu 4. haftada, kesişen doğruların açılarını öğrenirken göreceksin.',
           gorsel: 'dik-kesisim'
         },
         {

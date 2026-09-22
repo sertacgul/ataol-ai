@@ -109,7 +109,7 @@ export default {
         },
         {
           id: 'a6',
-          metin: 'Üç doğru birbirini ayrı noktalarda keserse üç tane kesişme noktası oluşur. Her kesişme noktasında dört açı bulunur, yani hepsi birlikte 12 açı sayarsın. Her noktada ters açılar kendi aralarında eşit, komşu açılar ise bütünlerdir. Üç yollu kavşaklarda bu düzeni görebilirsin.',
+          metin: 'Üç doğru birbirini ayrı noktalarda keserse üç tane kesişme noktası oluşur. Her kesişme noktasında dört açı bulunur, yani hepsi birlikte 12 açı sayarsın. Her noktada ters açılar kendi aralarında eşit, komşu açılar ise bütünlerdir. Ortada üçgen bir ada bırakacak biçimde kesişen üç caddeyi düşünürsen, adanın üç köşesinde de aynı düzeni görürsün.',
           gorsel: 'uc-dogru'
         }
       ],
