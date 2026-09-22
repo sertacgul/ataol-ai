@@ -462,6 +462,12 @@ saf motor. Tarih metin olarak girer, `Date` nesnesi girmez.
   - `uniteninHaftalari(takvim, uniteId)` -> hafta dizisi
   - `aktifHafta(takvim, tatiller, tarihMetni, sabitHafta)` -> hafta nesnesi veya `null`
 
+Not: Spec Bolum 5.1'de bu modulde `kazanimDurumu` da listelenmisti. O
+fonksiyon konu verisine (kazanim kodlarina) ihtiyac duyuyor ve konu
+verisi `data/konular/` altinda; `engines/mufredat.js` yalnizca takvimi
+bilir. Bu yuzden `kazanimDurumu` **Task 18'de `views/ders.js` icinde**
+`kazanimDurumu(takvim, konular, ilerleme)` imzasiyla yazilacak.
+
 - [ ] **Step 1: Basarisiz testleri yaz**
 
 ```js
@@ -4613,6 +4619,273 @@ kartlari blok sirasina kilitli ve ders sekmesi serbest erisimli."
 
 ---
 
+## Task 13b: Ornek cozum ekrani
+
+Spec Bolum 11'deki dorduncu ekran. Konu verisinde `ornekler` zaten var
+(Task 12 testi varligini zorluyor) ama hicbir ekran onu gostermiyordu.
+
+Adimlar tek tek acilir, hepsi birden degil. Gerekce: cozumun tamami bir
+anda ekranda olursa cocuk okumaz, cevaba bakar. Adim adim acilinca her
+adimda durup dusunme sansi olur.
+
+Anlatim ile "Kendin dene" arasina girer.
+
+**Files:**
+- Modify: `src/views/ders.js` (`ornekModeli`)
+- Modify: `src/ui/ders-dom.js` (`ornekEkrani`)
+- Modify: `src/main.js`, `src/core/i18n.js`
+- Test: `tests/ders-ornek.test.js`
+
+**Interfaces:**
+- Consumes: `KONULAR` (Task 12), `seviyeBul` (`views/ders.js` ici)
+- Produces:
+  - `ornekModeli(hafta, konular, acikAdim)` -> `{ ornek, konuAd, acik, toplam, bitti }`
+  - `ornekEkrani(kok, model, ceviri)` -> void
+  - `data-ders-ornek="adim" | "gec" | "kapat"`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/ders-ornek.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { TAKVIM } from '../src/data/mufredat.js';
+import { KONULAR } from '../src/data/konular/index.js';
+import { ornekModeli } from '../src/views/ders.js';
+
+const HAFTA1 = TAKVIM[0];
+
+test('ornekModeli haftanin ilk ornegini verir', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 0);
+  assert.ok(m.ornek, 'ornek yok');
+  assert.ok(m.ornek.soru.length > 15);
+  assert.equal(m.konuAd, 'Temel Geometrik Çizimler');
+  assert.ok(m.toplam >= 2, 'ornek en az iki adimli olmali');
+});
+
+test('acikAdim 0 iken hicbir cozum adimi gorunmez', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 0);
+  assert.deepEqual(m.acik, []);
+  assert.equal(m.bitti, false);
+});
+
+test('acikAdim arttikca adimlar sirayla acilir', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 2);
+  assert.equal(m.acik.length, 2);
+  assert.equal(m.acik[0], m.ornek.adimlar[0]);
+  assert.equal(m.acik[1], m.ornek.adimlar[1]);
+});
+
+test('tum adimlar acilinca bitti olur', () => {
+  const m = ornekModeli(HAFTA1, KONULAR, 99);
+  assert.equal(m.acik.length, m.toplam);
+  assert.equal(m.bitti, true);
+});
+
+test('negatif acikAdim sifira kirpilir', () => {
+  assert.deepEqual(ornekModeli(HAFTA1, KONULAR, -5).acik, []);
+});
+
+test('icerigi olmayan haftada ornek null doner', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 20);
+  assert.equal(ornekModeli(hafta, KONULAR, 0).ornek, null);
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/ders-ornek.test.js`
+Expected: FAIL, `ornekModeli is not a function`.
+
+- [ ] **Step 3: `views/ders.js` icine ekle**
+
+```js
+/**
+ * Ornek cozum ekraninin modeli.
+ *
+ * Cozum adimlari tek tek acilir. Tamami bir anda ekranda olursa cocuk
+ * okumaz, dogrudan cevaba bakar; adim adim acilinca her adimda durup
+ * dusunme sansi olur.
+ *
+ * Hafta iki konuya bagliysa ilk hazir konunun ilk ornegi gosterilir.
+ * Iki ornegi birden gostermek bu ekrani uzatirdi; asil is zaten
+ * alistirmada.
+ */
+export function ornekModeli(hafta, konular, acikAdim) {
+  for (const d of hafta.dersler) {
+    const konu = konular[d.konu];
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev || sev.ornekler.length === 0) continue;
+
+    const ornek = sev.ornekler[0];
+    const toplam = ornek.adimlar.length;
+    const n = Math.max(0, Math.min(acikAdim, toplam));
+
+    return {
+      ornek,
+      konuAd: konu.ad.tr,
+      acik: ornek.adimlar.slice(0, n),
+      toplam,
+      bitti: n === toplam
+    };
+  }
+
+  return { ornek: null, konuAd: '', acik: [], toplam: 0, bitti: false };
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/ders-ornek.test.js`
+Expected: PASS, 6 test gecer.
+
+- [ ] **Step 5: i18n anahtarlari**
+
+TR (Task 14'te eklenen `'ders.example'` zaten var, yanina):
+
+```js
+    'ders.exampleSkip': 'Geç',
+    'ders.exampleShow': 'Sonraki adımı göster',
+    'ders.exampleDone': 'Anladım, kendim deneyeyim',
+```
+
+EN:
+
+```js
+    'ders.exampleSkip': 'Skip',
+    'ders.exampleShow': 'Show the next step',
+    'ders.exampleDone': "Got it, let me try",
+```
+
+- [ ] **Step 6: `ui/ders-dom.js` icine `ornekEkrani` ekle**
+
+```js
+/**
+ * Ornek cozum ekrani. Adimlar tek tek acilir.
+ *
+ * Cevap yalniz tum adimlar acildiktan sonra gorunur; once cevabi
+ * gostermek cozum adimlarini okunmaz kilardi.
+ */
+export function ornekEkrani(kok, model, ceviri) {
+  if (!model.ornek) {
+    mount(kok, [el('p', { className: 'ders-kart__not', text: ceviri('ders.notReady') })]);
+    return;
+  }
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.example') })
+    ]),
+    el('p', { className: 'ornek__konu', text: model.konuAd }),
+    el('p', { className: 'ornek__soru', text: model.ornek.soru }),
+    el('div', { className: 'ornek__adimlar' },
+      model.acik.map((adim, i) =>
+        el('p', { className: 'ornek__adim', text: `${i + 1}. ${adim}` })
+      )
+    ),
+    model.bitti
+      ? el('p', { className: 'ornek__cevap', text: ceviri('ders.answer', { c: model.ornek.cevap }) })
+      : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.exampleSkip'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: 'gec' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: model.bitti ? ceviri('ders.exampleDone') : ceviri('ders.exampleShow'),
+        attrs: { type: 'button' },
+        dataset: { dersOrnek: model.bitti ? 'gec' : 'adim' }
+      })
+    ])
+  ]);
+}
+```
+
+- [ ] **Step 7: `main.js` icine bagla**
+
+Import:
+
+```js
+import { ornekModeli } from './views/ders.js';
+import { ornekEkrani } from './ui/ders-dom.js';
+```
+
+Modul durumu:
+
+```js
+let dersOrnekAdim = 0;
+```
+
+`renderDers` icine, `anlatim` dalindan sonra:
+
+```js
+  if (dersEkran === 'ornek') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      ornekEkrani(kok, ornekModeli(hafta, KONULAR, dersOrnekAdim), ceviri);
+      return;
+    }
+  }
+```
+
+Olay:
+
+```js
+  const ornekDugme = e.target.closest('[data-ders-ornek]');
+  if (ornekDugme) {
+    const eylem = ornekDugme.dataset.dersOrnek;
+    if (eylem === 'adim') {
+      dersOrnekAdim += 1;
+      ses.efekt('tik');
+      renderDers();
+      return;
+    }
+    dersOrnekAdim = 0;
+    dersEkran = eylem === 'gec' ? 'etkilesim' : 'hafta';
+    renderDers();
+    return;
+  }
+```
+
+Task 13'te anlatim "bitir" eylemi `dersEkran = 'etkilesim'` yapiyordu.
+Bunu `dersEkran = 'ornek'; dersOrnekAdim = 0;` olarak degistir. Akis
+boylece **anlatim -> ornek -> kendin dene** olur.
+
+- [ ] **Step 8: Testleri ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: anlatim bitince ornek cozum aciliyor, "Sonraki adımı göster"
+adimlari tek tek aciyor, son adimda cevap gorunuyor, "Anladım, kendim
+deneyeyim" widget ekranina geciyor. "Geç" dugmesi her an widget ekranina
+atliyor.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/views/ders.js src/ui/ders-dom.js src/main.js src/core/i18n.js tests/ders-ornek.test.js
+git commit -m "feat(ders): ornek cozum ekrani
+
+Cozum adimlari tek tek aciliyor. Tamami bir anda ekranda olsa cocuk
+okumaz, dogrudan cevaba bakar; adim adim acilinca her adimda durup
+dusunme sansi oluyor. Cevap ancak tum adimlar acilinca gorunuyor.
+
+Akis artik anlatim -> ornek -> kendin dene."
+```
+
+---
+
 ## Task 14: Etkilesimli widget'lar ve "Kendin dene" ekrani
 
 Iki widget: `aciolcer` ve `geometri-tuval`. Ikisi de canvas uzerinde
@@ -4633,7 +4906,10 @@ Cizim ve olay kodu `ui/widget/` altinda; olculebilir matematik
 **Interfaces:**
 - Consumes: `aciTuru`, `ACI_TURU_ADI`, `butunler` (Task 10); `el`, `mount`
 - Produces (her widget ayni sozlesme):
-  - `create(kok, { mod, gorev, veri, ses, bitti })` -> `{ ciz(), dogrula(), yokEt() }`
+  - `create(canvas, { mod, veri, ses })` -> `{ ciz(), dogrula(), yokEt() }`
+  - `geometri-tuval` ayrica `aracSec(ad)` ve `temizle()` saglar; ekran
+    kodu bunlari varsa cagirir (`dersWidget?.temizle?.()`)
+  - Gorev metni widget'a GECMEZ; onu ekran cizer
   - `dogrula()` -> `{ tamam: boolean, mesaj: string }`
   - `WIDGETLER: { aciolcer, 'geometri-tuval' }` (`ui/widget/index.js`)
   - `widgetKur(ad, kok, secenekler)` -> widget veya `null`
@@ -5374,9 +5650,9 @@ Olay bloklari (`data-ders-adim` blogundan sonra):
   }
 ```
 
-Anlatim "bitir" eylemini etkilesim ekranina yonlendir: `dersEkran = 'hafta'`
-yerine `dersEkran = 'etkilesim'` yaz, boylece anlatim bitince dogrudan
-"Kendin dene"ye gecilir.
+Anlatim "bitir" eylemi Task 13b'de zaten `dersEkran = 'ornek'` olarak
+ayarlandi; ornek ekraninin "Geç" ve "Anladım" dugmeleri buraya, yani
+`etkilesim` ekranina getirir. Burada ayrica bir yonlendirme yazma.
 
 Hafta kartindaki asama rozetlerinden dogrudan girilebilmesi icin
 `data-ders-asama` tiklamasini da bagla:
@@ -6797,3 +7073,791 @@ soru varsa bitirmeden once bir kez uyariyor.
 Sonuc ekrani konu bazli kirilim ve zayif konunun alistirmasina
 goturen dugme veriyor; not tek basina nereye gidilecegini soylemez."
 ```
+
+---
+
+## Task 18: AI aciklama, ebeveyn paneli ve rozetler
+
+Faz 1'i tamamlayan uc kucuk parca. Ucu de kendi basina kucuk oldugu icin
+tek gorevde birlesti; hicbiri digeri olmadan anlamli bir teslim etmiyor.
+
+**Files:**
+- Modify: `src/engines/ai.js` (`dersIstemi`)
+- Modify: `src/engines/rozetler.js` (uc yeni rozet)
+- Modify: `src/core/state.js` (`loadIstatistik` yeni sayaclar)
+- Modify: `src/views/ders.js` (`kazanimDurumu`)
+- Modify: `src/ui/ders-dom.js`, `src/main.js`, `src/core/i18n.js`
+- Test: `tests/ders-ai.test.js`, `tests/ders-rozet.test.js`
+
+**Interfaces:**
+- Consumes: `sistemIstemi`, `istekGovdesi`, `yanitAyikla` (`engines/ai.js`)
+- Produces:
+  - `dersIstemi({ konuAd, kazanim, adimMetni, yas })` -> string
+  - `ROZETLER` uc yeni kayit: `ogrenci`, `sinavci`, `tamPuan`
+  - `rozetSayaclari` yeni alanlar: `dersHaftalari`, `gecilenSinavlar`, `tamPuanQuiz`
+  - `kazanimDurumu(takvim, konular, ilerleme)` -> `Array<{ kod, konuAd, haftalar, tamam }>`
+
+- [ ] **Step 1: AI istemi testini yaz**
+
+```js
+// tests/ders-ai.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { dersIstemi } from '../src/engines/ai.js';
+
+const ORNEK = {
+  konuAd: 'Açı Ölçme',
+  kazanim: 'Açıları ölçmek için matematiksel araç ve teknolojiden yararlanabilme',
+  adimMetni: 'Açıölçerin merkezini açının köşesine koy.',
+  yas: 10
+};
+
+test('istem konuyu, kazanimi ve takilinan adimi icerir', () => {
+  const i = dersIstemi(ORNEK);
+  assert.ok(i.includes('Açı Ölçme'));
+  assert.ok(i.includes(ORNEK.kazanim));
+  assert.ok(i.includes(ORNEK.adimMetni));
+  assert.ok(i.includes('10'));
+});
+
+test('istem yeni soru uretmeyi yasaklar', () => {
+  const i = dersIstemi(ORNEK).toLocaleLowerCase('tr');
+  assert.ok(i.includes('soru sorma') || i.includes('yeni soru'), 'soru uretme yasagi yok');
+});
+
+test('istem quiz ve sinav cevabi vermeyi yasaklar', () => {
+  const i = dersIstemi(ORNEK).toLocaleLowerCase('tr');
+  assert.ok(i.includes('cevap'), 'cevap verme yasagi yok');
+});
+
+test('istem cocuk adi icermez', () => {
+  const i = dersIstemi(ORNEK);
+  for (const ad of ['Deha', 'Feride', 'Sertac']) {
+    assert.ok(!i.includes(ad), `istemde "${ad}" gecmemeli`);
+  }
+});
+
+test('eksik alanlarla cagrilinca cokmez', () => {
+  assert.equal(typeof dersIstemi({}), 'string');
+  assert.ok(dersIstemi({}).length > 50);
+});
+```
+
+- [ ] **Step 2: Rozet testini yaz**
+
+```js
+// tests/ders-rozet.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { ROZETLER, rozetSayaclari, rozetDurumu } from '../src/engines/rozetler.js';
+
+const ist = (ust = {}) => ({
+  okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0,
+  dersHaftalari: 0, gecilenSinavlar: 0, tamPuanQuiz: 0, ...ust
+});
+
+test('uc yeni ders rozeti tanimlidir', () => {
+  const idler = ROZETLER.map((r) => r.id);
+  for (const id of ['ogrenci', 'sinavci', 'tamPuan']) {
+    assert.ok(idler.includes(id), `${id} rozeti yok`);
+  }
+});
+
+test('mevcut rozetler korunur', () => {
+  const idler = ROZETLER.map((r) => r.id);
+  for (const id of ['kasif', 'matematikci', 'muhendis', 'satrancci', 'sanatci', 'seri']) {
+    assert.ok(idler.includes(id), `${id} rozeti kaybolmus`);
+  }
+});
+
+test('ders sayaclari okunur', () => {
+  const s = rozetSayaclari(ist({ dersHaftalari: 4, gecilenSinavlar: 2, tamPuanQuiz: 1 }), 0, 0);
+  assert.equal(s.ogrenci, 4);
+  assert.equal(s.sinavci, 2);
+  assert.equal(s.tamPuan, 1);
+});
+
+test('eksik ders sayaclari sifir sayilir', () => {
+  const s = rozetSayaclari({ okunanKahramanlar: [] }, 0, 0);
+  assert.equal(s.ogrenci, 0);
+  assert.equal(s.sinavci, 0);
+  assert.equal(s.tamPuan, 0);
+});
+
+test('hedefe ulasinca rozet kazanilir', () => {
+  const d = rozetDurumu(ist({ dersHaftalari: 10 }), 0, 0);
+  assert.equal(d.find((r) => r.id === 'ogrenci').kazanildi, true);
+});
+
+test('hedefin altinda rozet kazanilmaz', () => {
+  const d = rozetDurumu(ist({ dersHaftalari: 9 }), 0, 0);
+  assert.equal(d.find((r) => r.id === 'ogrenci').kazanildi, false);
+});
+```
+
+- [ ] **Step 3: Testleri calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/ders-ai.test.js tests/ders-rozet.test.js`
+Expected: FAIL.
+
+- [ ] **Step 4: `engines/ai.js` icine `dersIstemi` ekle**
+
+Dosyanin sonuna:
+
+```js
+/**
+ * Ders modulunun "Anlamadim, baska turlu anlat" istemi.
+ *
+ * Iki siki yasak istemin icinde yazilidir ve bunlar tasarim karari:
+ *   1. Yeni soru uretmez. Sorular offline ve dogrulanmis kalmali;
+ *      modelin urettigi soru yanlis kurulabilir ve cocuk yanlis ogrenir.
+ *   2. Quiz veya sinav cevabi vermez. Aksi halde cocuk anlamak yerine
+ *      cevabi sormayi ogrenir.
+ *
+ * Cocugun adi ISTEME GIRMEZ: bu modul engines/ altindadir ve mimari
+ * testi burada kisi adi bulunmasini yasaklar. Ad gerekirse cagiran
+ * taraf ekler.
+ */
+export function dersIstemi({ konuAd, kazanim, adimMetni, yas } = {}) {
+  const konu = konuAd ?? 'matematik konusu';
+  const hedef = kazanim ?? 'bu konunun temel fikri';
+  const adim = adimMetni ?? 'konunun tamamı';
+  const yasMetni = Number.isFinite(yas) ? String(yas) : '10';
+
+  return `Sen bir ilkokul matematik öğretmenisin. ${yasMetni} yaşında bir çocuğa anlatıyorsun.
+
+KONU: ${konu}
+KAZANIM: ${hedef}
+ÇOCUĞUN TAKILDIĞI YER: "${adim}"
+
+GÖREVİN: Bu fikri, yukarıdakinden FARKLI bir yoldan anlat. Günlük hayattan
+somut bir örnek ver. En fazla 4 kısa cümle kur. Basit kelimeler kullan.
+
+KESİN YASAKLAR:
+- Yeni soru sorma. Çocuğa soru yöneltme, alıştırma verme.
+- Quiz veya sınav cevabı verme. Hangi şıkkın doğru olduğunu söyleme.
+- Sembol kullanma (derece işareti, dik işareti gibi). "90 derece" diye yaz.
+- Uzun anlatma. Dört cümleyi aşma.
+
+Sadece anlat. Başka hiçbir şey yapma.`;
+}
+```
+
+- [ ] **Step 5: `engines/rozetler.js` guncelle**
+
+`ROZETLER` dizisine uc kayit ekle:
+
+```js
+  { id: 'ogrenci', emoji: '📚', hedef: 10 },
+  { id: 'sinavci', emoji: '🎓', hedef: 3 },
+  { id: 'tamPuan', emoji: '💯', hedef: 5 }
+```
+
+`rozetSayaclari` donen nesnesine uc alan ekle:
+
+```js
+    ogrenci: Number.isFinite(g.dersHaftalari) ? g.dersHaftalari : 0,
+    sinavci: Number.isFinite(g.gecilenSinavlar) ? g.gecilenSinavlar : 0,
+    tamPuan: Number.isFinite(g.tamPuanQuiz) ? g.tamPuanQuiz : 0
+```
+
+- [ ] **Step 6: `core/state.js` icindeki `loadIstatistik` guncelle**
+
+`bos` nesnesine ve donen nesneye uc alan ekle:
+
+```js
+      const bos = {
+        okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0,
+        dersHaftalari: 0, gecilenSinavlar: 0, tamPuanQuiz: 0
+      };
+```
+
+```js
+        dersHaftalari: Number.isFinite(kayit.dersHaftalari) ? kayit.dersHaftalari : 0,
+        gecilenSinavlar: Number.isFinite(kayit.gecilenSinavlar) ? kayit.gecilenSinavlar : 0,
+        tamPuanQuiz: Number.isFinite(kayit.tamPuanQuiz) ? kayit.tamPuanQuiz : 0
+```
+
+- [ ] **Step 7: `views/ders.js` icine `kazanimDurumu` ekle**
+
+```js
+/**
+ * Ebeveyn raporu icin kazanim bazli tablo.
+ *
+ * Cocuk MAT.5.3.1 gibi kodlari HIC gormez; bu tablo yalniz ebeveyn
+ * panelinde cikar. Kazanim kodunu veriye gomme karari tam da bunun
+ * icindi: MEB raporuna uyan bir ozet cikarabilmek.
+ */
+export function kazanimDurumu(takvim, konular, ilerleme) {
+  const satirlar = new Map();
+
+  for (const hafta of takvim) {
+    for (const ders of hafta.dersler) {
+      const konu = konular[ders.konu];
+      if (!konu) continue;
+
+      const kayit = ilerleme.haftalar?.[String(hafta.hafta)];
+      const bitti = kayit?.quiz?.enIyi >= QUIZ_GECME;
+
+      for (const kz of konu.kazanimlar) {
+        if (!satirlar.has(kz.kod)) {
+          satirlar.set(kz.kod, { kod: kz.kod, konuAd: konu.ad.tr, haftalar: [], tamamlanan: 0 });
+        }
+        const satir = satirlar.get(kz.kod);
+        if (!satir.haftalar.includes(hafta.hafta)) {
+          satir.haftalar.push(hafta.hafta);
+          if (bitti) satir.tamamlanan += 1;
+        }
+      }
+    }
+  }
+
+  return [...satirlar.values()].map((s) => ({
+    ...s,
+    tamam: s.tamamlanan === s.haftalar.length
+  }));
+}
+```
+
+- [ ] **Step 8: i18n anahtarlari**
+
+TR:
+
+```js
+    'ders.explaining': 'Düşünüyorum...',
+    'ders.explainError': 'Şu an bağlanamadım. İnternet olmadan da derse devam edebilirsin.',
+    'parent.dersSection': 'Matematik dersi',
+    'parent.dersWeek': 'Sabit hafta (boş bırakırsan takvimden bulunur)',
+    'parent.dersSound': 'Ders sesi açık',
+    'parent.dersAutoplay': 'Anlatımı otomatik oku',
+    'parent.dersVoiceAnswer': 'Sesli cevap (deneysel)',
+    'parent.dersOutcomes': 'Kazanım durumu',
+    'parent.dersExams': 'Sınav notları',
+    'parent.dersNoExam': 'Henüz sınava girilmedi.',
+```
+
+EN:
+
+```js
+    'ders.explaining': 'Thinking...',
+    'ders.explainError': 'I could not connect. You can keep going without the internet.',
+    'parent.dersSection': 'Maths lessons',
+    'parent.dersWeek': 'Fixed week (leave blank to use the calendar)',
+    'parent.dersSound': 'Lesson sound on',
+    'parent.dersAutoplay': 'Read the lesson automatically',
+    'parent.dersVoiceAnswer': 'Voice answers (experimental)',
+    'parent.dersOutcomes': 'Learning outcomes',
+    'parent.dersExams': 'Exam scores',
+    'parent.dersNoExam': 'No exam taken yet.',
+```
+
+- [ ] **Step 9: Anlatim ekranina "Anlamadim" dugmesi ekle**
+
+`ui/ders-dom.js` icindeki `anlatimEkrani`'nda `dinle` dugmesinin yanina,
+yalnizca `model.aiVar` true ise:
+
+```js
+  const aiDugme = model.aiVar
+    ? el('button', {
+        className: 'anlatim__ai',
+        text: ceviri('ders.explainAgain'),
+        attrs: { type: 'button' },
+        dataset: { dersAdim: 'anlat' }
+      })
+    : null;
+```
+
+`mount` cagrisina `aiDugme` ve varsa `model.aiMetin`'i ekle:
+
+```js
+  mount(kok, [ust, govde, dinle, aiDugme,
+    model.aiMetin ? el('p', { className: 'anlatim__ai-metin', text: model.aiMetin }) : null,
+    alt]);
+```
+
+`main.js` icinde `anlatimModeli` sonucuna `aiVar` ve `aiMetin` eklenir:
+
+```js
+// AI aciklamasi yalniz anahtar varken ve cevrimici iken teklif edilir.
+// Yoksa dugme hic gorunmez; calismayan bir dugme cocugu bosuna
+// umutlandirir.
+const dersAiVar = () => Boolean(state.loadApiKey()) && navigator.onLine;
+let dersAiMetin = '';
+```
+
+`renderDers` icindeki anlatim dali:
+
+```js
+      const m = anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex);
+      anlatimEkrani(kok, { ...m, aiVar: dersAiVar(), aiMetin: dersAiMetin }, ceviri);
+      return;
+```
+
+`data-ders-adim` blogunda `anlat` eylemi:
+
+```js
+    if (eylem === 'anlat') {
+      dersAiMetin = ceviri('ders.explaining');
+      renderDers();
+      dersAiSor(model.aktif);
+      return;
+    }
+```
+
+Mevcut sohbet cagrisi kalibini kullanan yardimci:
+
+```js
+async function dersAiSor(adim) {
+  const konu = KONULAR[adim.konuId];
+  const sev = konu.seviyeler.find((s) => s.seviye === adim.seviye);
+  const kazanim = konu.kazanimlar[0]?.metin ?? '';
+
+  try {
+    const govde = istekGovdesi(
+      dersIstemi({ konuAd: konu.ad.tr, kazanim, adimMetni: adim.metin, yas: profile.child?.age }),
+      []
+    );
+    const yanit = await fetch(AI_URL(state.loadApiKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(govde)
+    });
+    dersAiMetin = yanitAyikla(await yanit.json());
+  } catch {
+    dersAiMetin = ceviri('ders.explainError');
+  }
+  renderDers();
+}
+```
+
+`AI_URL` ve `istekGovdesi` kullanimi icin mevcut `sohbetGonder`
+fonksiyonundaki cagriyi ornek al; ayni uc nokta ve ayni anahtar kullanilir.
+Yeni bir ag katmani YAZILMAZ.
+
+Ekran degisince AI metnini temizle: `dersEkran` degisen her yerde
+`dersAiMetin = '';` ekle.
+
+- [ ] **Step 10: Ebeveyn paneline ders bolumu ekle**
+
+`main.js` icindeki `renderParent` fonksiyonunun sonuna, mevcut bolumlerin
+ardina su blogu ekleyen bir cagri koy:
+
+```js
+function ebeveynDersBolumu() {
+  const ilerleme = state.loadDersIlerleme();
+  const kazanimlar = kazanimDurumu(TAKVIM, KONULAR, ilerleme);
+  const sinavlar = Object.entries(ilerleme.sinavlar);
+
+  return el('section', { className: 'parent__bolum' }, [
+    el('h2', { text: ceviri('parent.dersSection') }),
+
+    el('label', { className: 'parent__satir' }, [
+      el('span', { text: ceviri('parent.dersWeek') }),
+      el('input', {
+        attrs: { type: 'number', inputmode: 'numeric', id: 'ders-sabit-hafta',
+                 value: ilerleme.ayar.sabitHafta === null ? '' : String(ilerleme.ayar.sabitHafta) }
+      })
+    ]),
+
+    ...[['sesAcik', 'parent.dersSound'], ['otomatikOynat', 'parent.dersAutoplay'], ['sesliCevap', 'parent.dersVoiceAnswer']]
+      .map(([anahtar, etiket]) =>
+        el('label', { className: 'parent__satir' }, [
+          el('span', { text: ceviri(etiket) }),
+          el('input', {
+            attrs: ilerleme.ayar[anahtar]
+              ? { type: 'checkbox', checked: 'checked' }
+              : { type: 'checkbox' },
+            dataset: { dersAyar: anahtar }
+          })
+        ])
+      ),
+
+    el('h3', { text: ceviri('parent.dersOutcomes') }),
+    el('div', { className: 'parent__kazanimlar' }, kazanimlar.map((k) =>
+      el('p', {
+        className: k.tamam ? 'parent__kazanim parent__kazanim--tamam' : 'parent__kazanim',
+        text: `${k.kod} - ${k.konuAd}: ${k.tamamlanan} / ${k.haftalar.length} hafta`
+      })
+    )),
+
+    el('h3', { text: ceviri('parent.dersExams') }),
+    sinavlar.length === 0
+      ? el('p', { text: ceviri('parent.dersNoExam') })
+      : el('div', {}, sinavlar.map(([id, s]) =>
+          el('p', { text: `${id}: ${s.puan} (${s.gecti ? 'geçti' : 'geçmedi'})` })
+        ))
+  ]);
+}
+```
+
+`value` ve `checked` oznitelikleri `ui/dom.js` beyaz listesinde vardir.
+
+**`sesliCevap` anahtari Faz 1'de hicbir sey yapmaz.** Ayar kaydedilir ama
+okuyan kod Faz 6'da yazilacak. Anahtarin simdiden konmasi bilincli: ayar
+sekli bir kez oturur ve Faz 6'da `state` semasini degistirmek gerekmez.
+Yanina su i18n notunu koy ki ebeveyn bosuna denemesin:
+
+```js
+    'parent.dersVoiceAnswerNote': 'Bu özellik henüz hazır değil, ileride açılacak.',
+```
+
+EN:
+
+```js
+    'parent.dersVoiceAnswerNote': 'Not ready yet; this will be enabled later.',
+```
+
+Ve `sesliCevap` satirinin altina:
+
+```js
+    el('p', { className: 'parent__not', text: ceviri('parent.dersVoiceAnswerNote') }),
+```
+
+Ayar degisikligi olayi:
+
+```js
+  const dersAyarKutu = e.target.closest('[data-ders-ayar]');
+  if (dersAyarKutu) {
+    const ilerleme = state.loadDersIlerleme();
+    const anahtar = dersAyarKutu.dataset.dersAyar;
+    state.saveDersIlerleme({
+      ...ilerleme,
+      ayar: { ...ilerleme.ayar, [anahtar]: dersAyarKutu.checked }
+    });
+    if (anahtar === 'sesAcik') ses.ayarla({ sesAcik: dersAyarKutu.checked });
+    render();
+    return;
+  }
+```
+
+Sabit hafta alanini `change` olayinda kaydet:
+
+```js
+document.getElementById('view-parent').addEventListener('change', (e) => {
+  if (e.target.id !== 'ders-sabit-hafta') return;
+  const ham = e.target.value.trim();
+  const sayi = ham === '' ? null : Number(ham);
+  const ilerleme = state.loadDersIlerleme();
+  state.saveDersIlerleme({
+    ...ilerleme,
+    ayar: { ...ilerleme.ayar, sabitHafta: Number.isInteger(sayi) ? sayi : null }
+  });
+  dersGorulenHafta = null;
+  render();
+});
+```
+
+- [ ] **Step 11: Rozet sayaclarini besle**
+
+`dersSinavBitir` icinde, quiz gecildiginde:
+
+```js
+  if (p.yuzde >= 100) dersIstatistikArtir('tamPuanQuiz');
+```
+
+`dersUniteSinaviBitir` icinde, gecildiginde:
+
+```js
+  if (p.gecti) dersIstatistikArtir('gecilenSinavlar');
+```
+
+Hafta tamamlandiginda (`haftaDurumu(...).bitti` ilk kez true olunca):
+
+```js
+function dersHaftaBittiMi(hafta, kayit) {
+  const m = dersModeli();
+  return m.tip === 'ders' && haftaDurumu(m.kart.adimIdleri, kayit).bitti;
+}
+
+function dersIstatistikArtir(alan) {
+  const ist = state.loadIstatistik();
+  state.saveIstatistik({ ...ist, [alan]: (ist[alan] ?? 0) + 1 });
+}
+```
+
+`dersSinavBitir` icinde, ilerleme yazildiktan sonra:
+
+```js
+  const guncelKayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
+  if (dersHaftaBittiMi(hafta, guncelKayit) && !sonuc.kayit.yildizAlinan.includes('hafta')) {
+    dersIstatistikArtir('dersHaftalari');
+    dersIlerlemeYaz(hafta.hafta, {
+      ...guncelKayit,
+      yildizAlinan: [...guncelKayit.yildizAlinan, 'hafta']
+    });
+  }
+```
+
+`'hafta'` isareti yildiz vermez, yalnizca rozet sayacinin iki kez
+artmasini onler.
+
+- [ ] **Step 12: Testleri calistir ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: anlatimda "Anlamadım" dugmesi gorunuyor (API anahtari
+varsa), basinca AI aciklamasi geliyor ve yeni soru sormuyor. Ebeveyn
+panelinde sabit hafta, ses anahtarlari, kazanim tablosu ve sinav notlari
+gorunuyor. Rozet ekraninda uc yeni rozet var.
+
+- [ ] **Step 13: Commit**
+
+```bash
+git add src/engines/ai.js src/engines/rozetler.js src/core/state.js \
+        src/views/ders.js src/ui/ders-dom.js src/main.js src/core/i18n.js \
+        tests/ders-ai.test.js tests/ders-rozet.test.js
+git commit -m "feat(ders): AI aciklama, ebeveyn paneli ve ders rozetleri
+
+AI istemi iki siki yasak tasiyor ve testi var: yeni soru uretmez,
+quiz/sinav cevabi vermez. Sorular offline ve dogrulanmis kalmali;
+modelin urettigi soru yanlis kurulabilir ve cocuk yanlis ogrenir.
+
+Dugme yalniz API anahtari varken ve cevrimici iken gorunuyor;
+calismayan bir dugme cocugu bosuna umutlandirir.
+
+Ebeveyn paneline kazanim tablosu (MAT kodlari) eklendi. Cocuk bu
+kodlari hic gormuyor; kodu veriye gomme karari tam da bunun icindi."
+```
+
+---
+
+## Task 19: Ses uretim scripti
+
+Uygulamanin parcasi degildir, elle calistirilir. `tools/make-icons.js`
+zaten ayni sekilde calisiyor, emsal var, "build adimi yok" kurali
+bozulmuyor.
+
+**Files:**
+- Create: `tools/ses-uret.js`
+- Create: `sesler/.gitkeep`
+- Modify: `README.md` (kullanim notu)
+
+**Interfaces:**
+- Consumes: `KONULAR` (Task 12), `adimKimligi` (Task 7)
+- Produces: `sesler/<konuId>-<seviye>-<adimId>.m4a`
+
+- [ ] **Step 1: Scripti yaz**
+
+```js
+/**
+ * Anlatim seslerini uretir. UYGULAMANIN PARCASI DEGILDIR.
+ *
+ * Kullanim:
+ *   GOOGLE_TTS_KEY=... node tools/ses-uret.js
+ *   GOOGLE_TTS_KEY=... node tools/ses-uret.js temel-cizimler
+ *
+ * Google Cloud Text-to-Speech Chirp 3 HD, tr-TR. Aylik ilk 1M karakter
+ * ucretsiz; bu projenin tamami yaklasik 150k karakter, yani ucretsiz
+ * kotaya siginir.
+ *
+ * Dosya adi konuId-seviye-adimId kalibindan TURETILIR; ui/ses.js ayni
+ * kalibi kullanir, boylece iki taraf kendiliginden eslesir.
+ *
+ * Var olan dosyanin ustune yazmaz. Yeniden uretmek icin once sil.
+ */
+
+import { writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { KONULAR } from '../src/data/konular/index.js';
+
+const KOK = fileURLToPath(new URL('..', import.meta.url));
+const CIKTI = path.join(KOK, 'sesler');
+
+const ANAHTAR = process.env.GOOGLE_TTS_KEY;
+const SADECE = process.argv[2] ?? null;
+
+const SES = 'tr-TR-Chirp3-HD-Aoede';
+const UC_NOKTA = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+
+if (!ANAHTAR) {
+  console.error('GOOGLE_TTS_KEY ortam degiskeni gerekli.');
+  console.error('Ornek: GOOGLE_TTS_KEY=xxx node tools/ses-uret.js');
+  process.exit(1);
+}
+
+function adimlariTopla() {
+  const isler = [];
+  for (const [konuId, konu] of Object.entries(KONULAR)) {
+    if (SADECE && konuId !== SADECE) continue;
+    for (const sev of konu.seviyeler) {
+      for (const adim of sev.anlatim) {
+        isler.push({
+          kimlik: `${konuId}-${sev.seviye}-${adim.id}`,
+          metin: adim.metin
+        });
+      }
+    }
+  }
+  return isler;
+}
+
+async function seslendir(metin) {
+  const yanit = await fetch(`${UC_NOKTA}?key=${ANAHTAR}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      input: { text: metin },
+      voice: { languageCode: 'tr-TR', name: SES },
+      // 32 kbps mono AAC: konusma icin yeterli, hafta basina ~1.3 MB.
+      audioConfig: { audioEncoding: 'MP3', sampleRateHertz: 24000, speakingRate: 0.95 }
+    })
+  });
+
+  if (!yanit.ok) {
+    throw new Error(`TTS ${yanit.status}: ${await yanit.text()}`);
+  }
+  const govde = await yanit.json();
+  return Buffer.from(govde.audioContent, 'base64');
+}
+
+async function main() {
+  if (!existsSync(CIKTI)) mkdirSync(CIKTI, { recursive: true });
+
+  const isler = adimlariTopla();
+  console.log(`${isler.length} adim bulundu.`);
+
+  let uretilen = 0;
+  let atlanan = 0;
+  let karakter = 0;
+
+  for (const is of isler) {
+    const hedef = path.join(CIKTI, `${is.kimlik}.m4a`);
+    if (existsSync(hedef)) {
+      atlanan++;
+      continue;
+    }
+
+    try {
+      const ses = await seslendir(is.metin);
+      writeFileSync(hedef, ses);
+      uretilen++;
+      karakter += is.metin.length;
+      console.log(`  ${is.kimlik} (${is.metin.length} karakter)`);
+    } catch (hata) {
+      console.error(`  ${is.kimlik} BASARISIZ: ${hata.message}`);
+    }
+  }
+
+  console.log(`\nUretilen: ${uretilen}, atlanan: ${atlanan}, karakter: ${karakter}`);
+  console.log('Var olan dosyanin ustune yazilmaz; yeniden uretmek icin once sil.');
+}
+
+main();
+```
+
+Not: `audioEncoding: 'MP3'` kullaniliyor ama dosya `.m4a` uzantisiyla
+yaziliyor. Bu tutarsizdir ve duzeltilmelidir. Iki secenekten birini uygula:
+
+**Secenek A (onerilen):** Uzantiyi `.mp3` yap. `ui/ses.js` icindeki
+`${sesKok}${id}.m4a` ifadesini `${sesKok}${id}.mp3` olarak degistir ve
+`tests/ses.test.js` icindeki beklentiyi de guncelle. MP3 iOS Safari'de
+sorunsuz calar ve Google TTS dogrudan MP3 veriyor, donusturme gerekmez.
+
+**Secenek B:** `audioEncoding: 'LINEAR16'` alip `ffmpeg` ile AAC'ye
+cevir. Daha kucuk dosya verir ama repoya `ffmpeg` bagimliligi getirir.
+
+**Secenek A uygulanacaktir.** Bagimliliksizlik bu projenin temel kurali;
+1.3 MB yerine 1.8 MB'lik hafta dosyasi bu kurali bozmaya degmez.
+
+- [ ] **Step 2: Secenek A'yi uygula**
+
+1. `tools/ses-uret.js` icinde `${is.kimlik}.m4a` -> `${is.kimlik}.mp3`
+2. `src/ui/ses.js` icinde `${sesKok}${id}.m4a` -> `${sesKok}${id}.mp3`
+3. `tests/ses.test.js` icinde `'sesler/temel-cizimler-1-a1.m4a'` ->
+   `'sesler/temel-cizimler-1-a1.mp3'`
+
+- [ ] **Step 3: Testi calistir**
+
+Run: `node --test tests/ses.test.js`
+Expected: PASS.
+
+- [ ] **Step 4: `sesler/` dizinini olustur**
+
+```bash
+mkdir -p sesler
+printf '# Uretilmis anlatim sesleri. tools/ses-uret.js ile uretilir.\n' > sesler/.gitkeep
+```
+
+`sesler/` dizini `sw.js` icindeki ASSETS listesine **girmez**; runtime
+cache'e birakilir.
+
+- [ ] **Step 5: `README.md` icine kullanim notu ekle**
+
+"Gelistirme" bolumunun sonuna:
+
+```markdown
+### Anlatim seslerini uretme
+
+Ders anlatimlari onceden seslendirilip `sesler/` altina konur. Ses dosyasi
+yoksa uygulama cihazin kendi TTS'ine duser, yani ses uretimi zorunlu
+degildir.
+
+```bash
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js                  # hepsi
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js temel-cizimler   # tek konu
+```
+
+Google Cloud Text-to-Speech Chirp 3 HD kullanilir (tr-TR). Aylik ilk 1M
+karakter ucretsizdir; bu projenin tamami yaklasik 150k karakterdir.
+
+Var olan dosyanin ustune yazilmaz. Bir anlatim metnini degistirdiysen o
+dosyayi silip scripti tekrar calistir.
+```
+
+- [ ] **Step 6: Elle dogrula**
+
+Anahtar olmadan calistir ve anlamli hata verdigini gor:
+
+```bash
+node tools/ses-uret.js
+```
+
+Expected: `GOOGLE_TTS_KEY ortam degiskeni gerekli.` ve cikis kodu 1.
+
+Anahtar varsa tek konuyla dene, `sesler/temel-cizimler-1-a1.mp3`
+olustugunu ve tarayicida anlatim acildiginda cihaz TTS'i yerine bu
+dosyanin calindigini dogrula.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add tools/ses-uret.js sesler/.gitkeep src/ui/ses.js tests/ses.test.js README.md
+git commit -m "feat(ders): anlatim sesi uretim scripti
+
+Chirp 3 HD ile sesler/<konu>-<seviye>-<adim>.mp3 uretir. Dosya adi
+kalibi ui/ses.js ile ayni, iki taraf kendiliginden eslesiyor.
+
+Uzanti m4a yerine mp3: Google TTS dogrudan MP3 veriyor ve AAC'ye
+cevirmek repoya ffmpeg bagimliligi getirirdi. Bagimliliksizlik bu
+projenin temel kurali; hafta basina 0.5 MB fark bunu bozmaya degmez.
+
+Var olan dosyanin ustune yazmaz. Ses uretimi zorunlu degil: dosya
+yoksa uygulama cihaz TTS'ine duser."
+```
+
+**FAZ 1 BITTI.** Cocuk 1-8. haftalari sesli anlatim, etkilesimli widget,
+sinirsiz alistirma, hafta quizi ve unite sinaviyla calisabilir.
+
+---
+
+## Faz 1 sonrasi dogrulama listesi
+
+Faz 1'i teslim etmeden once bastan sona su akisi bir kez elle gec:
+
+1. Ebeveyn panelinden sabit haftayi 1 yap
+2. Ders sekmesi 1. haftayi, "Temel Geometrik Çizimler" konusunu gosteriyor
+3. "Derse başla" anlatimi aciyor, ses okuyor, 5 adim ilerliyor
+4. Anlatim bitince 4 yildiz geliyor ve "Kendin dene" aciliyor
+5. Tuvale cizim yapilip "Kontrol et" ile 3 yildiz aliniyor
+6. Alistirmada 10 dogru yapiliyor, yildiz GELMIYOR, rozet yesil oluyor
+7. Quiz 10 soru soruyor, gecince 6 yildiz geliyor
+8. Ayni quize tekrar girip 100 alinca yildiz GELMIYOR, en iyi puan 100 oluyor
+9. 2-8. haftalar icin 3-8 tekrarlanip unite sinavi aciliyor
+10. Unite sinavi 20 soru soruyor, cozum gostermiyor, gecince 15 yildiz veriyor
+11. Rutin sekmesinde toplam yildiz dogru artmis
+12. Ucak moduna al: ders, alistirma ve quiz calismaya devam ediyor,
+    yalniz "Anlamadım" dugmesi kayboluyor
+13. Uygulamayi kapatip ac: tum ilerleme duruyor
+14. `npm test` tamamen yesil
