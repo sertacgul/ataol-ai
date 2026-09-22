@@ -170,10 +170,45 @@ test('asamalar dizisi beklenen sirada', () => {
   assert.deepEqual(ASAMALAR, ['anlatim', 'etkilesim', 'alistirma', 'quiz']);
 });
 
+test('adim listesi bos olan hafta tamamlanmis sayilmaz', () => {
+  let k = bosHafta();
+  k = etkilesimTamamla(k).kayit;
+  for (let i = 0; i < ALISTIRMA_HEDEF; i++) {
+    k = alistirmaCevap(k, 't' + i, { box: 2 }, true).kayit;
+  }
+  k = quizBitir(k, 90).kayit;
+  // Uc asama bitmis ama anlatim adimlari listesi bos
+  const d = haftaDurumu([], k);
+  assert.equal(d.asamalar.anlatim.tamam, false);
+  assert.equal(d.bitti, false, 'bos hafta tamamlanmis olamaz');
+});
+
 test('girdiler degistirilmez (saf kalir)', () => {
   const k = bosHafta();
   const kopya = JSON.parse(JSON.stringify(k));
   adimTamamla(k, 'a1', ADIMLAR);
   quizBitir(k, 90);
   assert.deepEqual(k, kopya);
+});
+
+test('tum motor fonksiyonlari saf kalir', () => {
+  // haftaKaydi - ilerleme objesini kontrol et
+  const ilerleme = { haftalar: { 3: { anlatim: ['a1'] } } };
+  const ilerlemeKopya = JSON.parse(JSON.stringify(ilerleme));
+  haftaKaydi(ilerleme, 3);
+  assert.deepEqual(ilerleme, ilerlemeKopya);
+
+  // etkilesimTamamla, alistirmaCevap, haftaDurumu - kayit objesini kontrol et
+  const k = bosHafta();
+  const kKopya = JSON.parse(JSON.stringify(k));
+  etkilesimTamamla(k);
+  alistirmaCevap(k, 'aci', { box: 1 }, true);
+  haftaDurumu(ADIMLAR, k);
+  assert.deepEqual(k, kKopya);
+
+  // sinavBitir - sinavlar objesini kontrol et
+  const sinavlar = {};
+  const sinavlarKopya = JSON.parse(JSON.stringify(sinavlar));
+  sinavBitir(sinavlar, 'unite-test', { puan: 80, tarih: '2026-11-08', tip: 'unite' });
+  assert.deepEqual(sinavlar, sinavlarKopya);
 });

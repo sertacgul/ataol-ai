@@ -144,6 +144,9 @@ export function haftaDurumu(adimIdleri, kayit) {
   const bitenAdim = adimIdleri.filter((a) => kayit.anlatim.includes(a)).length;
 
   const asamalar = {
+    // Bos adim listesi hafta iceriginin henuz yazilmamis oldugunu anlatiyor.
+    // tamam: false tutmak bilincli karar: bos haftada anlatim yildizi vermemek
+    // icin, icerik yazilana kadar ilerleme tamamlanmis sayilmamali.
     anlatim: { tamam: toplamAdim > 0 && bitenAdim === toplamAdim, n: bitenAdim, toplam: toplamAdim },
     etkilesim: { tamam: kayit.etkilesimBitti },
     alistirma: {
