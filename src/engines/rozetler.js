@@ -14,7 +14,10 @@ export const ROZETLER = [
   { id: 'muhendis', emoji: '🛠️', hedef: 9 },
   { id: 'satrancci', emoji: '♟️', hedef: 3 },
   { id: 'sanatci', emoji: '🎨', hedef: 5 },
-  { id: 'seri', emoji: '🔥', hedef: 7 }
+  { id: 'seri', emoji: '🔥', hedef: 7 },
+  { id: 'ogrenci', emoji: '📚', hedef: 10 },
+  { id: 'sinavci', emoji: '🎓', hedef: 3 },
+  { id: 'tamPuan', emoji: '💯', hedef: 5 }
 ];
 
 /**
@@ -29,7 +32,10 @@ export function rozetSayaclari(ist, seri, cizimSayisi) {
     muhendis: Array.isArray(g.kurulanMakineler) ? g.kurulanMakineler.length : 0,
     satrancci: Number.isFinite(g.satrancGalibiyet) ? g.satrancGalibiyet : 0,
     sanatci: Number.isFinite(cizimSayisi) ? cizimSayisi : 0,
-    seri: Number.isFinite(seri) ? seri : 0
+    seri: Number.isFinite(seri) ? seri : 0,
+    ogrenci: Number.isFinite(g.dersHaftalari) ? g.dersHaftalari : 0,
+    sinavci: Number.isFinite(g.gecilenSinavlar) ? g.gecilenSinavlar : 0,
+    tamPuan: Number.isFinite(g.tamPuanQuiz) ? g.tamPuanQuiz : 0
   };
 }
 

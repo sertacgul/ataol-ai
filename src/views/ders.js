@@ -285,3 +285,40 @@ export function uniteSinaviDurumu(takvim, uniteler, uniteId, ilerleme, konular) 
 
   return { acik: true, sebep: '', sinavId, puan: gecmis?.puan ?? null, gecti: gecmis?.gecti ?? false };
 }
+
+/**
+ * Ebeveyn raporu icin kazanim bazli tablo.
+ *
+ * Cocuk MAT.5.3.1 gibi kodlari HIC gormez; bu tablo yalniz ebeveyn
+ * panelinde cikar. Kazanim kodunu veriye gomme karari tam da bunun
+ * icindi: MEB raporuna uyan bir ozet cikarabilmek.
+ */
+export function kazanimDurumu(takvim, konular, ilerleme) {
+  const satirlar = new Map();
+
+  for (const hafta of takvim) {
+    for (const ders of hafta.dersler) {
+      const konu = konular[ders.konu];
+      if (!konu) continue;
+
+      const kayit = ilerleme.haftalar?.[String(hafta.hafta)];
+      const bitti = kayit?.quiz?.enIyi >= QUIZ_GECME;
+
+      for (const kz of konu.kazanimlar) {
+        if (!satirlar.has(kz.kod)) {
+          satirlar.set(kz.kod, { kod: kz.kod, konuAd: konu.ad.tr, haftalar: [], tamamlanan: 0 });
+        }
+        const satir = satirlar.get(kz.kod);
+        if (!satir.haftalar.includes(hafta.hafta)) {
+          satir.haftalar.push(hafta.hafta);
+          if (bitti) satir.tamamlanan += 1;
+        }
+      }
+    }
+  }
+
+  return [...satirlar.values()].map((s) => ({
+    ...s,
+    tamam: s.tamamlanan === s.haftalar.length
+  }));
+}

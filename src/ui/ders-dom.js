@@ -184,6 +184,15 @@ export function anlatimEkrani(kok, model, ceviri) {
     el('span', { text: ceviri('ders.listen') })
   ]);
 
+  const aiDugme = model.aiVar
+    ? el('button', {
+        className: 'anlatim__ai',
+        text: ceviri('ders.explainAgain'),
+        attrs: { type: 'button' },
+        dataset: { dersAdim: 'anlat' }
+      })
+    : null;
+
   const alt = el('div', { className: 'anlatim__alt' }, [
     el('button', {
       className: 'anlatim__gez',
@@ -199,7 +208,9 @@ export function anlatimEkrani(kok, model, ceviri) {
     })
   ]);
 
-  mount(kok, [ust, govde, dinle, alt]);
+  mount(kok, [ust, govde, dinle, aiDugme,
+    model.aiMetin ? el('p', { className: 'anlatim__ai-metin', text: model.aiMetin }) : null,
+    alt]);
 }
 
 /**

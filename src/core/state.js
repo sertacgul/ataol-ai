@@ -222,13 +222,19 @@ export function createAppState(storage) {
      */
     loadIstatistik() {
       const kayit = storage.get('istatistik', null);
-      const bos = { okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0 };
+      const bos = {
+        okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0,
+        dersHaftalari: 0, gecilenSinavlar: 0, tamPuanQuiz: 0
+      };
       if (!kayit || typeof kayit !== 'object') return bos;
       return {
         okunanKahramanlar: Array.isArray(kayit.okunanKahramanlar) ? kayit.okunanKahramanlar : [],
         matematikDogru: Number.isFinite(kayit.matematikDogru) ? kayit.matematikDogru : 0,
         kurulanMakineler: Array.isArray(kayit.kurulanMakineler) ? kayit.kurulanMakineler : [],
-        satrancGalibiyet: Number.isFinite(kayit.satrancGalibiyet) ? kayit.satrancGalibiyet : 0
+        satrancGalibiyet: Number.isFinite(kayit.satrancGalibiyet) ? kayit.satrancGalibiyet : 0,
+        dersHaftalari: Number.isFinite(kayit.dersHaftalari) ? kayit.dersHaftalari : 0,
+        gecilenSinavlar: Number.isFinite(kayit.gecilenSinavlar) ? kayit.gecilenSinavlar : 0,
+        tamPuanQuiz: Number.isFinite(kayit.tamPuanQuiz) ? kayit.tamPuanQuiz : 0
       };
     },
 

@@ -30,7 +30,7 @@ import { BOARD_SIZE, createBoard, cellId, fire, isDefeated, remainingShips, aiCh
 import { chessViewModel, cevapla as satrancCevapla, sonrakiDers } from './views/chess.js';
 import { soruUret } from './engines/chesspuzzle.js';
 import { kareId, kareCoz, TAHTA_BOYU } from './engines/chess.js';
-import { sistemIstemi, istekGovdesi, yanitAyikla } from './engines/ai.js';
+import { sistemIstemi, istekGovdesi, yanitAyikla, dersIstemi } from './engines/ai.js';
 import {
   baslangicTahtasi,
   yasalHamleler as satrancYasalHamleler,
@@ -45,11 +45,11 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu, uniteSinaviDurumu } from './views/ders.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu, uniteSinaviDurumu, kazanimDurumu } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
-import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME } from './engines/ders.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME, haftaDurumu } from './engines/ders.js';
 import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
 
@@ -108,6 +108,12 @@ let dersEtkilesimArac = null;
 // sey gercekten degisti mi" sorusunu cevaplamak icin tutulur; widget
 // kapatilinca dersWidgetKapat() bunu da sifirlar.
 let dersWidgetAnahtar = null;
+
+// AI aciklamasi yalniz anahtar varken ve cevrimici iken teklif edilir.
+// Yoksa dugme hic gorunmez; calismayan bir dugme cocugu bosuna
+// umutlandirir.
+const dersAiVar = () => Boolean(state.loadApiKey()) && navigator.onLine;
+let dersAiMetin = '';
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -350,6 +356,7 @@ function renderParent() {
     gorevlerBolumu(),
     odullerBolumu(),
     sohbetAyarBolumu(),
+    ebeveynDersBolumu(),
     dilBolumu()
   ];
 
@@ -626,6 +633,56 @@ function sohbetAyarBolumu() {
   ]);
 }
 
+// Ebeveyn paneli: ders ayarlari, kazanim tablosu (MAT kodlari) ve sinav
+// notlari. Cocuk MAT kodlarini hic gormuyor; kodu veriye gomme karari
+// tam da bunun icindi: MEB raporuna uyan bir ozet buradan cikar.
+function ebeveynDersBolumu() {
+  const ilerleme = state.loadDersIlerleme();
+  const kazanimlar = kazanimDurumu(TAKVIM, KONULAR, ilerleme);
+  const sinavlar = Object.entries(ilerleme.sinavlar);
+
+  return el('section', { className: 'parent__bolum' }, [
+    el('h2', { text: ceviri('parent.dersSection') }),
+
+    el('label', { className: 'parent__satir' }, [
+      el('span', { text: ceviri('parent.dersWeek') }),
+      el('input', {
+        attrs: { type: 'number', inputmode: 'numeric', id: 'ders-sabit-hafta',
+                 value: ilerleme.ayar.sabitHafta === null ? '' : String(ilerleme.ayar.sabitHafta) }
+      })
+    ]),
+
+    ...[['sesAcik', 'parent.dersSound'], ['otomatikOynat', 'parent.dersAutoplay'], ['sesliCevap', 'parent.dersVoiceAnswer']]
+      .map(([anahtar, etiket]) =>
+        el('label', { className: 'parent__satir' }, [
+          el('span', { text: ceviri(etiket) }),
+          el('input', {
+            attrs: ilerleme.ayar[anahtar]
+              ? { type: 'checkbox', checked: 'checked' }
+              : { type: 'checkbox' },
+            dataset: { dersAyar: anahtar }
+          })
+        ])
+      ),
+    el('p', { className: 'parent__not', text: ceviri('parent.dersVoiceAnswerNote') }),
+
+    el('h3', { text: ceviri('parent.dersOutcomes') }),
+    el('div', { className: 'parent__kazanimlar' }, kazanimlar.map((k) =>
+      el('p', {
+        className: k.tamam ? 'parent__kazanim parent__kazanim--tamam' : 'parent__kazanim',
+        text: `${k.kod} - ${k.konuAd}: ${k.tamamlanan} / ${k.haftalar.length} hafta`
+      })
+    )),
+
+    el('h3', { text: ceviri('parent.dersExams') }),
+    sinavlar.length === 0
+      ? el('p', { text: ceviri('parent.dersNoExam') })
+      : el('div', {}, sinavlar.map(([id, s]) =>
+          el('p', { text: `${id}: ${s.puan} (${s.gecti ? 'geçti' : 'geçmedi'})` })
+        ))
+  ]);
+}
+
 // Dil secici (ebeveyn). TR/EN dugmeleri; secilince profile.settings.language
 // guncellenir, kaydedilir ve tum ekran yeniden cizilir.
 function dilBolumu() {
@@ -714,16 +771,17 @@ function renderDers() {
 
   if (dersEkran === 'anlatim') {
     const hafta = dersAktifHafta();
-    if (!hafta) { dersEkran = 'hafta'; }
+    if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; }
     else {
-      anlatimEkrani(kok, anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex), ceviri);
+      const m = anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex);
+      anlatimEkrani(kok, { ...m, aiVar: dersAiVar(), aiMetin: dersAiMetin }, ceviri);
       return;
     }
   }
 
   if (dersEkran === 'ornek') {
     const hafta = dersAktifHafta();
-    if (!hafta) { dersEkran = 'hafta'; }
+    if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; }
     else {
       ornekEkrani(kok, ornekModeli(hafta, KONULAR, dersOrnekAdim), ceviri);
       return;
@@ -771,11 +829,12 @@ function renderDers() {
     // hic kapatilmadan birikir.
     dersWidgetKapat();
     dersEkran = 'hafta';
+    dersAiMetin = '';
   }
 
   if (dersEkran === 'alistirma') {
     const hafta = dersAktifHafta();
-    if (!hafta) { dersEkran = 'hafta'; }
+    if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; }
     else {
       const ilerleme = state.loadDersIlerleme();
       const kayit = haftaKaydi(ilerleme, hafta.hafta);
@@ -797,6 +856,7 @@ function renderDers() {
         return;
       }
       dersEkran = 'hafta';
+      dersAiMetin = '';
     }
   }
 
@@ -832,6 +892,7 @@ function renderDers() {
       return;
     }
     dersEkran = 'hafta';
+    dersAiMetin = '';
   }
 
   haftaEkrani(kok, dersModeli(), ceviri);
@@ -914,6 +975,13 @@ function konuHaftasiBul(uniteId, konuId) {
   return adaylar.reduce((enIyi, h) => (enYuksekSeviye(h) > enYuksekSeviye(enIyi) ? h : enIyi)).hafta;
 }
 
+// Aktif haftanin dort asamasi da bitti mi. Ders rozetinin ("ogrenci")
+// sayacini haftada bir kez artirmak icin kullanilir.
+function dersHaftaBittiMi(kayit) {
+  const m = dersModeli();
+  return m.tip === 'ders' && haftaDurumu(m.kart.adimIdleri, kayit).bitti;
+}
+
 // Quizi bitirir: puanlar, ilerlemeye yazar, yildiz kazanildiysa verir
 // ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
 // verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
@@ -925,6 +993,20 @@ function dersSinavBitir() {
   if (sonuc.kazanilanYildiz > 0) {
     dersYildizVer(sonuc.kazanilanYildiz);
     ses.efekt('kutlama');
+  }
+  if (p.yuzde >= 100) istArtir((ist) => { ist.tamPuanQuiz += 1; });
+
+  // Hafta rozeti: dort asama da bittiyse rozet sayaci bir kez artar.
+  // 'hafta' isareti yildiz VERMEZ, yalniz sayacin iki kez artmasini
+  // onler. guncelKayit yukarida yazilan sonuc.kayit'i ELDE OKUR: baska
+  // bir kayittan okuyup baskasina yazmak tam da cifte sayimin yolu olurdu.
+  const guncelKayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
+  if (dersHaftaBittiMi(guncelKayit) && !guncelKayit.yildizAlinan.includes('hafta')) {
+    istArtir((ist) => { ist.dersHaftalari += 1; });
+    dersIlerlemeYaz(hafta.hafta, {
+      ...guncelKayit,
+      yildizAlinan: [...guncelKayit.yildizAlinan, 'hafta']
+    });
   }
 
   dersSinavSonuc = {
@@ -965,6 +1047,7 @@ function dersUniteSinaviBitir() {
     dersYildizVer(sonuc.kazanilanYildiz);
     ses.efekt('kutlama');
   }
+  if (p.gecti) istArtir((ist) => { ist.gecilenSinavlar += 1; });
 
   dersSinavSonuc = {
     baslik: ceviri('ders.unitExam'),
@@ -2832,6 +2915,26 @@ async function sohbetGonder(metin) {
   }
 }
 
+// Ders modulunun "Anlamadim, baska turlu anlat" cagrisi. Sohbetle ayni
+// uc nokta ve ayni ATAOL API anahtarini kullanir, ikinci bir ag katmani
+// eklenmez.
+async function dersAiSor(adim) {
+  const konu = KONULAR[adim.konuId];
+  const kazanim = konu.kazanimlar[0]?.metin ?? '';
+
+  try {
+    const anahtar = state.loadApiKey();
+    const govde = istekGovdesi(
+      dersIstemi({ konuAd: konu.ad.tr, kazanim, adimMetni: adim.metin, yas: profile.child?.age }),
+      []
+    );
+    dersAiMetin = yanitAyikla(await sohbetIste(anahtar, govde));
+  } catch {
+    dersAiMetin = ceviri('ders.explainError');
+  }
+  renderDers();
+}
+
 function kaydetSohbetAyar() {
   const anahtar = document.getElementById('sohbet-apikey').value.trim();
   // Bos birakilan anahtar mevcut (tasinan ya da kayitli) anahtari SILMEZ.
@@ -3158,11 +3261,25 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const dersAyarKutu = e.target.closest('[data-ders-ayar]');
+  if (dersAyarKutu) {
+    const ilerleme = state.loadDersIlerleme();
+    const anahtar = dersAyarKutu.dataset.dersAyar;
+    state.saveDersIlerleme({
+      ...ilerleme,
+      ayar: { ...ilerleme.ayar, [anahtar]: dersAyarKutu.checked }
+    });
+    if (anahtar === 'sesAcik') ses.ayarla({ sesAcik: dersAyarKutu.checked });
+    render();
+    return;
+  }
+
   const dersGit = e.target.closest('[data-ders-git]');
   if (dersGit) {
     dersGorulenHafta = Number(dersGit.dataset.dersGit);
     dersEkran = 'hafta';
     dersAdimIndex = 0;
+    dersAiMetin = '';
     renderDers();
     return;
   }
@@ -3173,6 +3290,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     ses.hazirla();
     dersEkran = 'anlatim';
     dersAdimIndex = 0;
+    dersAiMetin = '';
     renderDers();
     dersAdimiSeslendir();
     return;
@@ -3190,12 +3308,20 @@ document.getElementById('app').addEventListener('click', (e) => {
     if (eylem === 'kapat') {
       ses.dur();
       dersEkran = 'hafta';
+      dersAiMetin = '';
       renderDers();
       return;
     }
 
     if (eylem === 'dinle') {
       dersAdimiSeslendir();
+      return;
+    }
+
+    if (eylem === 'anlat') {
+      dersAiMetin = ceviri('ders.explaining');
+      renderDers();
+      dersAiSor(model.aktif);
       return;
     }
 
@@ -3224,6 +3350,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       ses.dur();
       dersEkran = 'ornek';
       dersOrnekAdim = 0;
+      dersAiMetin = '';
       render();
       return;
     }
@@ -3245,6 +3372,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     }
     dersOrnekAdim = 0;
     dersEkran = eylem === 'gec' ? 'etkilesim' : 'hafta';
+    dersAiMetin = '';
     renderDers();
     return;
   }
@@ -3257,6 +3385,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersWidgetKapat();
       dersEtkilesimMesaj = '';
       dersEkran = 'hafta';
+      dersAiMetin = '';
       renderDers();
       return;
     }
@@ -3280,6 +3409,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersWidgetKapat();
       dersEkran = 'hafta';
       dersEtkilesimMesaj = '';
+      dersAiMetin = '';
       render();
       return;
     }
@@ -3311,6 +3441,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     ses.hazirla();
     dersEkran = asamaDugme.dataset.dersAsama;
     dersAdimIndex = 0;
+    dersAiMetin = '';
 
     if (dersEkran === 'quiz') {
       const hafta = dersAktifHafta();
@@ -3337,6 +3468,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersSinavUyari = '';
     dersSinavSonuc = null;
     dersEkran = 'sinav';
+    dersAiMetin = '';
     renderDers();
     return;
   }
@@ -3372,6 +3504,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSoru = null;
       dersSecildi = null;
       dersEkran = 'hafta';
+      dersAiMetin = '';
       render();
       return;
     }
@@ -3407,6 +3540,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSinav = null;
       dersSinavSonuc = null;
       dersEkran = 'hafta';
+      dersAiMetin = '';
       render();
       return;
     }
@@ -3426,6 +3560,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSinav = null;
       dersSinavSonuc = null;
       dersEkran = 'hafta';
+      dersAiMetin = '';
       render();
       return;
     }
@@ -3472,6 +3607,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSoru = null;
       dersSecildi = null;
       dersEkran = 'alistirma';
+      dersAiMetin = '';
       renderDers();
       return;
     }
@@ -3493,12 +3629,14 @@ document.getElementById('app').addEventListener('click', (e) => {
         dersEkran = 'quiz';
         dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
       }
+      dersAiMetin = '';
       renderDers();
       return;
     }
     dersSinav = null;
     dersSinavSonuc = null;
     dersEkran = 'hafta';
+    dersAiMetin = '';
     render();
     return;
   }
@@ -3561,6 +3699,21 @@ document.getElementById('kurucu-kapat').addEventListener('click', kapatKurucu);
 document.getElementById('sohbet-form').addEventListener('submit', (e) => {
   e.preventDefault();
   sohbetGonder(document.getElementById('sohbet-metin').value);
+});
+
+// Ders sekmesinin ebeveyn panelindeki sabit hafta alani. change'de
+// kaydedilir; her tus vurusunda kaydetmek gereksiz yazma yapardi.
+document.getElementById('view-parent').addEventListener('change', (e) => {
+  if (e.target.id !== 'ders-sabit-hafta') return;
+  const ham = e.target.value.trim();
+  const sayi = ham === '' ? null : Number(ham);
+  const ilerleme = state.loadDersIlerleme();
+  state.saveDersIlerleme({
+    ...ilerleme,
+    ayar: { ...ilerleme.ayar, sabitHafta: Number.isInteger(sayi) ? sayi : null }
+  });
+  dersGorulenHafta = null;
+  render();
 });
 
 document.getElementById('ob-basla').addEventListener('click', onboardingBasla);
