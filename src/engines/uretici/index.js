@@ -13,13 +13,15 @@
  */
 
 import { uret as temelCizimler } from './temel-cizimler.js';
+import { uret as aciOlcme } from './aci-olcme.js';
 
 export { BICIMLER, sec, karistir, secmeliKur } from './ortak.js';
 
 // Uretici kayit defteri. Her uretici kendi gorevinde buraya eklenir:
 // once import satiri, sonra bu nesneye bir giris.
 export const URETICILER = {
-  'temel-cizimler': temelCizimler
+  'temel-cizimler': temelCizimler,
+  'aci-olcme': aciOlcme
 };
 
 export function ureticiVarMi(id) {
