@@ -194,3 +194,83 @@ test('uretici cevaplari o haftaya kadarki ders metninde gecer', () => {
     }
   }
 });
+
+// --- Sayisal cevapli seviyelerin kural sozlugu ----------------------
+//
+// Yukaridaki kategorik denetim, dogru cevabi sayi olan seviyelerde
+// hicbir sey dogrulamaz: aci-olcme seviye 2 ile cokgenler-cember
+// seviye 2'de butun cevaplar sayidir. Oysa o seviyelerde ogretilmesi
+// gereken sey kuralin ADIDIR. Bu harita o adlari ariyor.
+//
+// Deger olarak bos dizi yazmak "bu tip icin ek terim gerekmiyor"
+// demektir ve gerekcesi yorumda durur; cogu tipte kategorik denetim
+// zaten dogru cevabin kendisini terim olarak zorunlu kiliyor.
+//
+// Haritada olmayan bir tip testi kirar. Boylece bir ureticiye yeni
+// soru tipi eklendiginde birinin oturup "bu tipin ogretilmesi gereken
+// terimi var mi" diye dusunmesi zorunlu olur; harita da boylece
+// curumez.
+const TIP_TERIMLERI = {
+  // Cevaplari sekil ve arac adlari; kategorik denetim kapsiyor.
+  'temel-cizimler-arac': [],
+  'temel-cizimler-tanim': [],
+  'temel-cizimler-gosterim': [],
+  // Cevabi uc sayisi, yani sayi. Ama uc sayisi sorulan sekillerin
+  // adlari ayni seviyenin gosterim sorusunda kategorik olarak zaten
+  // isteniyor; ek terim aranmiyor.
+  'temel-cizimler-uc': [],
+  // Cevaplari aci turlerinin adlari; kategorik denetim kapsiyor.
+  'aci-olcme-tur': [],
+  // Cevabi derece, yani sayi; bu tip icin kategorik denetim de bir sey
+  // dogrulamiyor. "aciolcer" terimini zorunlu kilmak dusunulebilir ama
+  // simdilik istenmedi, bkz. rapor.
+  'aci-olcme-okuma': [],
+  // Bundan sonrasi seviye 2: cevaplarin hepsi sayi, kategorik denetim
+  // bu seviyede hicbir sey dogrulamiyor. Kural adlari burada zorunlu.
+  'aci-olcme-butunler': ['bütünler'],
+  'aci-olcme-tumler': ['tümler'],
+  'aci-olcme-ters': ['ters'],
+  // Cevabi cokgen adi; kategorik denetim kapsiyor.
+  'cokgen-olusum': [],
+  // Cevaplari alti cokgen adi. Bunlari seviye 1'in kategorik denetimi
+  // zaten birikimli olarak zorunlu kiliyor; burada tekrar istemek
+  // koruma eklemez, yalniz tekrar olurdu.
+  'cokgen-ad': [],
+  // Cevabi kose sayisi, yani sayi. Kelimenin kendisi aranir.
+  'cokgen-kenar-kose': ['köşe'],
+  // Cevaplari ucgen turlerinin adlari; kategorik denetim kapsiyor.
+  'cember-ucgen-tur': [],
+  // Cevabi yaricap uzunlugu, yani sayi; bu tip icin kategorik denetim
+  // de bir sey dogrulamiyor. "yaricap" terimini zorunlu kilmak
+  // dusunulebilir ama simdilik istenmedi, bkz. rapor.
+  'cember-yaricap': []
+};
+
+function uretilenTipler(konuId, seviyeNo, tur = 300) {
+  const tipler = new Set();
+  for (let tohum = 1; tohum <= tur; tohum++) {
+    tipler.add(soruUret(konuId, seviyeNo, tohumluRng(tohum)).tip);
+  }
+  return tipler;
+}
+
+test('her soru tipinin gerektirdigi kural adi ders metninde gecer', () => {
+  for (const id of FAZ1) {
+    let birikmis = '';
+    for (const s of KONULAR[id].seviyeler) {
+      birikmis += ' ' + seviyeMetni(s);
+      for (const tip of uretilenTipler(id, s.seviye)) {
+        const terimler = TIP_TERIMLERI[tip];
+        assert.ok(Array.isArray(terimler),
+          `${id} seviye ${s.seviye}: "${tip}" soru tipi TIP_TERIMLERI haritasinda yok. ` +
+          'Bu tipin ogretilmesi gereken terimlerini haritaya ekle; ' +
+          'gerekmiyorsa gerekcesini yazip bos dizi koy.');
+        for (const terim of terimler) {
+          assert.ok(birikmis.includes(KUCUK(terim)),
+            `${id} seviye ${s.seviye} (${tip}): "${terim}" terimi ` +
+            'o haftaya kadarki ders metninde hic gecmiyor');
+        }
+      }
+    }
+  }
+});
