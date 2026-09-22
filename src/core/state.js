@@ -234,6 +234,48 @@ export function createAppState(storage) {
 
     saveIstatistik(ist) {
       storage.set('istatistik', ist);
+    },
+
+    /**
+     * Matematik ders modulunun ilerlemesi.
+     *
+     * haftalar: hafta numarasi -> { anlatim: string[], etkilesimBitti,
+     *   alistirma: leitner kutulari, quiz: { enIyi, denemeler,
+     *   yildizAlindi } }
+     * sinavlar: sinav kimligi -> { puan, gecti, tarih, yildizAlindi }
+     * ayar: ses ve hafta tercihleri
+     *
+     * Savunmaci yuklenir: bozuk ya da eksik kayit uygulamayi cokertmez,
+     * varsayilana duser. Cocugun elindeki tek cihazda kayit bozulursa
+     * ders ekrani acilmaya devam etmeli.
+     */
+    loadDersIlerleme() {
+      const bos = {
+        haftalar: {},
+        sinavlar: {},
+        ayar: { sesAcik: true, otomatikOynat: true, sabitHafta: null, sesliCevap: false }
+      };
+      const kayit = storage.get('ders', null);
+      if (!kayit || typeof kayit !== 'object' || Array.isArray(kayit)) return bos;
+
+      const nesne = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+      const bayrak = (x, varsayilan) => (typeof x === 'boolean' ? x : varsayilan);
+      const ayar = nesne(kayit.ayar);
+
+      return {
+        haftalar: nesne(kayit.haftalar),
+        sinavlar: nesne(kayit.sinavlar),
+        ayar: {
+          sesAcik: bayrak(ayar.sesAcik, true),
+          otomatikOynat: bayrak(ayar.otomatikOynat, true),
+          sabitHafta: Number.isInteger(ayar.sabitHafta) ? ayar.sabitHafta : null,
+          sesliCevap: bayrak(ayar.sesliCevap, false)
+        }
+      };
+    },
+
+    saveDersIlerleme(ilerleme) {
+      storage.set('ders', ilerleme);
     }
   };
 }
