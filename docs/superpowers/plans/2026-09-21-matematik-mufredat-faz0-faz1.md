@@ -7861,3 +7861,47 @@ Faz 1'i teslim etmeden once bastan sona su akisi bir kez elle gec:
     yalniz "Anlamadım" dugmesi kayboluyor
 13. Uygulamayi kapatip ac: tum ilerleme duruyor
 14. `npm test` tamamen yesil
+
+---
+
+## Task 20: Ders modulu stilleri (plan bosluğu, yurutme sirasinda eklendi)
+
+Bu gorev plan yazilirken ATLANMIS bir bosluktur. Plan veri katmanini,
+motorlari, ekranlari, testleri, sesi, ureticileri ve icerigi ayrintisiyla
+tarif ediyor ama **tek satir CSS tarif etmiyor**. Task 13 sirasinda
+dogrulandi: `styles-v2.css` ve `styles.css` icinde `ders-kart`,
+`ders-asama`, `ders-gezinme`, `anlatim__*`, `etkilesim__*`, `soru__*`,
+`sonuc__*`, `ornek__*` siniflarinin HICBIRI yok. Modul dogru calisiyor ama
+bicimsiz goruniyor.
+
+**Neden tek gorevde ve sonda:** stili alti goreve bolmek tutarsiz bir
+gorunum ve tekrar is demek. Tum ekranlar var olduktan sonra tek gecisde
+stillemek hem tutarli bir dil verir hem tek incelemeye konu olur.
+
+**Files:**
+- Modify: `styles-v2.css`
+
+**Kapsanacak ekranlar ve sinif aileleri:**
+- Hafta karti: `ders-kart`, `ders-kart__ust/etiket/hafta/unite/tarih/konular/
+  asamalar/ilerleme/basla/not`, `ders-konu`, `ders-asama`, `ders-gezinme`
+- Anlatim: `anlatim__ust/kapat/sayac/govde/konu/metin/dinle/alt/gez/ai/ai-metin`
+- Ornek: `ornek__konu/soru/adimlar/adim/cevap`
+- Etkilesim: `etkilesim__tuval/gorev/mesaj/alt`
+- Soru ve sinav: `soru__baslik/metin/secenekler/secenek/cozum/geri/cozum-adim`,
+  `sinav__not/uyari`
+- Sonuc: `sonuc__baslik/puan/durum/kirilim/konu/konu-ad/calis/alt`
+- Ebeveyn eki: `parent__bolum/satir/kazanimlar/kazanim/not`
+
+**Kurallar:**
+- Mevcut v2 tasarim dilini izle: `styles-v2.css` icindeki `games-card`,
+  `drill__`, `v2-modal__` kaliplarina bak ve ayni degisken, renk, kose
+  yaricapi ve boslugu kullan. Yeni bir tema icat etme.
+- iPhone 12 hedef cihaz: dokunma hedefleri en az 44 piksel, yatay tasma yok,
+  guvenli alan (safe area) dolgusu mevcut kalibi izler.
+- Anlatim metni buyuk ve seyrek: cocuk hem okuyup hem dinleyecek.
+- Dogru/yanlis secenek renkleri yalnizca renge dayanmasin; ikon ya da
+  kalinlik da degissin.
+- Yeni CSS degiskeni gerekiyorsa `:root` icindeki mevcut kumeye ekle.
+
+**Dogrulama:** tarayicida her ekranin ekran goruntusu alinir ve mevcut
+sekmelerle yan yana karsilastirilir. Bu gorev testle degil GOZLE dogrulanir.
