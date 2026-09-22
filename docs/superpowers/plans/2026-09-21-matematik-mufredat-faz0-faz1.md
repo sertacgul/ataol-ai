@@ -4610,3 +4610,1173 @@ adimda ve yalniz bir kez veriliyor.
 Yildiz rutin karti uzerinden degil dogrudan gune yaziliyor; rutin
 kartlari blok sirasina kilitli ve ders sekmesi serbest erisimli."
 ```
+
+---
+
+## Task 14: Etkilesimli widget'lar ve "Kendin dene" ekrani
+
+Iki widget: `aciolcer` ve `geometri-tuval`. Ikisi de canvas uzerinde
+calisir ve ayni arayuzu saglar, boylece ekran kodu hangi widget oldugunu
+bilmek zorunda kalmaz.
+
+Cizim ve olay kodu `ui/widget/` altinda; olculebilir matematik
+`engines/widgets/aci.js` icinde (Task 10'da yazildi) ve oradan okunur.
+
+**Files:**
+- Create: `src/ui/widget/aciolcer.js`
+- Create: `src/ui/widget/geometri-tuval.js`
+- Create: `src/ui/widget/index.js`
+- Modify: `src/ui/ders-dom.js` (`etkilesimEkrani`)
+- Modify: `src/main.js`, `src/core/i18n.js`, `sw.js`
+- Test: `tests/widget-arayuz.test.js`
+
+**Interfaces:**
+- Consumes: `aciTuru`, `ACI_TURU_ADI`, `butunler` (Task 10); `el`, `mount`
+- Produces (her widget ayni sozlesme):
+  - `create(kok, { mod, gorev, veri, ses, bitti })` -> `{ ciz(), dogrula(), yokEt() }`
+  - `dogrula()` -> `{ tamam: boolean, mesaj: string }`
+  - `WIDGETLER: { aciolcer, 'geometri-tuval' }` (`ui/widget/index.js`)
+  - `widgetKur(ad, kok, secenekler)` -> widget veya `null`
+
+### Widget sozlesmesi
+
+| Uye | Anlam |
+|---|---|
+| `ciz()` | Tuvali bastan cizer. Boyut degisince ve her durum degisiminde cagrilir |
+| `dogrula()` | Gorev tamamlandi mi. Ekran "Tamamla" dugmesinde cagirir |
+| `yokEt()` | Olay dinleyicilerini kaldirir. Ekran kapanirken cagrilir |
+
+`yokEt()` sozlesmenin en onemli parcasidir: widget `pointermove`
+dinleyicisi birakirsa ekran her acildiginda bir tane daha eklenir ve
+uygulama zamanla yavaslar.
+
+- [ ] **Step 1: Widget sozlesmesi testini yaz**
+
+Canvas node'da yok; test sahte bir canvas ve 2D baglam ile calisir.
+
+```js
+// tests/widget-arayuz.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { WIDGETLER, widgetKur } from '../src/ui/widget/index.js';
+
+// node'da DOM yok; widget'in cagirdigi her seyi yutan en kucuk sahte.
+function sahteBaglam() {
+  const cagrilar = [];
+  const yut = (ad) => (...a) => cagrilar.push([ad, ...a]);
+  return {
+    cagrilar,
+    canvas: { width: 320, height: 240 },
+    beginPath: yut('beginPath'), closePath: yut('closePath'),
+    moveTo: yut('moveTo'), lineTo: yut('lineTo'), arc: yut('arc'),
+    stroke: yut('stroke'), fill: yut('fill'), clearRect: yut('clearRect'),
+    fillText: yut('fillText'), save: yut('save'), restore: yut('restore'),
+    translate: yut('translate'), rotate: yut('rotate'), setTransform: yut('setTransform'),
+    set strokeStyle(v) {}, set fillStyle(v) {}, set lineWidth(v) {},
+    set font(v) {}, set textAlign(v) {}, set lineCap(v) {}
+  };
+}
+
+function sahteKok() {
+  const dinleyiciler = [];
+  const baglam = sahteBaglam();
+  const canvas = {
+    width: 320, height: 240,
+    style: {},
+    getContext: () => baglam,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 320, height: 240 }),
+    addEventListener: (ad, fn) => dinleyiciler.push([ad, fn]),
+    removeEventListener: (ad, fn) => {
+      const i = dinleyiciler.findIndex(([a, f]) => a === ad && f === fn);
+      if (i >= 0) dinleyiciler.splice(i, 1);
+    },
+    setPointerCapture() {}, releasePointerCapture() {}
+  };
+  return { canvas, dinleyiciler, baglam };
+}
+
+const ADLAR = ['aciolcer', 'geometri-tuval'];
+
+test('Faz 1 widgetleri kayitlidir', () => {
+  for (const ad of ADLAR) {
+    assert.equal(typeof WIDGETLER[ad], 'function', `${ad} kayitli degil`);
+  }
+});
+
+test('bilinmeyen widget null dondurur, atmaz', () => {
+  assert.equal(widgetKur('boyle-bir-widget-yok', {}, {}), null);
+});
+
+test('her widget sozlesmedeki uc uyeyi saglar', () => {
+  for (const ad of ADLAR) {
+    const { canvas } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'serbest', veri: { derece: 60, r1: 5, r2: 5, d: 5, kenar: 4 } });
+    assert.equal(typeof w.ciz, 'function', `${ad}.ciz yok`);
+    assert.equal(typeof w.dogrula, 'function', `${ad}.dogrula yok`);
+    assert.equal(typeof w.yokEt, 'function', `${ad}.yokEt yok`);
+    w.yokEt();
+  }
+});
+
+test('dogrula her zaman tamam ve mesaj dondurur', () => {
+  for (const ad of ADLAR) {
+    const { canvas } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'serbest', veri: { derece: 60, r1: 5, r2: 5, d: 5, kenar: 4 } });
+    const s = w.dogrula();
+    assert.equal(typeof s.tamam, 'boolean', `${ad}: tamam bayragi yok`);
+    assert.equal(typeof s.mesaj, 'string', `${ad}: mesaj yok`);
+    w.yokEt();
+  }
+});
+
+test('yokEt tum olay dinleyicilerini kaldirir', () => {
+  for (const ad of ADLAR) {
+    const { canvas, dinleyiciler } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'serbest', veri: { derece: 60, r1: 5, r2: 5, d: 5, kenar: 4 } });
+    assert.ok(dinleyiciler.length > 0, `${ad}: hic dinleyici eklenmemis`);
+    w.yokEt();
+    assert.equal(dinleyiciler.length, 0,
+      `${ad}: yokEt sonrasi ${dinleyiciler.length} dinleyici kaldi, ekran her acildiginda birikirler`);
+  }
+});
+
+test('ciz tuvali temizleyip yeniden cizer', () => {
+  for (const ad of ADLAR) {
+    const { canvas, baglam } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'serbest', veri: { derece: 60, r1: 5, r2: 5, d: 5, kenar: 4 } });
+    baglam.cagrilar.length = 0;
+    w.ciz();
+    assert.ok(baglam.cagrilar.some(([c]) => c === 'clearRect'), `${ad}: clearRect cagrilmadi`);
+    assert.ok(baglam.cagrilar.length > 1, `${ad}: hicbir sey cizilmedi`);
+    w.yokEt();
+  }
+});
+
+test('ciz iki kez cagrilinca cokmez', () => {
+  for (const ad of ADLAR) {
+    const { canvas } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'serbest', veri: { derece: 60, r1: 5, r2: 5, d: 5, kenar: 4 } });
+    w.ciz();
+    w.ciz();
+    w.yokEt();
+    w.yokEt();
+  }
+});
+
+test('aciolcer olc modunda hedef aciya ulasmadan tamam demez', () => {
+  const { canvas } = sahteKok();
+  const w = WIDGETLER.aciolcer(canvas, { mod: 'olc', veri: { derece: 75 } });
+  assert.equal(w.dogrula().tamam, false, 'hic olculmeden tamam olmamali');
+  w.yokEt();
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/widget-arayuz.test.js`
+Expected: FAIL, `Cannot find module '../src/ui/widget/index.js'`.
+
+- [ ] **Step 3: `src/ui/widget/aciolcer.js` yaz**
+
+```js
+/**
+ * Aciolcer widget'i.
+ *
+ * Uc mod:
+ *   goster  - verilen aciyi cizer, cocuk turunu gorur
+ *   olc     - aciyi cizer, cocuk aciolceri surukleyip okur
+ *   kesisim - iki dogru kesistirir, komsu ve ters acilari renklendirir
+ *
+ * Aci matematigi engines/widgets/aci.js icindedir; burada yalniz cizim
+ * ve dokunma var. Boylece ekranda gorunen ile soruda sorulan ayni
+ * kuraldan gelir.
+ */
+
+import { aciTuru, ACI_TURU_ADI, butunler } from '../../engines/widgets/aci.js';
+
+const RENK = {
+  cizgi: '#2d3436', vurgu: '#6C5CE7', ikinci: '#00b894',
+  yay: 'rgba(108, 92, 231, 0.25)', metin: '#2d3436'
+};
+
+const RAD = Math.PI / 180;
+
+export function aciolcer(canvas, { mod = 'goster', veri = {}, ses = null } = {}) {
+  const ctx = canvas.getContext('2d');
+  const hedef = Number(veri.derece) || 60;
+
+  // olc modunda cocugun aciolceri dondurerek buldugu deger.
+  let okunan = null;
+  let kesisimAcisi = Number(veri.derece) || 50;
+  let suruyor = false;
+
+  const merkez = () => ({ x: canvas.width / 2, y: canvas.height * 0.72 });
+  const yaricap = () => Math.min(canvas.width, canvas.height) * 0.42;
+
+  function kolCiz(derece, renk, uzunluk) {
+    const m = merkez();
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y);
+    ctx.lineTo(m.x + Math.cos(-derece * RAD) * uzunluk, m.y + Math.sin(-derece * RAD) * uzunluk);
+    ctx.strokeStyle = renk;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function yayCiz(derece) {
+    const m = merkez();
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y);
+    ctx.arc(m.x, m.y, yaricap() * 0.3, 0, -derece * RAD, true);
+    ctx.closePath();
+    ctx.fillStyle = RENK.yay;
+    ctx.fill();
+  }
+
+  function olcekCiz() {
+    const m = merkez();
+    const r = yaricap();
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, r, Math.PI, 2 * Math.PI);
+    ctx.strokeStyle = RENK.cizgi;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    for (let d = 0; d <= 180; d += 10) {
+      const ic = d % 30 === 0 ? r - 14 : r - 8;
+      ctx.beginPath();
+      ctx.moveTo(m.x + Math.cos(-d * RAD) * ic, m.y + Math.sin(-d * RAD) * ic);
+      ctx.lineTo(m.x + Math.cos(-d * RAD) * r, m.y + Math.sin(-d * RAD) * r);
+      ctx.strokeStyle = RENK.cizgi;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (d % 30 === 0) {
+        ctx.fillStyle = RENK.metin;
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(d), m.x + Math.cos(-d * RAD) * (r - 26), m.y + Math.sin(-d * RAD) * (r - 26) + 4);
+      }
+    }
+  }
+
+  function yaziCiz(metin) {
+    ctx.fillStyle = RENK.metin;
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(metin, canvas.width / 2, 24);
+  }
+
+  function ciz() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const r = yaricap();
+
+    if (mod === 'kesisim') {
+      const m = merkez();
+      // Iki dogru: her biri iki yonde uzanan birer cizgi.
+      for (const [derece, renk] of [[0, RENK.cizgi], [kesisimAcisi, RENK.vurgu]]) {
+        ctx.beginPath();
+        ctx.moveTo(m.x - Math.cos(-derece * RAD) * r, m.y - Math.sin(-derece * RAD) * r);
+        ctx.lineTo(m.x + Math.cos(-derece * RAD) * r, m.y + Math.sin(-derece * RAD) * r);
+        ctx.strokeStyle = renk;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+      yayCiz(kesisimAcisi);
+      yaziCiz(`${kesisimAcisi} derece, komşusu ${butunler(kesisimAcisi)} derece`);
+      return;
+    }
+
+    olcekCiz();
+    kolCiz(0, RENK.cizgi, r);
+    kolCiz(hedef, RENK.ikinci, r);
+    yayCiz(hedef);
+
+    if (mod === 'goster') {
+      yaziCiz(`${hedef} derece - ${ACI_TURU_ADI[aciTuru(hedef)]}`);
+    } else {
+      yaziCiz(okunan === null ? 'Açıölçeri sürükle ve açıyı oku' : `Okuduğun: ${okunan} derece`);
+    }
+  }
+
+  function noktadanDerece(olay) {
+    const kutu = canvas.getBoundingClientRect();
+    const m = merkez();
+    const x = ((olay.clientX - kutu.left) / kutu.width) * canvas.width - m.x;
+    const y = ((olay.clientY - kutu.top) / kutu.height) * canvas.height - m.y;
+    let d = Math.round((Math.atan2(-y, x) / RAD) / 5) * 5;
+    if (d < 0) d = 0;
+    if (d > 180) d = 180;
+    return d;
+  }
+
+  function basla(olay) {
+    suruyor = true;
+    hareket(olay);
+  }
+
+  function hareket(olay) {
+    if (!suruyor) return;
+    const d = noktadanDerece(olay);
+    if (mod === 'olc') {
+      okunan = d;
+      if (okunan === hedef && ses) ses.efekt('dogru');
+    } else if (mod === 'kesisim') {
+      kesisimAcisi = Math.max(10, Math.min(170, d));
+    }
+    ciz();
+  }
+
+  function bitir() {
+    suruyor = false;
+  }
+
+  canvas.addEventListener('pointerdown', basla);
+  canvas.addEventListener('pointermove', hareket);
+  canvas.addEventListener('pointerup', bitir);
+  canvas.addEventListener('pointercancel', bitir);
+
+  function dogrula() {
+    if (mod === 'olc') {
+      if (okunan === null) return { tamam: false, mesaj: 'Önce açıölçeri sürükleyip açıyı oku.' };
+      if (okunan !== hedef) return { tamam: false, mesaj: `${okunan} derece okudun. Sıfır çizgisinin başladığı skalayı takip et.` };
+      return { tamam: true, mesaj: 'Doğru okudun!' };
+    }
+    if (mod === 'kesisim') {
+      return { tamam: true, mesaj: 'Komşu açıların toplamının hep 180 ettiğini gördün.' };
+    }
+    return { tamam: true, mesaj: 'Açıyı ve türünü gördün.' };
+  }
+
+  function yokEt() {
+    canvas.removeEventListener('pointerdown', basla);
+    canvas.removeEventListener('pointermove', hareket);
+    canvas.removeEventListener('pointerup', bitir);
+    canvas.removeEventListener('pointercancel', bitir);
+  }
+
+  return { ciz, dogrula, yokEt };
+}
+```
+
+- [ ] **Step 4: `src/ui/widget/geometri-tuval.js` yaz**
+
+```js
+/**
+ * Geometrik cizim tuvali.
+ *
+ * Modlar:
+ *   serbest      - nokta, dogru parcasi, isin secip cizer; ne cizdigini soyler
+ *   dikme        - verilen dogruya dikme cizdirir
+ *   cokgen       - ardisik kesisen dogrularla cokgen kurdurur
+ *   cember       - pergel gibi cember cizdirir
+ *   cember-ucgen - iki cember ve merkezleri ile ucgen gosterir
+ *
+ * Cizilen sekiller bir dizide tutulur ve her ciz() cagrisinda bastan
+ * cizilir. Boylece geri alma ve yeniden boyutlandirma bedava gelir.
+ */
+
+const RENK = {
+  cizgi: '#2d3436', vurgu: '#6C5CE7', ikinci: '#00b894',
+  ucuncu: '#e17055', silik: 'rgba(45, 52, 54, 0.25)'
+};
+
+export function geometriTuval(canvas, { mod = 'serbest', veri = {}, ses = null } = {}) {
+  const ctx = canvas.getContext('2d');
+  const sekiller = [];
+  let baslangic = null;
+  let arac = mod === 'cember' ? 'cember' : 'dogru-parcasi';
+
+  const olcek = () => Math.min(canvas.width, canvas.height) / 26;
+
+  function noktaAl(olay) {
+    const kutu = canvas.getBoundingClientRect();
+    return {
+      x: ((olay.clientX - kutu.left) / kutu.width) * canvas.width,
+      y: ((olay.clientY - kutu.top) / kutu.height) * canvas.height
+    };
+  }
+
+  function noktaCiz(p, renk) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = renk;
+    ctx.fill();
+  }
+
+  function cizgiCiz(a, b, renk, uzat) {
+    ctx.beginPath();
+    if (uzat) {
+      // Isin ve dogru icin tuval disina tasiracak kadar uzat.
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const n = Math.hypot(dx, dy) || 1;
+      const k = (canvas.width + canvas.height) / n;
+      ctx.moveTo(uzat === 'iki' ? a.x - dx * k : a.x, uzat === 'iki' ? a.y - dy * k : a.y);
+      ctx.lineTo(a.x + dx * k, a.y + dy * k);
+    } else {
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.strokeStyle = renk;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function cemberCiz(merkez, r, renk) {
+    ctx.beginPath();
+    ctx.arc(merkez.x, merkez.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = renk;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    noktaCiz(merkez, renk);
+  }
+
+  function yaziCiz(metin, y) {
+    ctx.fillStyle = RENK.cizgi;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(metin, canvas.width / 2, y);
+  }
+
+  function cemberUcgenCiz() {
+    const b = olcek();
+    const { r1 = 5, r2 = 5, d = 5 } = veri;
+    const m1 = { x: canvas.width / 2 - (d * b) / 2, y: canvas.height * 0.6 };
+    const m2 = { x: canvas.width / 2 + (d * b) / 2, y: canvas.height * 0.6 };
+
+    cemberCiz(m1, r1 * b, RENK.silik);
+    cemberCiz(m2, r2 * b, RENK.silik);
+
+    // Kesisim noktasi: iki cemberin ust kesisimi. Merkezler yatay
+    // oldugu icin x, kosinus teoreminden; y, Pisagor'dan bulunur.
+    const a = (d * d - r2 * r2 + r1 * r1) / (2 * d);
+    const h2 = r1 * r1 - a * a;
+    const h = h2 > 0 ? Math.sqrt(h2) : 0;
+    const k = { x: m1.x + a * b, y: m1.y - h * b };
+
+    cizgiCiz(m1, m2, RENK.vurgu);
+    cizgiCiz(m1, k, RENK.ikinci);
+    cizgiCiz(m2, k, RENK.ucuncu);
+    noktaCiz(k, RENK.cizgi);
+
+    yaziCiz(`Kenarlar: ${r1} cm, ${r2} cm, ${d} cm`, 24);
+  }
+
+  function ciz() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (mod === 'cember-ucgen') {
+      cemberUcgenCiz();
+      return;
+    }
+
+    if (mod === 'dikme') {
+      const y = canvas.height * 0.6;
+      cizgiCiz({ x: 0, y }, { x: canvas.width, y }, RENK.cizgi);
+      noktaCiz({ x: canvas.width / 2, y }, RENK.vurgu);
+    }
+
+    for (const s of sekiller) {
+      if (s.tip === 'nokta') noktaCiz(s.a, RENK.vurgu);
+      else if (s.tip === 'cember') cemberCiz(s.a, s.r, RENK.vurgu);
+      else cizgiCiz(s.a, s.b, RENK.vurgu, s.tip === 'isin' ? 'tek' : s.tip === 'dogru' ? 'iki' : null);
+    }
+
+    if (mod === 'cokgen' && sekiller.length > 0) {
+      yaziCiz(`${sekiller.length} kenar, ${sekiller.length} köşe`, canvas.height - 12);
+    }
+  }
+
+  function basla(olay) {
+    baslangic = noktaAl(olay);
+  }
+
+  function bitir(olay) {
+    if (!baslangic) return;
+    const son = noktaAl(olay);
+    const uzunluk = Math.hypot(son.x - baslangic.x, son.y - baslangic.y);
+
+    if (arac === 'cember') {
+      if (uzunluk > 8) sekiller.push({ tip: 'cember', a: baslangic, r: uzunluk });
+    } else if (uzunluk < 6) {
+      sekiller.push({ tip: 'nokta', a: baslangic });
+    } else {
+      sekiller.push({ tip: arac, a: baslangic, b: son });
+    }
+
+    baslangic = null;
+    if (ses) ses.efekt('tik');
+    ciz();
+  }
+
+  canvas.addEventListener('pointerdown', basla);
+  canvas.addEventListener('pointerup', bitir);
+  canvas.addEventListener('pointercancel', () => { baslangic = null; });
+
+  function aracSec(yeni) {
+    arac = yeni;
+  }
+
+  function temizle() {
+    sekiller.length = 0;
+    ciz();
+  }
+
+  function dogrula() {
+    if (mod === 'cokgen') {
+      return sekiller.length >= 3
+        ? { tamam: true, mesaj: `${sekiller.length} kenarlı bir çokgen kurdun.` }
+        : { tamam: false, mesaj: 'Çokgen için en az 3 doğru gerekir.' };
+    }
+    if (mod === 'serbest') {
+      const tipler = new Set(sekiller.map((s) => s.tip));
+      return tipler.size >= 2
+        ? { tamam: true, mesaj: 'Farklı şekiller çizdin, güzel.' }
+        : { tamam: false, mesaj: 'En az iki farklı şekil çiz: nokta, doğru parçası, ışın.' };
+    }
+    if (mod === 'cember') {
+      return sekiller.some((s) => s.tip === 'cember')
+        ? { tamam: true, mesaj: 'Çember çizdin.' }
+        : { tamam: false, mesaj: 'Merkeze bas ve dışarı sürükleyerek bir çember çiz.' };
+    }
+    if (mod === 'dikme') {
+      return sekiller.length > 0
+        ? { tamam: true, mesaj: 'Dikmeyi çizdin.' }
+        : { tamam: false, mesaj: 'Doğrunun üzerindeki noktadan yukarı doğru bir çizgi çek.' };
+    }
+    return { tamam: true, mesaj: 'İncelemeni tamamladın.' };
+  }
+
+  function yokEt() {
+    canvas.removeEventListener('pointerdown', basla);
+    canvas.removeEventListener('pointerup', bitir);
+  }
+
+  return { ciz, dogrula, yokEt, aracSec, temizle };
+}
+```
+
+Dikkat: `pointercancel` dinleyicisi isimsiz bir ok fonksiyonuyla
+eklenirse `yokEt` onu kaldiramaz ve test basarisiz olur. Yukaridaki kodu
+yazarken o dinleyiciyi de adlandirilmis bir fonksiyona cevir:
+
+```js
+  function iptal() { baslangic = null; }
+  canvas.addEventListener('pointercancel', iptal);
+  // yokEt icinde:
+  canvas.removeEventListener('pointercancel', iptal);
+```
+
+- [ ] **Step 5: `src/ui/widget/index.js` yaz**
+
+```js
+/**
+ * Widget kayit defteri. Ekran kodu hangi widget oldugunu bilmek
+ * zorunda kalmasin diye hepsi ayni sozlesmeyi saglar:
+ *   create(kok, secenekler) -> { ciz, dogrula, yokEt }
+ */
+
+import { aciolcer } from './aciolcer.js';
+import { geometriTuval } from './geometri-tuval.js';
+
+export const WIDGETLER = {
+  'aciolcer': aciolcer,
+  'geometri-tuval': geometriTuval
+};
+
+export function widgetKur(ad, kok, secenekler) {
+  const kur = WIDGETLER[ad];
+  return typeof kur === 'function' ? kur(kok, secenekler) : null;
+}
+```
+
+- [ ] **Step 6: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/widget-arayuz.test.js`
+Expected: PASS, 8 test gecer.
+
+- [ ] **Step 7: i18n anahtarlarini ekle**
+
+TR: `'ders.explainAgain'` satirindan sonra
+
+```js
+    'ders.tryIt': 'Kendin dene',
+    'ders.check': 'Kontrol et',
+    'ders.done': 'Tamamla',
+    'ders.clear': 'Temizle',
+    'ders.example': 'Örnek çözüm',
+    'ders.showStep': 'Sonraki adım',
+    'ders.answer': 'Cevap: {c}',
+```
+
+EN: ayni yerde
+
+```js
+    'ders.tryIt': 'Try it yourself',
+    'ders.check': 'Check',
+    'ders.done': 'Complete',
+    'ders.clear': 'Clear',
+    'ders.example': 'Worked example',
+    'ders.showStep': 'Next step',
+    'ders.answer': 'Answer: {c}',
+```
+
+- [ ] **Step 8: `ui/ders-dom.js` icine `etkilesimEkrani` ekle**
+
+```js
+/**
+ * "Kendin dene" ekrani. Widget'i canvas'a kurar; widget'in kendisini
+ * kurmaz, o isi main.js yapar cunku yokEt cagrisinin sahibi odur.
+ *
+ * Doner: olusturulan canvas. Cagiran bunu widget'a verir.
+ */
+export function etkilesimEkrani(kok, { gorev, mesaj }, ceviri) {
+  const canvas = el('canvas', { className: 'etkilesim__tuval', attrs: { id: 'ders-tuval' } });
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.tryIt') })
+    ]),
+    el('p', { className: 'etkilesim__gorev', text: gorev }),
+    canvas,
+    mesaj ? el('p', { className: 'etkilesim__mesaj', text: mesaj }) : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.clear'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'temizle' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ders.check'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'kontrol' }
+      })
+    ])
+  ]);
+
+  return canvas;
+}
+```
+
+`el` cagrisinda `id` beyaz listede vardir, bu yuzden `attrs: { id: ... }`
+kabul edilir.
+
+- [ ] **Step 9: `main.js` icine bagla**
+
+Import:
+
+```js
+import { etkilesimEkrani } from './ui/ders-dom.js';
+import { widgetKur } from './ui/widget/index.js';
+import { etkilesimTamamla } from './engines/ders.js';
+```
+
+Modul durumu:
+
+```js
+// Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
+// dinleyicileri birikir ve uygulama zamanla yavaslar.
+let dersWidget = null;
+let dersEtkilesimMesaj = '';
+```
+
+`renderDers` icine, `anlatim` blogundan sonra:
+
+```js
+  if (dersEkran === 'etkilesim') {
+    const hafta = dersAktifHafta();
+    const ders = hafta?.dersler.find((d) => KONULAR[d.konu]);
+    const sev = ders ? KONULAR[ders.konu].seviyeler.find((s) => s.seviye === ders.seviye) : null;
+
+    if (sev) {
+      dersWidgetKapat();
+      const canvas = etkilesimEkrani(kok, { gorev: sev.etkilesim.gorev, mesaj: dersEtkilesimMesaj }, ceviri);
+      // Tuvalin cizim cozunurlugu CSS boyutundan ayridir; retina
+      // ekranda bulanik cikmasin diye oranla carpilir.
+      const oran = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * oran;
+      canvas.height = Math.round(canvas.clientWidth * 0.75) * oran;
+      dersWidget = widgetKur(sev.etkilesim.widget, canvas, {
+        mod: sev.etkilesim.mod,
+        veri: sev.etkilesim.veri ?? {},
+        ses
+      });
+      dersWidget?.ciz();
+      return;
+    }
+    dersEkran = 'hafta';
+  }
+```
+
+Yardimci:
+
+```js
+function dersWidgetKapat() {
+  if (dersWidget) {
+    dersWidget.yokEt();
+    dersWidget = null;
+  }
+}
+```
+
+Olay bloklari (`data-ders-adim` blogundan sonra):
+
+```js
+  const dersEtk = e.target.closest('[data-ders-etkilesim]');
+  if (dersEtk) {
+    const eylem = dersEtk.dataset.dersEtkilesim;
+
+    if (eylem === 'kapat') {
+      dersWidgetKapat();
+      dersEtkilesimMesaj = '';
+      dersEkran = 'hafta';
+      renderDers();
+      return;
+    }
+
+    if (eylem === 'temizle') {
+      dersWidget?.temizle?.();
+      return;
+    }
+
+    const sonuc = dersWidget?.dogrula() ?? { tamam: false, mesaj: '' };
+    dersEtkilesimMesaj = sonuc.mesaj;
+
+    if (sonuc.tamam) {
+      const hafta = dersAktifHafta();
+      const kayit = etkilesimTamamla(haftaKaydi(state.loadDersIlerleme(), hafta.hafta));
+      dersIlerlemeYaz(hafta.hafta, kayit.kayit);
+      if (kayit.kazanilanYildiz > 0) {
+        dersYildizVer(kayit.kazanilanYildiz);
+        ses.efekt('kutlama');
+      }
+      dersWidgetKapat();
+      dersEkran = 'hafta';
+      dersEtkilesimMesaj = '';
+      render();
+      return;
+    }
+
+    ses.efekt('yanlis');
+    renderDers();
+    return;
+  }
+```
+
+Anlatim "bitir" eylemini etkilesim ekranina yonlendir: `dersEkran = 'hafta'`
+yerine `dersEkran = 'etkilesim'` yaz, boylece anlatim bitince dogrudan
+"Kendin dene"ye gecilir.
+
+Hafta kartindaki asama rozetlerinden dogrudan girilebilmesi icin
+`data-ders-asama` tiklamasini da bagla:
+
+```js
+  const asamaDugme = e.target.closest('[data-ders-asama]');
+  if (asamaDugme) {
+    ses.hazirla();
+    dersEkran = asamaDugme.dataset.dersAsama;
+    dersAdimIndex = 0;
+    renderDers();
+    if (dersEkran === 'anlatim') dersAdimiSeslendir();
+    return;
+  }
+```
+
+`ders-asama` su an `div`; tiklanabilir olmasi icin `ders-dom.js` icindeki
+`asamaRozeti` fonksiyonunda `el('div', ...)` yerine
+`el('button', { ..., attrs: { type: 'button' } }, ...)` kullan.
+
+- [ ] **Step 10: `sw.js` guncelle**
+
+`CACHE_NAME` -> `'ataol-ai-v40'`, ASSETS'e ekle:
+
+```js
+  './src/ui/widget/index.js',
+  './src/ui/widget/aciolcer.js',
+  './src/ui/widget/geometri-tuval.js',
+```
+
+- [ ] **Step 11: Tum testleri ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: anlatim bitince "Kendin dene" aciliyor, tuvale cizim
+yapilabiliyor, "Kontrol et" gorev tamamlanmadiysa mesaj veriyor,
+tamamlandiginda hafta ekranina donuyor ve rozet yesil oluyor, yildiz
+3 artiyor.
+
+- [ ] **Step 12: Commit**
+
+```bash
+git add src/ui/widget/ src/ui/ders-dom.js src/main.js src/core/i18n.js sw.js tests/widget-arayuz.test.js
+git commit -m "feat(ders): aciolcer ve geometri tuvali widgetleri
+
+Ikisi de ayni sozlesmeyi sagliyor (ciz, dogrula, yokEt), boylece ekran
+kodu hangi widget oldugunu bilmek zorunda degil.
+
+yokEt testi ozellikle onemli: widget pointer dinleyicisi birakirsa
+ekran her acildiginda bir tane daha eklenir ve uygulama zamanla
+yavaslar. Test bunu zorluyor.
+
+Aci matematigi engines/widgets/aci.js'ten okunuyor; ekranda gorunen
+ile soruda sorulan ayni kuraldan geliyor."
+```
+
+---
+
+## Task 15: Alistirma ekrani
+
+Sinirsiz soru, aninda geri bildirim, yanlista cozum adimlari. Leitner
+kutulari yanlis yapilan soru tipini daha sik getirir.
+
+**Files:**
+- Modify: `src/views/ders.js` (`alistirmaSorusu`)
+- Modify: `src/ui/ders-dom.js` (`soruEkrani`)
+- Modify: `src/main.js`, `src/core/i18n.js`
+- Test: `tests/alistirma.test.js`
+
+**Interfaces:**
+- Consumes: `soruUret` (Task 8), `newBox`, `promote`, `demote`,
+  `selectWeighted` (`engines/leitner.js`), `alistirmaCevap` (Task 6)
+- Produces:
+  - `alistirmaSorusu(hafta, konular, kayit, rng)` -> `{ soru, ureticiId, seviye }` veya `null`
+  - `soruEkrani(kok, model, ceviri)` -> void
+  - `data-ders-secenek="<indeks>"`, `data-ders-soru="devam" | "kapat"`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/alistirma.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { TAKVIM } from '../src/data/mufredat.js';
+import { KONULAR } from '../src/data/konular/index.js';
+import { alistirmaSorusu } from '../src/views/ders.js';
+import { bosHafta, alistirmaCevap } from '../src/engines/ders.js';
+import { sozlesmeyiDogrula, tohumluRng } from './yardim/soru-sozlesmesi.js';
+
+const HAFTA1 = TAKVIM[0];
+
+test('alistirmaSorusu gecerli bir soru uretir', () => {
+  for (let t = 1; t <= 100; t++) {
+    const s = alistirmaSorusu(HAFTA1, KONULAR, bosHafta(), tohumluRng(t));
+    assert.ok(s, 'soru uretilmedi');
+    sozlesmeyiDogrula(s.soru, `alistirma tohum ${t}`);
+    assert.equal(s.ureticiId, 'temel-cizimler');
+    assert.equal(s.seviye, 1);
+  }
+});
+
+test('alistirmaSorusu icerigi olmayan haftada null doner', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 20);
+  assert.equal(alistirmaSorusu(hafta, KONULAR, bosHafta(), tohumluRng(1)), null);
+});
+
+test('iki konulu haftada iki konudan da soru gelir', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 8);
+  const ureticiler = new Set();
+  for (let t = 1; t <= 100; t++) {
+    ureticiler.add(alistirmaSorusu(hafta, KONULAR, bosHafta(), tohumluRng(t)).ureticiId);
+  }
+  assert.ok(ureticiler.size >= 1);
+  for (const u of ureticiler) assert.ok(['cokgenler-cember'].includes(u), u);
+});
+
+test('zayif kutudaki tip daha sik gelir', () => {
+  // 'temel-cizimler-arac' tipini 1. kutuya, digerlerini 5. kutuya koy.
+  let kayit = bosHafta();
+  kayit = alistirmaCevap(kayit, 'temel-cizimler-arac', { box: 1 }, false).kayit;
+  kayit = alistirmaCevap(kayit, 'temel-cizimler-tanim', { box: 5 }, true).kayit;
+
+  let zayifSayisi = 0;
+  for (let t = 1; t <= 400; t++) {
+    const s = alistirmaSorusu(HAFTA1, KONULAR, kayit, tohumluRng(t));
+    if (s.soru.tip === 'temel-cizimler-arac') zayifSayisi++;
+  }
+  assert.ok(zayifSayisi > 200,
+    `zayif tip 400 denemede yalniz ${zayifSayisi} kez geldi, Leitner agirligi calismiyor`);
+});
+
+test('ayni tohum ayni soruyu uretir', () => {
+  const a = alistirmaSorusu(HAFTA1, KONULAR, bosHafta(), tohumluRng(7));
+  const b = alistirmaSorusu(HAFTA1, KONULAR, bosHafta(), tohumluRng(7));
+  assert.deepEqual(a, b);
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/alistirma.test.js`
+Expected: FAIL, `alistirmaSorusu is not a function`.
+
+- [ ] **Step 3: `views/ders.js` icine ekle**
+
+```js
+import { soruUret } from '../engines/uretici/index.js';
+import { selectWeighted } from '../engines/leitner.js';
+
+/**
+ * Bir alistirma sorusu secer.
+ *
+ * Once hangi konudan soru gelecegi belirlenir (hafta iki konuya
+ * bagliysa rastgele biri), sonra uretici calistirilir.
+ *
+ * Leitner agirligi soru URETILDIKTEN sonra uygulanir: uretici rastgele
+ * bir tip seciyor, biz de zayif kutudaki tip cikana kadar birkac kez
+ * deniyoruz. Ureticiyi tip zorlamak icin degistirmek her ureticiye
+ * ayni karmasikligi tasirdi; burada tek yerde duruyor.
+ */
+export function alistirmaSorusu(hafta, konular, kayit, rng) {
+  const hazirDersler = hafta.dersler.filter((d) => {
+    const sev = seviyeBul(konular[d.konu], d.seviye);
+    return Boolean(sev);
+  });
+  if (hazirDersler.length === 0) return null;
+
+  const ders = hazirDersler[Math.floor(rng() * hazirDersler.length)];
+
+  const zayifTip = Object.keys(kayit.alistirma).length > 0
+    ? selectWeighted(kayit.alistirma, rng)
+    : null;
+
+  let soru = soruUret(ders.konu, ders.seviye, rng);
+  if (zayifTip) {
+    // En fazla 12 deneme: zayif tip bulunamazsa elde olanla devam
+    // edilir, cocugu bekletmenin anlami yok.
+    for (let i = 0; i < 12 && soru.tip !== zayifTip; i++) {
+      soru = soruUret(ders.konu, ders.seviye, rng);
+    }
+  }
+
+  return { soru, ureticiId: ders.konu, seviye: ders.seviye };
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/alistirma.test.js`
+Expected: PASS, 5 test gecer.
+
+- [ ] **Step 5: i18n anahtarlari**
+
+TR:
+
+```js
+    'ders.practice': 'Alıştırma',
+    'ders.correct': 'Doğru!',
+    'ders.wrong': 'Bu değil, bak bakalım:',
+    'ders.next': 'Devam',
+    'ders.practiceCount': 'Doğru cevap: {n}',
+```
+
+EN:
+
+```js
+    'ders.practice': 'Practice',
+    'ders.correct': 'Correct!',
+    'ders.wrong': "Not this one, let's look:",
+    'ders.next': 'Continue',
+    'ders.practiceCount': 'Correct answers: {n}',
+```
+
+- [ ] **Step 6: `ui/ders-dom.js` icine `soruEkrani` ekle**
+
+Quiz ve sinav da ayni ekrani kullanir; farki `model` belirler.
+
+```js
+/**
+ * Soru ekrani. Alistirma, quiz ve sinav ayni ekrani kullanir.
+ *
+ * model: {
+ *   baslik, ustBilgi, soru, secildi, dogruMu, cozumGoster,
+ *   devamEtiketi, kapatVar
+ * }
+ *
+ * secildi null ise henuz cevaplanmamistir. Cevaplandiktan sonra
+ * secenekler yeniden cizilir ve dogru olan isaretlenir; yanlis secilen
+ * ayrica kirmizi gosterilir ki cocuk neyi sectigini gorsun.
+ */
+export function soruEkrani(kok, model, ceviri) {
+  const secenekler = model.soru.secenekler.map((metin, i) => {
+    let sinif = 'soru__secenek';
+    if (model.secildi !== null && model.cozumGoster) {
+      if (i === model.soru.dogru) sinif += ' soru__secenek--dogru';
+      else if (i === model.secildi) sinif += ' soru__secenek--yanlis';
+    }
+    return el('button', {
+      className: sinif,
+      text: metin,
+      attrs: { type: 'button' },
+      dataset: { dersSecenek: String(i) }
+    });
+  });
+
+  const cozum = model.cozumGoster && model.secildi !== null
+    ? el('div', { className: 'soru__cozum' }, [
+        el('p', {
+          className: model.dogruMu ? 'soru__geri soru__geri--dogru' : 'soru__geri soru__geri--yanlis',
+          text: model.dogruMu ? ceviri('ders.correct') : ceviri('ders.wrong')
+        }),
+        ...model.soru.cozum.map((adim) => el('p', { className: 'soru__cozum-adim', text: adim }))
+      ])
+    : null;
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      model.kapatVar
+        ? el('button', {
+            className: 'anlatim__kapat',
+            text: ceviri('ders.close'),
+            attrs: { type: 'button' },
+            dataset: { dersSoru: 'kapat' }
+          })
+        : null,
+      el('p', { className: 'anlatim__sayac', text: model.ustBilgi })
+    ]),
+    el('p', { className: 'soru__baslik', text: model.baslik }),
+    el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    el('div', { className: 'soru__secenekler' }, secenekler),
+    cozum,
+    model.secildi !== null
+      ? el('button', {
+          className: 'anlatim__gez anlatim__gez--vurgu',
+          text: model.devamEtiketi,
+          attrs: { type: 'button' },
+          dataset: { dersSoru: 'devam' }
+        })
+      : null
+  ]);
+}
+```
+
+- [ ] **Step 7: `main.js` icine bagla**
+
+Import:
+
+```js
+import { alistirmaSorusu } from './views/ders.js';
+import { soruEkrani } from './ui/ders-dom.js';
+import { alistirmaCevap } from './engines/ders.js';
+import { newBox, promote, demote } from './engines/leitner.js';
+```
+
+Modul durumu:
+
+```js
+// Ekranda duran alistirma sorusu. Cevaplanana kadar degismez; her
+// render'da yeni soru uretmek cocugun okudugu soruyu degistirirdi.
+let dersSoru = null;
+let dersSecildi = null;
+```
+
+`renderDers` icine:
+
+```js
+  if (dersEkran === 'alistirma') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      const ilerleme = state.loadDersIlerleme();
+      const kayit = haftaKaydi(ilerleme, hafta.hafta);
+      if (!dersSoru) {
+        dersSoru = alistirmaSorusu(hafta, KONULAR, kayit, Math.random);
+        dersSecildi = null;
+      }
+      if (dersSoru) {
+        soruEkrani(kok, {
+          baslik: ceviri('ders.practice'),
+          ustBilgi: ceviri('ders.practiceCount', { n: kayit.alistirmaDogru }),
+          soru: dersSoru.soru,
+          secildi: dersSecildi,
+          dogruMu: dersSecildi === dersSoru.soru.dogru,
+          cozumGoster: true,
+          devamEtiketi: ceviri('ders.next'),
+          kapatVar: true
+        }, ceviri);
+        return;
+      }
+      dersEkran = 'hafta';
+    }
+  }
+```
+
+Olaylar:
+
+```js
+  const secenekDugme = e.target.closest('[data-ders-secenek]');
+  if (secenekDugme && dersEkran === 'alistirma') {
+    if (dersSecildi !== null) return;   // ayni soruya iki kez cevap yok
+
+    dersSecildi = Number(secenekDugme.dataset.dersSecenek);
+    const dogruMu = dersSecildi === dersSoru.soru.dogru;
+    const hafta = dersAktifHafta();
+    const kayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
+    const tip = dersSoru.soru.tip;
+    const onceki = kayit.alistirma[tip] ?? newBox();
+    const yeniKutu = dogruMu ? promote(onceki) : demote(onceki);
+
+    const sonuc = alistirmaCevap(kayit, tip, {
+      ...yeniKutu,
+      seen: (onceki.seen ?? 0) + 1,
+      correct: (onceki.correct ?? 0) + (dogruMu ? 1 : 0),
+      wrong: (onceki.wrong ?? 0) + (dogruMu ? 0 : 1)
+    }, dogruMu);
+
+    dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+    ses.efekt(dogruMu ? 'dogru' : 'yanlis');
+    renderDers();
+    return;
+  }
+
+  const soruDugme = e.target.closest('[data-ders-soru]');
+  if (soruDugme && dersEkran === 'alistirma') {
+    if (soruDugme.dataset.dersSoru === 'kapat') {
+      dersSoru = null;
+      dersSecildi = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    dersSoru = null;
+    dersSecildi = null;
+    renderDers();
+    return;
+  }
+```
+
+- [ ] **Step 8: Tum testleri ve tarayiciyi dogrula**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida: hafta kartindaki "Alıştırma" rozetine basinca soru geliyor,
+secenek seciliyor, dogruda yesil ses, yanlista cozum adimlari cikiyor,
+"Devam" yeni soru getiriyor, 10 dogruda rozet yesil oluyor. 10 dogru
+sonrasi yildiz gelmiyor (alistirma yildiz vermez).
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/views/ders.js src/ui/ders-dom.js src/main.js src/core/i18n.js tests/alistirma.test.js
+git commit -m "feat(ders): sinirsiz alistirma ekrani
+
+Leitner kutulari yanlis yapilan soru tipini daha sik getiriyor.
+Agirlik soru uretildikten SONRA uygulaniyor: ureticiye tip zorlamak
+her ureticiye ayni karmasikligi tasirdi, burada tek yerde duruyor ve
+12 denemeden sonra elde olanla devam ediyor, cocugu bekletmiyor.
+
+Ekrandaki soru cevaplanana kadar sabit; her render'da yeni soru
+uretmek cocugun okudugu soruyu degistirirdi."
+```
