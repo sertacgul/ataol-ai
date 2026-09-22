@@ -134,3 +134,40 @@ export function gezinmeHedefleri(takvim, durum) {
   // tip === 'once': yil henuz baslamadi, gidilecek bir hafta yok.
   return { geri: null, ileri: null };
 }
+
+/**
+ * Anlatim ekraninin modeli.
+ *
+ * Bir hafta iki konuya baglanabildigi icin adimlar duzlestirilerek tek
+ * bir sira haline getirilir. Cocuk icin bu tek bir anlatimdir; iki
+ * konudan geldigini bilmesine gerek yok, ama her adim kendi konu adini
+ * tasir ki basliktan nerede oldugunu anlasin.
+ */
+export function anlatimModeli(hafta, konular, ilerleme, index) {
+  const adimlar = hafta.dersler.flatMap((d) => {
+    const konu = konular[d.konu] ?? null;
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev) return [];
+    return sev.anlatim.map((a) => ({
+      kimlik: adimKimligi(d.konu, d.seviye, a.id),
+      metin: a.metin,
+      gorsel: a.gorsel ?? null,
+      konuId: d.konu,
+      konuAd: konu.ad.tr,
+      seviye: d.seviye
+    }));
+  });
+
+  const toplam = adimlar.length;
+  const guvenli = toplam === 0 ? 0 : Math.max(0, Math.min(index, toplam - 1));
+  const kayit = haftaKaydi(ilerleme, hafta.hafta);
+
+  return {
+    adimlar,
+    index: guvenli,
+    aktif: toplam === 0 ? null : adimlar[guvenli],
+    toplam,
+    sonMu: toplam > 0 && guvenli === toplam - 1,
+    tamamlanan: kayit.anlatim
+  };
+}

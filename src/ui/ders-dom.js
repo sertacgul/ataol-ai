@@ -123,3 +123,60 @@ export function haftaEkrani(kok, model, ceviri) {
 
   mount(kok, parcalar);
 }
+
+/**
+ * Anlatim ekrani.
+ *
+ * Metin buyuk ve seyrek yazilir; cocuk hem okuyup hem dinleyebilsin
+ * diye. Adim sayaci ustte durur ki nerede oldugunu bilsin, bitmeyen
+ * bir sey hissi vermesin.
+ */
+export function anlatimEkrani(kok, model, ceviri) {
+  if (!model.aktif) {
+    mount(kok, [el('p', { className: 'ders-kart__not', text: ceviri('ders.notReady') })]);
+    return;
+  }
+
+  const adim = model.aktif;
+
+  const ust = el('div', { className: 'anlatim__ust' }, [
+    el('button', {
+      className: 'anlatim__kapat',
+      text: ceviri('ders.close'),
+      attrs: { type: 'button' },
+      dataset: { dersAdim: 'kapat' }
+    }),
+    el('p', { className: 'anlatim__sayac', text: ceviri('ders.stepOf', { n: model.index + 1, t: model.toplam }) })
+  ]);
+
+  const govde = el('div', { className: 'anlatim__govde' }, [
+    el('p', { className: 'anlatim__konu', text: adim.konuAd }),
+    el('p', { className: 'anlatim__metin', text: adim.metin })
+  ]);
+
+  const dinle = el('button', {
+    className: 'anlatim__dinle',
+    attrs: { type: 'button' },
+    dataset: { dersAdim: 'dinle' }
+  }, [
+    el('span', { className: 'material-symbols-rounded', text: 'volume_up' }),
+    el('span', { text: ceviri('ders.listen') })
+  ]);
+
+  const alt = el('div', { className: 'anlatim__alt' }, [
+    el('button', {
+      className: 'anlatim__gez',
+      text: ceviri('ders.back'),
+      attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+      dataset: { dersAdim: 'geri' }
+    }),
+    el('button', {
+      className: 'anlatim__gez anlatim__gez--vurgu',
+      text: model.sonMu ? ceviri('ders.finishLesson') : ceviri('ders.forward'),
+      attrs: { type: 'button' },
+      dataset: { dersAdim: model.sonMu ? 'bitir' : 'ileri' }
+    })
+  ]);
+
+  mount(kok, [ust, govde, dinle, alt]);
+}

@@ -45,9 +45,10 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu, gezinmeHedefleri } from './views/ders.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani } from './ui/ders-dom.js';
+import { haftaKaydi, adimTamamla } from './engines/ders.js';
 import { createSes } from './ui/ses.js';
 
 let state;
@@ -70,6 +71,11 @@ let seciliOdulEmoji = null;
 // Ders sekmesi. Gorulen hafta ekranda gezinmeyle degisir; null ise
 // tarihten (ya da ebeveynin sabitledigi haftadan) bulunur.
 let dersGorulenHafta = null;
+
+// Ders sekmesinde acik olan ic ekran. Sekmenin kendisi tek bir
+// gorunumdur; icindeki ekranlar bu degiskene gore degisir.
+let dersEkran = 'hafta';
+let dersAdimIndex = 0;
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -665,8 +671,63 @@ function dersModeli() {
   };
 }
 
+function dersAktifHafta() {
+  const model = dersModeli();
+  return model.tip === 'ders' ? haftaNo(TAKVIM, model.kart.no) : null;
+}
+
 function renderDers() {
-  haftaEkrani(document.getElementById('view-ders'), dersModeli(), ceviri);
+  const kok = document.getElementById('view-ders');
+
+  if (dersEkran === 'anlatim') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      anlatimEkrani(kok, anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex), ceviri);
+      return;
+    }
+  }
+
+  haftaEkrani(kok, dersModeli(), ceviri);
+}
+
+// Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
+// cihaz TTS'i okur; ses.oku bu secimi kendisi yapar.
+function dersAdimiSeslendir() {
+  const ilerleme = state.loadDersIlerleme();
+  if (!ilerleme.ayar.sesAcik) return;
+
+  const hafta = dersAktifHafta();
+  if (!hafta) return;
+
+  const model = anlatimModeli(hafta, KONULAR, ilerleme, dersAdimIndex);
+  if (!model.aktif) return;
+
+  ses.dur();
+  ses.oku({ metin: model.aktif.metin, ses: model.aktif.kimlik });
+}
+
+function dersIlerlemeYaz(haftaNumarasi, kayit) {
+  const ilerleme = state.loadDersIlerleme();
+  state.saveDersIlerleme({
+    ...ilerleme,
+    haftalar: { ...ilerleme.haftalar, [String(haftaNumarasi)]: kayit }
+  });
+}
+
+/**
+ * Ders yildizi gunun ilerlemesine dogrudan yazilir, rutin karti
+ * uzerinden degil.
+ *
+ * Rutin kartlari blok sirasina gore kilitleniyor (cardStates icindeki
+ * previousClosed mantigi). Ders sekmesi serbest erisimli oldugu icin
+ * ikisini baglasaydik "sabah dersi yaptim ama ogle blogu acilmadi,
+ * yildizim gelmedi" hatasi cikardi.
+ */
+function dersYildizVer(miktar) {
+  const anahtar = dayKey(now(), profile.settings?.dayResetHour ?? 4);
+  const gun = state.loadDayProgress(anahtar);
+  state.saveDayProgress(anahtar, { ...gun, stars: gun.stars + miktar });
 }
 
 function render() {
@@ -2845,6 +2906,8 @@ document.getElementById('app').addEventListener('click', (e) => {
   const dersGit = e.target.closest('[data-ders-git]');
   if (dersGit) {
     dersGorulenHafta = Number(dersGit.dataset.dersGit);
+    dersEkran = 'hafta';
+    dersAdimIndex = 0;
     renderDers();
     return;
   }
@@ -2853,7 +2916,66 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (dersBasla) {
     // iOS'ta ses ancak kullanici dokunusunun icinde baslatilabilir.
     ses.hazirla();
-    // Anlatim ekrani Task 13'te baglanacak.
+    dersEkran = 'anlatim';
+    dersAdimIndex = 0;
+    renderDers();
+    dersAdimiSeslendir();
+    return;
+  }
+
+  const dersAdimDugme = e.target.closest('[data-ders-adim]');
+  if (dersAdimDugme) {
+    const eylem = dersAdimDugme.dataset.dersAdim;
+    const hafta = dersAktifHafta();
+    if (!hafta) return;
+
+    const ilerleme = state.loadDersIlerleme();
+    const model = anlatimModeli(hafta, KONULAR, ilerleme, dersAdimIndex);
+
+    if (eylem === 'kapat') {
+      ses.dur();
+      dersEkran = 'hafta';
+      renderDers();
+      return;
+    }
+
+    if (eylem === 'dinle') {
+      dersAdimiSeslendir();
+      return;
+    }
+
+    if (eylem === 'geri') {
+      dersAdimIndex = Math.max(0, dersAdimIndex - 1);
+      renderDers();
+      dersAdimiSeslendir();
+      return;
+    }
+
+    // 'ileri' ve 'bitir': once icinde bulunulan adim tamamlanmis
+    // isaretlenir. Cocuk adimi OKUDUKTAN sonra ilerledigi icin
+    // isaretleme ileri giderken yapilir, ekrana gelirken degil.
+    const sonuc = adimTamamla(
+      haftaKaydi(ilerleme, hafta.hafta),
+      model.aktif.kimlik,
+      model.adimlar.map((a) => a.kimlik)
+    );
+    dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+    if (sonuc.kazanilanYildiz > 0) {
+      dersYildizVer(sonuc.kazanilanYildiz);
+      ses.efekt('kutlama');
+    }
+
+    if (eylem === 'bitir') {
+      ses.dur();
+      dersEkran = 'hafta';
+      dersAdimIndex = 0;
+      render();
+      return;
+    }
+
+    dersAdimIndex += 1;
+    renderDers();
+    dersAdimiSeslendir();
     return;
   }
 

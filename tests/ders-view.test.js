@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TAKVIM, TATILLER } from '../src/data/mufredat.js';
-import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri } from '../src/views/ders.js';
+import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli } from '../src/views/ders.js';
 
 const SAHTE_KONULAR = {
   'temel-cizimler': {
@@ -107,4 +107,56 @@ test('gezinmeHedefleri normal haftada iki komsu haftayi da dondurur', () => {
   const h = gezinmeHedefleri(TAKVIM, durum);
   assert.equal(h.geri, 19);
   assert.equal(h.ileri, 21);
+});
+
+const IKI_KONU = {
+  ...SAHTE_KONULAR,
+  'dikdortgen': {
+    id: 'dikdortgen',
+    ad: { tr: 'Dikdörtgen' },
+    seviyeler: [{ seviye: 1, baslik: 'Çevre', anlatim: [{ id: 'a1', metin: 'Çevre...' }] }]
+  }
+};
+
+test('anlatimModeli adimlari sirayla duzlestirir', () => {
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 0);
+  assert.equal(m.toplam, 2);
+  assert.equal(m.adimlar[0].kimlik, 'temel-cizimler-1-a1');
+  assert.equal(m.adimlar[1].kimlik, 'temel-cizimler-1-a2');
+  assert.equal(m.aktif.kimlik, 'temel-cizimler-1-a1');
+  assert.equal(m.sonMu, false);
+});
+
+test('anlatimModeli iki konulu haftada iki konunun adimlarini birlestirir', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 14);
+  const m = anlatimModeli(hafta, IKI_KONU, { haftalar: {} }, 0);
+  // hafta 14: dort-islem-problem (yazilmamis) + dikdortgen seviye 1
+  assert.equal(m.toplam, 1);
+  assert.equal(m.adimlar[0].kimlik, 'dikdortgen-1-a1');
+  assert.equal(m.adimlar[0].konuAd, 'Dikdörtgen');
+});
+
+test('anlatimModeli son adimi isaretler', () => {
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 1);
+  assert.equal(m.sonMu, true);
+});
+
+test('anlatimModeli index sinirlari disina tasmaz', () => {
+  const ust = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 99);
+  assert.equal(ust.index, 1, 'son adimda kirpilmali');
+  const alt = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, -5);
+  assert.equal(alt.index, 0, 'ilk adimda kirpilmali');
+});
+
+test('anlatimModeli tamamlanan adimlari isaretler', () => {
+  const ilerleme = { haftalar: { 1: { anlatim: ['temel-cizimler-1-a1'] } } };
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, ilerleme, 0);
+  assert.deepEqual(m.tamamlanan, ['temel-cizimler-1-a1']);
+});
+
+test('anlatimModeli icerigi olmayan haftada bos doner', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 20);
+  const m = anlatimModeli(hafta, SAHTE_KONULAR, { haftalar: {} }, 0);
+  assert.equal(m.toplam, 0);
+  assert.equal(m.aktif, null);
 });
