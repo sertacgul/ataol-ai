@@ -175,9 +175,11 @@ test('dur calan dosyayi duraklatir ve TTS i iptal eder', async () => {
   const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
   await ses.oku({ metin: 'Merhaba', ses: 'temel-cizimler-1-a1' });
 
+  const onceBefore = tts.iptalSayisi();
   ses.dur();
 
   assert.equal(Audio.ornekler[0].duraklatildi, true);
+  assert.equal(tts.iptalSayisi(), onceBefore + 1);
 });
 
 test('tarayici yetenekleri yoksa cokmez', async () => {
