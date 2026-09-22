@@ -239,13 +239,17 @@ export function ornekEkrani(kok, model, ceviri) {
  *   devamEtiketi, kapatVar
  * }
  *
- * secildi null ise henuz cevaplanmamistir. Cevaplandiktan sonra
- * secenekler yeniden cizilir ve dogru olan isaretlenir; yanlis secilen
- * ayrica kirmizi gosterilir ki cocuk neyi sectigini gorsun.
+ * secildi null ise henuz cevaplanmamistir. Secim isareti (--secili)
+ * cozumGoster'dan BAGIMSIZDIR: cocuk dokunusunun kaydedildigini her
+ * zaman gormeli, aksi halde geciktirilmis geri bildirimli sinav
+ * modunda (cozumGoster: false) ekran tiklamaya tepkisiz gorunur.
+ * Dogru/yanlis renklendirmesi ise yalniz cozumGoster true iken eklenir:
+ * o an cevabin doğruluğu aciklaniyor demektir.
  */
 export function soruEkrani(kok, model, ceviri) {
   const secenekler = model.soru.secenekler.map((metin, i) => {
     let sinif = 'soru__secenek';
+    if (i === model.secildi) sinif += ' soru__secenek--secili';
     if (model.secildi !== null && model.cozumGoster) {
       if (i === model.soru.dogru) sinif += ' soru__secenek--dogru';
       else if (i === model.secildi) sinif += ' soru__secenek--yanlis';
