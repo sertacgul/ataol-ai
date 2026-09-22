@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { soruUret, ureticiVarMi, karistir, secmeliKur } from '../src/engines/uretici/index.js';
+import { soruUret, ureticiVarMi, karistir, secmeliKur, URETICILER } from '../src/engines/uretici/index.js';
 import { tohumluRng, sozlesmeyiDogrula } from './yardim/soru-sozlesmesi.js';
 
 test('bilinmeyen uretici null dondurur, atmaz', () => {
@@ -86,4 +86,16 @@ test('secmeliKur yetersiz celdiriciyle patlar', () => {
     },
     /yeterli celdirici yok/
   );
+});
+
+test('Faz 1 ureticileri kayitlidir', () => {
+  for (const id of ['temel-cizimler', 'aci-olcme', 'cokgenler-cember']) {
+    assert.ok(ureticiVarMi(id), `${id} kayitli degil`);
+    assert.equal(typeof URETICILER[id], 'function');
+  }
+});
+
+test('soruUret kayitli ureticiyi cagirir', () => {
+  const soru = soruUret('aci-olcme', 1, tohumluRng(42));
+  sozlesmeyiDogrula(soru, 'soruUret');
 });

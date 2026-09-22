@@ -14,6 +14,7 @@
 
 import { uret as temelCizimler } from './temel-cizimler.js';
 import { uret as aciOlcme } from './aci-olcme.js';
+import { uret as cokgenlerCember } from './cokgenler-cember.js';
 
 export { BICIMLER, sec, karistir, secmeliKur } from './ortak.js';
 
@@ -21,7 +22,8 @@ export { BICIMLER, sec, karistir, secmeliKur } from './ortak.js';
 // once import satiri, sonra bu nesneye bir giris.
 export const URETICILER = {
   'temel-cizimler': temelCizimler,
-  'aci-olcme': aciOlcme
+  'aci-olcme': aciOlcme,
+  'cokgenler-cember': cokgenlerCember
 };
 
 export function ureticiVarMi(id) {
