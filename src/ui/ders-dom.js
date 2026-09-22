@@ -63,21 +63,29 @@ function haftaKartiDom(kart, ceviri) {
   ]);
 }
 
-function gezinme(no, ceviri) {
-  return el('div', { className: 'ders-gezinme' }, [
-    el('button', {
-      className: 'ders-gezinme__dugme',
-      text: ceviri('ders.prev'),
-      attrs: { type: 'button' },
-      dataset: { dersGezin: 'geri', dersHafta: String(no) }
-    }),
-    el('button', {
-      className: 'ders-gezinme__dugme',
-      text: ceviri('ders.next'),
-      attrs: { type: 'button' },
-      dataset: { dersGezin: 'ileri', dersHafta: String(no) }
-    })
-  ]);
+// hedefler: { geri, ileri } — views/ders.js#gezinmeHedefleri ciktisi.
+// Hedefi null olan yon hic cizilmez: gidecek yeri olmayan bir dugme
+// cocuk icin bos bir tiklamadir.
+function gezinme(hedefler, ceviri) {
+  const geri = hedefler.geri !== null
+    ? el('button', {
+        className: 'ders-gezinme__dugme',
+        text: ceviri('ders.prev'),
+        attrs: { type: 'button' },
+        dataset: { dersGit: String(hedefler.geri) }
+      })
+    : null;
+
+  const ileri = hedefler.ileri !== null
+    ? el('button', {
+        className: 'ders-gezinme__dugme',
+        text: ceviri('ders.next'),
+        attrs: { type: 'button' },
+        dataset: { dersGit: String(hedefler.ileri) }
+      })
+    : null;
+
+  return el('div', { className: 'ders-gezinme' }, [geri, ileri]);
 }
 
 function bilgiKarti(baslik, metin) {
@@ -90,8 +98,8 @@ function bilgiKarti(baslik, metin) {
 /**
  * Hafta ekranini cizer.
  *
- * model: { tip, kart?, ad?, dilTr } — views/ders.js ciktisindan main.js
- * tarafindan hazirlanir.
+ * model: { tip, kart?, ad?, hedefler, dilTr } — views/ders.js
+ * ciktisindan main.js tarafindan hazirlanir.
  */
 export function haftaEkrani(kok, model, ceviri) {
   const parcalar = [];
@@ -102,15 +110,15 @@ export function haftaEkrani(kok, model, ceviri) {
 
   if (model.tip === 'ders') {
     parcalar.push(haftaKartiDom(model.kart, ceviri));
-    parcalar.push(gezinme(model.kart.no, ceviri));
+    parcalar.push(gezinme(model.hedefler, ceviri));
   } else if (model.tip === 'tatil') {
     parcalar.push(bilgiKarti(ceviri('ders.holiday'), ceviri('ders.holidayNote', { ad: model.ad })));
-    parcalar.push(gezinme(model.sonHaftaNo, ceviri));
+    parcalar.push(gezinme(model.hedefler, ceviri));
   } else if (model.tip === 'once') {
     parcalar.push(bilgiKarti(ceviri('ders.holiday'), ceviri('ders.beforeStart')));
   } else {
     parcalar.push(bilgiKarti(ceviri('ders.holiday'), ceviri('ders.afterEnd')));
-    parcalar.push(gezinme(model.sonHaftaNo, ceviri));
+    parcalar.push(gezinme(model.hedefler, ceviri));
   }
 
   mount(kok, parcalar);

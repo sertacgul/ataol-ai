@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TAKVIM, TATILLER } from '../src/data/mufredat.js';
-import { adimKimligi, haftaKarti, ekranDurumu } from '../src/views/ders.js';
+import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri } from '../src/views/ders.js';
 
 const SAHTE_KONULAR = {
   'temel-cizimler': {
@@ -79,4 +79,32 @@ test('ekranDurumu sabitHafta tatilde bile dersi gosterir', () => {
   const e = ekranDurumu(TAKVIM, TATILLER, '2026-11-18', 5);
   assert.equal(e.tip, 'ders');
   assert.equal(e.hafta.hafta, 5);
+});
+
+test('gezinmeHedefleri tatilde onceki ve sonraki ders haftasini bulur', () => {
+  const durum = ekranDurumu(TAKVIM, TATILLER, '2026-11-18', null); // 1. Donem Ara Tatili
+  const h = gezinmeHedefleri(TAKVIM, durum);
+  assert.equal(h.geri, 9);
+  assert.equal(h.ileri, 10);
+});
+
+test('gezinmeHedefleri ilk haftada geri hedefi yok', () => {
+  const durum = ekranDurumu(TAKVIM, TATILLER, '2026-09-16', null); // 1. hafta
+  const h = gezinmeHedefleri(TAKVIM, durum);
+  assert.equal(h.geri, null);
+  assert.equal(h.ileri, 2);
+});
+
+test('gezinmeHedefleri dersi olan son haftada ileri hedefi yok', () => {
+  const durum = ekranDurumu(TAKVIM, TATILLER, '2027-06-16', null); // 36. hafta, 37. haftanin dersi yok
+  const h = gezinmeHedefleri(TAKVIM, durum);
+  assert.equal(h.geri, 35);
+  assert.equal(h.ileri, null);
+});
+
+test('gezinmeHedefleri normal haftada iki komsu haftayi da dondurur', () => {
+  const durum = ekranDurumu(TAKVIM, TATILLER, '2027-02-15', null); // 20. hafta
+  const h = gezinmeHedefleri(TAKVIM, durum);
+  assert.equal(h.geri, 19);
+  assert.equal(h.ileri, 21);
 });

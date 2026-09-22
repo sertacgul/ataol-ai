@@ -45,8 +45,8 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu } from './views/ders.js';
-import { haftaGezin, haftaNo } from './engines/mufredat.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri } from './views/ders.js';
+import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani } from './ui/ders-dom.js';
 import { createSes } from './ui/ses.js';
 
@@ -641,7 +641,6 @@ function bugununTarihi() {
 function dersModeli() {
   const ilerleme = state.loadDersIlerleme();
   const sabit = ilerleme.ayar.sabitHafta;
-  const sonHaftaNo = TAKVIM[TAKVIM.length - 1].hafta;
 
   const hafta = dersGorulenHafta === null
     ? null
@@ -651,14 +650,17 @@ function dersModeli() {
     ? { tip: 'ders', hafta }
     : ekranDurumu(TAKVIM, TATILLER, bugununTarihi(), sabit);
 
+  const hedefler = gezinmeHedefleri(TAKVIM, durum);
+
   if (durum.tip !== 'ders') {
-    return { ...durum, sonHaftaNo, dilTr: dil() === 'tr' };
+    return { ...durum, hedefler, dilTr: dil() === 'tr' };
   }
 
   const unite = UNITELER.find((u) => u.id === durum.hafta.unite);
   return {
     tip: 'ders',
     kart: haftaKarti(durum.hafta, KONULAR, unite?.ad ?? '', ilerleme),
+    hedefler,
     dilTr: dil() === 'tr'
   };
 }
@@ -2840,15 +2842,10 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
-  const dersGezin = e.target.closest('[data-ders-gezin]');
-  if (dersGezin) {
-    const su = Number(dersGezin.dataset.dersHafta);
-    const yon = dersGezin.dataset.dersGezin === 'ileri' ? 1 : -1;
-    const hedef = haftaGezin(TAKVIM, su, yon);
-    if (hedef) {
-      dersGorulenHafta = hedef.hafta;
-      renderDers();
-    }
+  const dersGit = e.target.closest('[data-ders-git]');
+  if (dersGit) {
+    dersGorulenHafta = Number(dersGit.dataset.dersGit);
+    renderDers();
     return;
   }
 
