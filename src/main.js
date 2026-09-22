@@ -85,6 +85,13 @@ let dersWidget = null;
 let dersEtkilesimMesaj = '';
 // 'serbest' modda secili arac; diger modlarda null (arac cubugu yok).
 let dersEtkilesimArac = null;
+// Acik widget'in hangi (hafta, konu, seviye) icin kuruldugu. render()
+// cok yerden (renderIfStale, gun/blok siniri, vs.) tekrar cagrilabilir;
+// renderDers() her seferinde ayni sey icin widget'i yikip
+// yeniden kurarsa cocugun cizdigi her sey silinir. Bu anahtar, "gosterilen
+// sey gercekten degisti mi" sorusunu cevaplamak icin tutulur; widget
+// kapatilinca dersWidgetKapat() bunu da sifirlar.
+let dersWidgetAnahtar = null;
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -712,7 +719,17 @@ function renderDers() {
     const sev = ders ? KONULAR[ders.konu].seviyeler.find((s) => s.seviye === ders.seviye) : null;
 
     if (sev) {
+      const anahtar = `${hafta.hafta}:${ders.konu}:${ders.seviye}`;
+
+      // Widget zaten ayni (hafta, konu, seviye) icin acik: renderDers()
+      // baska bir sebeple (renderIfStale, gun/blok siniri, sekme gecisi)
+      // tekrar cagrilmis olabilir. Gosterilen sey degismedigi surece
+      // tuvale ve widget'a dokunmadan cikilir; aksi halde her tetikleyici
+      // cocugun cizdigini sifirlardi.
+      if (dersWidget && dersWidgetAnahtar === anahtar) return;
+
       dersWidgetKapat();
+      dersWidgetAnahtar = anahtar;
       // Sadece 'serbest' modda arac secimi anlamli (bkz. ders-dom.js
       // aracCubugu yorumu); widget her acilista kendi varsayilanina
       // donuyor, o yuzden secim burada da varsayilana sifirlanir.
@@ -747,6 +764,10 @@ function dersWidgetKapat() {
     dersWidget.yokEt();
     dersWidget = null;
   }
+  // Kayit hep sifirlanir, dersWidget zaten null olsa bile: aksi halde
+  // sonraki ayni (hafta, konu, seviye) icin gelen bir kurulum, hala acik
+  // bir widget varmis gibi yanlislikla atlanabilirdi.
+  dersWidgetAnahtar = null;
 }
 
 // Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
