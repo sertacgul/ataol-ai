@@ -111,6 +111,26 @@ export function haftaEkrani(kok, model, ceviri) {
 
   if (model.tip === 'ders') {
     parcalar.push(haftaKartiDom(model.kart, ceviri));
+    if (model.sinav) {
+      parcalar.push(
+        el('div', { className: 'ders-sinav' }, [
+          el('p', {
+            className: 'ders-sinav__baslik',
+            text: model.sinav.puan !== null
+              ? ceviri('ders.unitExamScore', { n: model.sinav.puan })
+              : ceviri('ders.unitExam')
+          }),
+          model.sinav.acik
+            ? el('button', {
+                className: 'ders-sinav__gir',
+                text: ceviri('ders.unitExamStart'),
+                attrs: { type: 'button' },
+                dataset: { dersSinavBasla: model.sinav.sinavId }
+              })
+            : el('p', { className: 'ders-kart__not', text: model.sinav.sebep })
+        ])
+      );
+    }
     parcalar.push(gezinme(model.hedefler, ceviri));
   } else if (model.tip === 'tatil') {
     parcalar.push(bilgiKarti(ceviri('ders.holiday'), ceviri('ders.holidayNote', { ad: model.ad })));
@@ -232,27 +252,24 @@ export function ornekEkrani(kok, model, ceviri) {
 }
 
 /**
- * Soru ekrani. Alistirma, quiz ve sinav ayni ekrani kullanir.
+ * Secenek dugmelerini cizer. soruEkrani ve sinavEkrani tarafindan
+ * ortak kullanilir ki secim/dogru/yanlis siniflandirma kurali iki
+ * yerde ayri ayri tutulup birbirinden sapmasin.
  *
- * model: {
- *   baslik, ustBilgi, soru, secildi, dogruMu, cozumGoster,
- *   devamEtiketi, kapatVar
- * }
- *
- * secildi null ise henuz cevaplanmamistir. Secim isareti (--secili)
- * cozumGoster'dan BAGIMSIZDIR: cocuk dokunusunun kaydedildigini her
- * zaman gormeli, aksi halde geciktirilmis geri bildirimli sinav
- * modunda (cozumGoster: false) ekran tiklamaya tepkisiz gorunur.
- * Dogru/yanlis renklendirmesi ise yalniz cozumGoster true iken eklenir:
- * o an cevabin doğruluğu aciklaniyor demektir.
+ * Secim isareti (--secili) cozumGoster'dan BAGIMSIZDIR: cocuk
+ * dokunusunun kaydedildigini her zaman gormeli, aksi halde
+ * geciktirilmis geri bildirimli sinav modunda (cozumGoster: false)
+ * ekran tiklamaya tepkisiz gorunur. Dogru/yanlis renklendirmesi ise
+ * yalniz cozumGoster true iken eklenir: o an cevabin doğruluğu
+ * aciklaniyor demektir.
  */
-export function soruEkrani(kok, model, ceviri) {
-  const secenekler = model.soru.secenekler.map((metin, i) => {
+function secenekListesi(soru, secildi, cozumGoster) {
+  return soru.secenekler.map((metin, i) => {
     let sinif = 'soru__secenek';
-    if (i === model.secildi) sinif += ' soru__secenek--secili';
-    if (model.secildi !== null && model.cozumGoster) {
-      if (i === model.soru.dogru) sinif += ' soru__secenek--dogru';
-      else if (i === model.secildi) sinif += ' soru__secenek--yanlis';
+    if (i === secildi) sinif += ' soru__secenek--secili';
+    if (secildi !== null && cozumGoster) {
+      if (i === soru.dogru) sinif += ' soru__secenek--dogru';
+      else if (i === secildi) sinif += ' soru__secenek--yanlis';
     }
     return el('button', {
       className: sinif,
@@ -261,6 +278,20 @@ export function soruEkrani(kok, model, ceviri) {
       dataset: { dersSecenek: String(i) }
     });
   });
+}
+
+/**
+ * Soru ekrani. Alistirma, quiz ve sinav ayni ekrani kullanir.
+ *
+ * model: {
+ *   baslik, ustBilgi, soru, secildi, dogruMu, cozumGoster,
+ *   devamEtiketi, kapatVar
+ * }
+ *
+ * secildi null ise henuz cevaplanmamistir.
+ */
+export function soruEkrani(kok, model, ceviri) {
+  const secenekler = secenekListesi(model.soru, model.secildi, model.cozumGoster);
 
   const cozum = model.cozumGoster && model.secildi !== null
     ? el('div', { className: 'soru__cozum' }, [
@@ -321,6 +352,54 @@ function aracCubugu(secili, ceviri) {
       })
     )
   );
+}
+
+/**
+ * Sinav ekrani. Quiz'den uc farki var:
+ *   1. Cevaptan sonra cozum GOSTERILMEZ (olcme araci)
+ *   2. Sorular arasinda ileri geri gezinilebilir
+ *   3. Bitirmek ayri bir dugme ve bos soru varsa uyarir
+ */
+export function sinavEkrani(kok, model, ceviri) {
+  const secenekler = secenekListesi(model.soru, model.secildi, false);
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersSinav: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.quizOf', { n: model.index + 1, t: model.toplam }) })
+    ]),
+    el('p', { className: 'soru__baslik', text: ceviri('ders.unitExam') }),
+    el('p', { className: 'sinav__not', text: ceviri('ders.examNote') }),
+    el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
+    el('div', { className: 'soru__secenekler' }, secenekler),
+    model.uyari ? el('p', { className: 'sinav__uyari', text: model.uyari }) : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.back'),
+        attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+        dataset: { dersSinav: 'geri' }
+      }),
+      model.index === model.toplam - 1
+        ? el('button', {
+            className: 'anlatim__gez anlatim__gez--vurgu',
+            text: ceviri('ders.finishExam'),
+            attrs: { type: 'button' },
+            dataset: { dersSinav: 'bitir' }
+          })
+        : el('button', {
+            className: 'anlatim__gez anlatim__gez--vurgu',
+            text: ceviri('ders.forward'),
+            attrs: { type: 'button' },
+            dataset: { dersSinav: 'ileri' }
+          })
+    ])
+  ]);
 }
 
 /**

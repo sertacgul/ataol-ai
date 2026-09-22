@@ -45,11 +45,11 @@ import { rozetDurumu, seriHesapla } from './engines/rozetler.js';
 import { calistir as kodCalistir, SEVIYELER as KOD_SEVIYELER } from './engines/kodlama.js';
 import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
-import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu } from './views/ders.js';
+import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu, uniteSinaviDurumu } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sonucEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
-import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, QUIZ_GECME } from './engines/ders.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME } from './engines/ders.js';
 import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
 
@@ -89,6 +89,11 @@ let dersSecildi = null;
 // ekrani gosteriliyordur.
 let dersSinav = null;
 let dersSinavSonuc = null;
+
+// Sinavda gorulen soru. Quiz'de ilk bos soruya otomatik gidilir ama
+// sinavda cocuk istedigi soruya donebilmeli, bu yuzden ayri tutulur.
+let dersSinavIndex = 0;
+let dersSinavUyari = '';
 
 // Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
 // dinleyicileri birikir ve uygulama zamanla yavaslar.
@@ -693,6 +698,7 @@ function dersModeli() {
   return {
     tip: 'ders',
     kart: haftaKarti(durum.hafta, KONULAR, unite?.ad ?? '', ilerleme),
+    sinav: unite ? uniteSinaviDurumu(TAKVIM, UNITELER, unite.id, ilerleme, KONULAR) : null,
     hedefler,
     dilTr: dil() === 'tr'
   };
@@ -794,6 +800,17 @@ function renderDers() {
     }
   }
 
+  if (dersEkran === 'sinav' && dersSinav && !dersSinavSonuc) {
+    sinavEkrani(kok, {
+      soru: dersSinav.sorular[dersSinavIndex],
+      secildi: dersSinav.cevaplar[dersSinavIndex],
+      index: dersSinavIndex,
+      toplam: dersSinav.sorular.length,
+      uyari: dersSinavUyari
+    }, ceviri);
+    return;
+  }
+
   if (dersEkran === 'quiz' || dersEkran === 'sinav') {
     if (dersSinavSonuc) {
       sonucEkrani(kok, dersSinavSonuc, ceviri);
@@ -870,6 +887,16 @@ function dersYildizVer(miktar) {
   state.saveDayProgress(anahtar, { ...gun, stars: gun.stars + miktar });
 }
 
+// Bir haftanin quiz kaynak listesi: o haftadaki (hazir icerigi olan)
+// her ders bir kaynaktir, agirligi esittir. Quiz baslatma iki yerden
+// cagrildigi icin (asama dugmesi ve sonuc ekranindan "tekrar dene")
+// burada tek yerde tutulur, iki kopya birbirinden sapmasin.
+function haftaninKaynaklari(hafta) {
+  return hafta.dersler
+    .filter((d) => KONULAR[d.konu])
+    .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
+}
+
 // Quizi bitirir: puanlar, ilerlemeye yazar, yildiz kazanildiysa verir
 // ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
 // verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
@@ -898,6 +925,46 @@ function dersSinavBitir() {
       zayif: k.dogru / k.toplam < 0.7
     }))
   };
+  renderDers();
+}
+
+// Unite sinavini bitirir. Quiz'den farki: yildiz sinavBitir icinden
+// gelir (uniteSinavi miktari) ve sinav tekrar girilse bile gecilmis bir
+// sinav yildizi ikinci kez odemez.
+function dersUniteSinaviBitir() {
+  const p = puanla(dersSinav);
+  const model = dersModeli();
+  const sinavId = model.sinav?.sinavId ?? 'unite-bilinmeyen';
+  const ilerleme = state.loadDersIlerleme();
+
+  const sonuc = sinavBitir(ilerleme.sinavlar, sinavId, {
+    puan: p.yuzde,
+    tarih: bugununTarihi(),
+    tip: 'unite'
+  });
+  state.saveDersIlerleme({ ...ilerleme, sinavlar: sonuc.sinavlar });
+
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+  }
+
+  dersSinavSonuc = {
+    baslik: ceviri('ders.unitExam'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: dersSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: Object.entries(p.konuBazli).map(([id, k]) => ({
+      id,
+      ad: KONULAR[id]?.ad?.tr ?? id,
+      dogru: k.dogru,
+      toplam: k.toplam,
+      zayif: k.dogru / k.toplam < 0.6
+    }))
+  };
+  dersSinavUyari = '';
   renderDers();
 }
 
@@ -3230,15 +3297,30 @@ document.getElementById('app').addEventListener('click', (e) => {
 
     if (dersEkran === 'quiz') {
       const hafta = dersAktifHafta();
-      const kaynaklar = hafta.dersler
-        .filter((d) => KONULAR[d.konu])
-        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
-      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
       dersSinavSonuc = null;
     }
 
     renderDers();
     if (dersEkran === 'anlatim') dersAdimiSeslendir();
+    return;
+  }
+
+  const sinavBaslaDugme = e.target.closest('[data-ders-sinav-basla]');
+  if (sinavBaslaDugme) {
+    const uniteId = sinavBaslaDugme.dataset.dersSinavBasla.replace(/^unite-/, '');
+    ses.hazirla();
+    dersSinav = sinavKur({
+      kaynaklar: agirlikHesapla(TAKVIM, uniteId),
+      soruSayisi: 20,
+      gecmeNotu: SINAV_GECME,
+      aninda: false
+    }, Math.random);
+    dersSinavIndex = 0;
+    dersSinavUyari = '';
+    dersSinavSonuc = null;
+    dersEkran = 'sinav';
+    renderDers();
     return;
   }
 
@@ -3282,6 +3364,13 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  if (secenekDugme && dersEkran === 'sinav') {
+    dersSinav = sinavCevapla(dersSinav, dersSinavIndex, Number(secenekDugme.dataset.dersSecenek));
+    ses.efekt('tik');   // dogru/yanlis SOYLENMEZ, bu bir olcme
+    renderDers();
+    return;
+  }
+
   if (secenekDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
     const i = dersSinav.cevaplar.findIndex((c) => c === null);
     const index = i === -1 ? dersSinav.sorular.length - 1 : i;
@@ -3311,6 +3400,41 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const sinavDugme = e.target.closest('[data-ders-sinav]');
+  if (sinavDugme) {
+    const eylem = sinavDugme.dataset.dersSinav;
+
+    if (eylem === 'kapat') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    if (eylem === 'geri') {
+      dersSinavIndex = Math.max(0, dersSinavIndex - 1);
+      dersSinavUyari = '';
+      renderDers();
+      return;
+    }
+    if (eylem === 'ileri') {
+      dersSinavIndex = Math.min(dersSinav.sorular.length - 1, dersSinavIndex + 1);
+      dersSinavUyari = '';
+      renderDers();
+      return;
+    }
+
+    // 'bitir': bos soru varsa once uyar, ikinci basista bitir.
+    const bos = dersSinav.cevaplar.filter((c) => c === null).length;
+    if (bos > 0 && !dersSinavUyari) {
+      dersSinavUyari = ceviri('ders.unanswered', { n: bos });
+      renderDers();
+      return;
+    }
+    dersUniteSinaviBitir();
+    return;
+  }
+
   const sonucDugme = e.target.closest('[data-ders-sonuc]');
   if (sonucDugme) {
     const eylem = sonucDugme.dataset.dersSonuc;
@@ -3325,12 +3449,22 @@ document.getElementById('app').addEventListener('click', (e) => {
     }
     if (eylem === 'tekrar') {
       dersSinavSonuc = null;
-      dersEkran = 'quiz';
       const hafta = dersAktifHafta();
-      const kaynaklar = hafta.dersler
-        .filter((d) => KONULAR[d.konu])
-        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
-      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      // dersEkran, bitiren fonksiyon tarafindan degistirilmedigi icin
+      // 'quiz' ya da 'sinav' olarak kalir; hangisi bitmisse onu tekrar kurar.
+      if (dersEkran === 'sinav') {
+        dersSinav = sinavKur({
+          kaynaklar: agirlikHesapla(TAKVIM, hafta.unite),
+          soruSayisi: 20,
+          gecmeNotu: SINAV_GECME,
+          aninda: false
+        }, Math.random);
+        dersSinavIndex = 0;
+        dersSinavUyari = '';
+      } else {
+        dersEkran = 'quiz';
+        dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      }
       renderDers();
       return;
     }

@@ -8,7 +8,7 @@
  * dosyasi adinda kullanilir; boylece tek kaynak olur.
  */
 
-import { haftaKaydi, haftaDurumu } from '../engines/ders.js';
+import { haftaKaydi, haftaDurumu, QUIZ_GECME } from '../engines/ders.js';
 import { haftaBul, aktifHafta, haftaGezin } from '../engines/mufredat.js';
 import { soruUret } from '../engines/uretici/index.js';
 import { selectWeighted } from '../engines/leitner.js';
@@ -241,4 +241,47 @@ export function alistirmaSorusu(hafta, konular, kayit, rng) {
   }
 
   return { soru, ureticiId: ders.konu, seviye: ders.seviye };
+}
+
+/**
+ * Unite sinavinin acik olup olmadigi.
+ *
+ * Kosul: unitedeki TUM haftalarin quizi gecilmis olmali. Sinav bir
+ * ozettir; konuyu hic calismadan sinava girmek cocugu bosuna
+ * basarisizliga ugratir ve sinavdan sogutur.
+ *
+ * Icerigi henuz yazilmamis unitede (Faz 2-5) sinav hic acilmaz.
+ */
+export function uniteSinaviDurumu(takvim, uniteler, uniteId, ilerleme, konular) {
+  const unite = uniteler.find((u) => u.id === uniteId);
+  if (!unite) return { acik: false, sebep: 'Ünite bulunamadı.', sinavId: null, puan: null, gecti: false };
+
+  const haftalar = takvim.filter((h) => h.unite === uniteId && h.dersler.length > 0);
+
+  const icerikHazir = haftalar.every((h) =>
+    h.dersler.every((d) => konular[d.konu]?.seviyeler.some((s) => s.seviye === d.seviye))
+  );
+  if (!icerikHazir) {
+    return { acik: false, sebep: 'Bu ünitenin içeriği henüz hazırlanıyor.', sinavId: null, puan: null, gecti: false };
+  }
+
+  const eksik = haftalar.filter((h) => {
+    const kayit = ilerleme.haftalar?.[String(h.hafta)];
+    return !(kayit?.quiz?.enIyi >= QUIZ_GECME);
+  });
+
+  const sinavId = `unite-${uniteId}`;
+  const gecmis = ilerleme.sinavlar?.[sinavId] ?? null;
+
+  if (eksik.length > 0) {
+    return {
+      acik: false,
+      sebep: `Sınav için ${eksik.length} haftanın quizini daha geçmen gerekiyor.`,
+      sinavId,
+      puan: gecmis?.puan ?? null,
+      gecti: gecmis?.gecti ?? false
+    };
+  }
+
+  return { acik: true, sebep: '', sinavId, puan: gecmis?.puan ?? null, gecti: gecmis?.gecti ?? false };
 }
