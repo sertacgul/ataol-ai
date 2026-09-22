@@ -9,8 +9,9 @@
 import { el, mount } from './dom.js';
 
 function asamaRozeti(ad, tamam, etiket) {
-  return el('div', {
+  return el('button', {
     className: `ders-asama ${tamam ? 'ders-asama--tamam' : ''}`,
+    attrs: { type: 'button' },
     dataset: { dersAsama: ad }
   }, [
     el('span', { className: 'material-symbols-rounded', text: tamam ? 'check_circle' : 'radio_button_unchecked' }),
@@ -228,4 +229,45 @@ export function ornekEkrani(kok, model, ceviri) {
       })
     ])
   ]);
+}
+
+/**
+ * "Kendin dene" ekrani. Widget'i canvas'a kurar; widget'in kendisini
+ * kurmaz, o isi main.js yapar cunku yokEt cagrisinin sahibi odur.
+ *
+ * Doner: olusturulan canvas. Cagiran bunu widget'a verir.
+ */
+export function etkilesimEkrani(kok, { gorev, mesaj }, ceviri) {
+  const canvas = el('canvas', { className: 'etkilesim__tuval', attrs: { id: 'ders-tuval' } });
+
+  mount(kok, [
+    el('div', { className: 'anlatim__ust' }, [
+      el('button', {
+        className: 'anlatim__kapat',
+        text: ceviri('ders.close'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'kapat' }
+      }),
+      el('p', { className: 'anlatim__sayac', text: ceviri('ders.tryIt') })
+    ]),
+    el('p', { className: 'etkilesim__gorev', text: gorev }),
+    canvas,
+    mesaj ? el('p', { className: 'etkilesim__mesaj', text: mesaj }) : null,
+    el('div', { className: 'etkilesim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.clear'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'temizle' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ders.check'),
+        attrs: { type: 'button' },
+        dataset: { dersEtkilesim: 'kontrol' }
+      })
+    ])
+  ]);
+
+  return canvas;
 }

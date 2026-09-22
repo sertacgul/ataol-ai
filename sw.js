@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ataol-ai-v39';
+const CACHE_NAME = 'ataol-ai-v40';
 const ASSETS = [
   // v1 varliklari (gunluk kullanilan surum)
   './',
@@ -58,6 +58,9 @@ const ASSETS = [
   './src/views/ders.js',
   './src/ui/ses.js',
   './src/ui/ders-dom.js',
+  './src/ui/widget/index.js',
+  './src/ui/widget/aciolcer.js',
+  './src/ui/widget/geometri-tuval.js',
   './src/views/chess.js',
   './src/views/clock.js',
   './src/views/drill.js',

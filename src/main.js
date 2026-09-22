@@ -47,8 +47,9 @@ import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
 import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani, ornekEkrani } from './ui/ders-dom.js';
-import { haftaKaydi, adimTamamla } from './engines/ders.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani } from './ui/ders-dom.js';
+import { widgetKur } from './ui/widget/index.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla } from './engines/ders.js';
 import { createSes } from './ui/ses.js';
 
 let state;
@@ -77,6 +78,11 @@ let dersGorulenHafta = null;
 let dersEkran = 'hafta';
 let dersAdimIndex = 0;
 let dersOrnekAdim = 0;
+
+// Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
+// dinleyicileri birikir ve uygulama zamanla yavaslar.
+let dersWidget = null;
+let dersEtkilesimMesaj = '';
 
 const ses = createSes({
   speechSynthesis: window.speechSynthesis,
@@ -698,7 +704,38 @@ function renderDers() {
     }
   }
 
+  if (dersEkran === 'etkilesim') {
+    const hafta = dersAktifHafta();
+    const ders = hafta?.dersler.find((d) => KONULAR[d.konu]);
+    const sev = ders ? KONULAR[ders.konu].seviyeler.find((s) => s.seviye === ders.seviye) : null;
+
+    if (sev) {
+      dersWidgetKapat();
+      const canvas = etkilesimEkrani(kok, { gorev: sev.etkilesim.gorev, mesaj: dersEtkilesimMesaj }, ceviri);
+      // Tuvalin cizim cozunurlugu CSS boyutundan ayridir; retina
+      // ekranda bulanik cikmasin diye oranla carpilir.
+      const oran = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * oran;
+      canvas.height = Math.round(canvas.clientWidth * 0.75) * oran;
+      dersWidget = widgetKur(sev.etkilesim.widget, canvas, {
+        mod: sev.etkilesim.mod,
+        veri: sev.etkilesim.veri ?? {},
+        ses
+      });
+      dersWidget?.ciz();
+      return;
+    }
+    dersEkran = 'hafta';
+  }
+
   haftaEkrani(kok, dersModeli(), ceviri);
+}
+
+function dersWidgetKapat() {
+  if (dersWidget) {
+    dersWidget.yokEt();
+    dersWidget = null;
+  }
 }
 
 // Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
@@ -3001,6 +3038,56 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersOrnekAdim = 0;
     dersEkran = eylem === 'gec' ? 'etkilesim' : 'hafta';
     renderDers();
+    return;
+  }
+
+  const dersEtk = e.target.closest('[data-ders-etkilesim]');
+  if (dersEtk) {
+    const eylem = dersEtk.dataset.dersEtkilesim;
+
+    if (eylem === 'kapat') {
+      dersWidgetKapat();
+      dersEtkilesimMesaj = '';
+      dersEkran = 'hafta';
+      renderDers();
+      return;
+    }
+
+    if (eylem === 'temizle') {
+      dersWidget?.temizle?.();
+      return;
+    }
+
+    const sonuc = dersWidget?.dogrula() ?? { tamam: false, mesaj: '' };
+    dersEtkilesimMesaj = sonuc.mesaj;
+
+    if (sonuc.tamam) {
+      const hafta = dersAktifHafta();
+      const kayit = etkilesimTamamla(haftaKaydi(state.loadDersIlerleme(), hafta.hafta));
+      dersIlerlemeYaz(hafta.hafta, kayit.kayit);
+      if (kayit.kazanilanYildiz > 0) {
+        dersYildizVer(kayit.kazanilanYildiz);
+        ses.efekt('kutlama');
+      }
+      dersWidgetKapat();
+      dersEkran = 'hafta';
+      dersEtkilesimMesaj = '';
+      render();
+      return;
+    }
+
+    ses.efekt('yanlis');
+    renderDers();
+    return;
+  }
+
+  const asamaDugme = e.target.closest('[data-ders-asama]');
+  if (asamaDugme) {
+    ses.hazirla();
+    dersEkran = asamaDugme.dataset.dersAsama;
+    dersAdimIndex = 0;
+    renderDers();
+    if (dersEkran === 'anlatim') dersAdimiSeslendir();
     return;
   }
 
