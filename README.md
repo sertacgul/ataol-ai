@@ -81,6 +81,28 @@ node --test "tests/**/*.test.js"
 4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunamaz.
 5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js` kurar. `el()` yardımcısı metni `textContent` ile yazar ve öznitelikleri beyaz listeden geçirir. Bu kuralların tamamı `tests/architecture.test.js` içindeki tek bir dizin taramasıyla `src/` ağacının tümü üzerinde denetlenir.
 
+### Anlatim seslerini uretme
+
+Ders anlatimlari onceden seslendirilip `sesler/` altina konur. Ses dosyasi
+yoksa uygulama cihazin kendi TTS'ine duser, yani ses uretimi zorunlu
+degildir.
+
+```bash
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js                  # hepsi
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js temel-cizimler   # tek konu
+```
+
+Google Cloud Text-to-Speech Chirp 3 HD kullanilir (tr-TR). Aylik ilk 1M
+karakter ucretsizdir; bu projenin tamami yaklasik 150k karakterdir.
+
+**Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'te commit edilmeli**,
+cunku bu uygulama GitHub Pages'tan dogru daldan sunuluyor; taahhutlu
+olmayan dosya cihaza ulasmaz. Uretim yaklasik 150k karakter narasyonla
+sonunda on bir kacindan megabayt dosya olusturur.
+
+Var olan dosyanin ustune yazilmaz. Bir anlatim metnini degistirdiysen o
+dosyayi silip scripti tekrar calistir.
+
 ### Sürümler
 
 `index.html` v1'dir ve çalışır durumdadır. v2 `v2.html` olarak yanına kurulmuştur; devir teslim Faz 1D'de yapılacaktır.
