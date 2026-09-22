@@ -20,35 +20,33 @@ export const ARACLAR = [
 export const VARLIKLAR = [
   {
     id: 'nokta', ad: 'Nokta', arac: 'cetvel', uc: 0, gosterim: 'A',
-    tanim: 'Yeri belli olan, boyu ve eni olmayan şekil'
+    tanim: 'Yeri belli olan, boyu ve eni olmayan şekil', sembolik: false
   },
   {
     id: 'dogru', ad: 'Doğru', arac: 'cetvel', uc: 0, gosterim: 'AB doğrusu',
-    tanim: 'İki yönde de sonsuza giden, başı ve sonu olmayan şekil'
+    tanim: 'İki yönde de sonsuza giden, başı ve sonu olmayan şekil', sembolik: false
   },
   {
     id: 'dogru-parcasi', ad: 'Doğru parçası', arac: 'cetvel', uc: 2, gosterim: '[AB]',
-    tanim: 'İki ucu belli olan, uzunluğu ölçülebilen şekil'
+    tanim: 'İki ucu belli olan, uzunluğu ölçülebilen şekil', sembolik: true
   },
   {
     id: 'isin', ad: 'Işın', arac: 'cetvel', uc: 1, gosterim: '[AB',
-    tanim: 'Bir ucu belli olan, diğer yönde sonsuza giden şekil'
+    tanim: 'Bir ucu belli olan, diğer yönde sonsuza giden şekil', sembolik: true
   },
   {
     id: 'aci', ad: 'Açı', arac: 'aciolcer', uc: null, gosterim: 'ABC açısı',
-    tanim: 'Başlangıç noktaları aynı olan iki ışının oluşturduğu şekil'
+    tanim: 'Başlangıç noktaları aynı olan iki ışının oluşturduğu şekil', sembolik: false
   },
   {
     id: 'cember', ad: 'Çember', arac: 'pergel', uc: null, gosterim: null,
-    tanim: 'Bir noktaya eşit uzaklıktaki noktaların oluşturduğu kapalı eğri'
+    tanim: 'Bir noktaya eşit uzaklıktaki noktaların oluşturduğu kapalı eğri', sembolik: false
   },
   {
-    id: 'dikme', ad: 'Dikme', arac: 'gonye', uc: null, gosterim: null,
-    tanim: 'Bir doğruya 90 derecelik açıyla çizilen doğru'
+    id: 'dikme', ad: 'Dikme', arac: 'gonye', uc: 0, gosterim: null,
+    tanim: 'Bir doğruya 90 derecelik açıyla çizilen doğru', sembolik: false
   }
 ];
-
-const varlikAdi = (id) => VARLIKLAR.find((v) => v.id === id).ad;
 
 export function aracSorusu(varlik, rng) {
   const dogru = ARACLAR.find((a) => a.id === varlik.arac);
@@ -82,9 +80,10 @@ export function tanimSorusu(varlik, rng) {
 }
 
 export function ucSorusu(varlik, rng) {
-  // Celdiriciler diger varliklarin uc sayilari: "isin ile dogru
+  // Celdiriciler tablodaki diger uc degerleri: "isin ile dogru
   // parcasini karistirma" hatasini dogrudan hedefler.
-  const celdiriciler = [0, 1, 2, 3]
+  const UC_DEGERLERI = [...new Set(VARLIKLAR.map((v) => v.uc).filter(Number.isInteger))].sort();
+  const celdiriciler = UC_DEGERLERI
     .filter((n) => n !== varlik.uc)
     .map(String);
 
@@ -102,16 +101,16 @@ export function ucSorusu(varlik, rng) {
 
 export function gosterimSorusu(varlik, rng) {
   const celdiriciler = VARLIKLAR
-    .filter((v) => v.id !== varlik.id && v.gosterim)
+    .filter((v) => v.id !== varlik.id)
     .map((v) => v.ad);
 
   return secmeliKur({
     tip: 'temel-cizimler-gosterim',
-    soru: `"${varlik.gosterim}" gösterimi neyi ifade eder?`,
+    soru: `Matematikte ${varlik.gosterim} biçiminde yazılan şekil hangisidir?`,
     dogruCevap: varlik.ad,
     celdiriciler: karistir(celdiriciler, rng),
     cozum: [
-      `"${varlik.gosterim}" gösterimi ${varlik.ad.toLocaleLowerCase('tr')} demektir.`,
+      `Matematikte ${varlik.gosterim} biçiminde yazılan şekil ${varlik.ad.toLocaleLowerCase('tr')} demektir.`,
       `${varlik.tanim}.`
     ]
   }, rng);
@@ -124,11 +123,11 @@ export function uret(seviye, rng) {
   }
 
   // Seviye 2: ozellik cikarimi. uc sorusu yalniz uc sayisi tanimli,
-  // gosterim sorusu yalniz gosterimi olan varliklar icin kurulabilir.
+  // gosterim sorusu yalniz sembolik gosterimi olan varliklar icin kurulabilir.
   const ucluler = VARLIKLAR.filter((v) => Number.isInteger(v.uc));
-  const gosterimliler = VARLIKLAR.filter((v) => v.gosterim);
+  const sembolikler = VARLIKLAR.filter((v) => v.sembolik);
 
   return rng() < 0.5
     ? ucSorusu(sec(ucluler, rng), rng)
-    : gosterimSorusu(sec(gosterimliler, rng), rng);
+    : gosterimSorusu(sec(sembolikler, rng), rng);
 }

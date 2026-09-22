@@ -66,9 +66,9 @@ test('uc sorusu yalniz uc sayisi tanimli varliklar icin kurulur', () => {
 });
 
 test('gosterim sorusunda dogru cevap varligin adidir', () => {
-  const gosterimli = VARLIKLAR.filter((v) => v.gosterim);
-  assert.ok(gosterimli.length >= 3, 'gosterimi olan varlik az');
-  for (const v of gosterimli) {
+  const sembolik = VARLIKLAR.filter((v) => v.sembolik);
+  assert.ok(sembolik.length >= 2, 'sembolik gosterimi olan varlik az');
+  for (const v of sembolik) {
     for (let t = 1; t <= 20; t++) {
       const soru = gosterimSorusu(v, tohumluRng(t));
       sozlesmeyiDogrula(soru, `gosterim ${v.id} tohum ${t}`);
