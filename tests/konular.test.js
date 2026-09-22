@@ -222,9 +222,9 @@ const TIP_TERIMLERI = {
   // Cevaplari aci turlerinin adlari; kategorik denetim kapsiyor.
   'aci-olcme-tur': [],
   // Cevabi derece, yani sayi; bu tip icin kategorik denetim de bir sey
-  // dogrulamiyor. "aciolcer" terimini zorunlu kilmak dusunulebilir ama
-  // simdilik istenmedi, bkz. rapor.
-  'aci-olcme-okuma': [],
+  // dogrulamiyor. Olcme aracinin adi zorunlu: birikimli metin konu
+  // bazli oldugu icin temel-cizimler'deki "Açıölçer" buraya sayilmaz.
+  'aci-olcme-okuma': ['açıölçer'],
   // Bundan sonrasi seviye 2: cevaplarin hepsi sayi, kategorik denetim
   // bu seviyede hicbir sey dogrulamiyor. Kural adlari burada zorunlu.
   'aci-olcme-butunler': ['bütünler'],
@@ -241,9 +241,8 @@ const TIP_TERIMLERI = {
   // Cevaplari ucgen turlerinin adlari; kategorik denetim kapsiyor.
   'cember-ucgen-tur': [],
   // Cevabi yaricap uzunlugu, yani sayi; bu tip icin kategorik denetim
-  // de bir sey dogrulamiyor. "yaricap" terimini zorunlu kilmak
-  // dusunulebilir ama simdilik istenmedi, bkz. rapor.
-  'cember-yaricap': []
+  // de bir sey dogrulamiyor. Olculen buyuklugun adi zorunlu.
+  'cember-yaricap': ['yarıçap']
 };
 
 function uretilenTipler(konuId, seviyeNo, tur = 300) {
