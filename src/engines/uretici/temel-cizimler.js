@@ -24,7 +24,13 @@ export const VARLIKLAR = [
   },
   {
     id: 'dogru', ad: 'Doğru', arac: 'cetvel', uc: 0, gosterim: 'AB doğrusu',
-    tanim: 'İki yönde de sonsuza giden, başı ve sonu olmayan şekil', sembolik: false
+    tanim: 'İki yönde de sonsuza giden, başı ve sonu olmayan şekil', sembolik: false,
+    // Dikme de bir dogrudur (bkz. data/konular/temel-cizimler.js seviye 2
+    // a4: "Dikme de bir dogru oldugu icin onun da ucu yoktur"), yani bu
+    // tanima dikme de tipatip uyar. Celdirici havuzunda kalirsa tanim
+    // sorusunun iki dogru cevabi olur; bu yuzden tanimSorusu bu listeyi
+    // ekleyip distraktor olarak elemeli.
+    tanimaUyanDigerleri: ['dikme']
   },
   {
     id: 'dogru-parcasi', ad: 'Doğru parçası', arac: 'cetvel', uc: 2, gosterim: '[AB]',
@@ -65,7 +71,11 @@ export function aracSorusu(varlik, rng) {
 }
 
 export function tanimSorusu(varlik, rng) {
-  const celdiriciler = VARLIKLAR.filter((v) => v.id !== varlik.id).map((v) => v.ad);
+  // varlik.id kendisi zaten cikar. tanimaUyanDigerleri varsa (alt tur
+  // iliskisi yuzunden ayni tanima uyan baska varliklar), onlar da
+  // celdirici havuzundan cikarilir; yoksa soru iki dogru cevapli olur.
+  const haric = new Set([varlik.id, ...(varlik.tanimaUyanDigerleri || [])]);
+  const celdiriciler = VARLIKLAR.filter((v) => !haric.has(v.id)).map((v) => v.ad);
 
   return secmeliKur({
     tip: 'temel-cizimler-tanim',

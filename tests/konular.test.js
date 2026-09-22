@@ -273,3 +273,25 @@ test('her soru tipinin gerektirdigi kural adi ders metninde gecer', () => {
     }
   }
 });
+
+// Regresyon: temel-cizimler seviye 2'nin dikme orneginde 3. adim
+// ("Dik kesişen iki doğrunun oluşturduğu dört açı birbirine eşittir.")
+// tam olarak ispatlanmasi istenen sonuc kadar zordu ve hicbir onceki
+// adimdan turemiyordu - ustelik ayni seviyenin a5 anlatimi bu onermenin
+// nedenini 4. haftaya erteledigini acikca soyluyordu. Ornek, dersin
+// kendisinin henuz vermedigini soyledigi bir gerekceyi vermis gibi
+// davraniyordu. Duzeltme, cocugun o ana kadar ogrendigi tek arac olan
+// "doğru üzerindeki açılar toplami 180 derece" hesabini kullanir.
+test('temel-cizimler seviye 2 dikme orneginde henuz ispatlanmamis "dort aci esittir" onermesi kullanilmaz (regresyon)', () => {
+  const seviye2 = KONULAR['temel-cizimler'].seviyeler.find((s) => s.seviye === 2);
+  const dikmeOrnegi = seviye2.ornekler.find((o) => o.soru.includes('dikme çizdin'));
+  assert.ok(dikmeOrnegi, 'dikme ornegi bulunamadi');
+
+  assert.ok(!dikmeOrnegi.adimlar.some((a) => a.includes('dört açı birbirine eşittir')),
+    'cozum hala ispatlanmamis "dort aci birbirine esittir" iddiasini kullaniyor');
+
+  // Cevaba (90 derece) 180 - 90 hesabiyla ulasildigi acikca gorulmeli.
+  assert.ok(dikmeOrnegi.adimlar.some((a) => a.includes('180') && a.includes('90')),
+    'cozum 180 dereceden 90 cikararak sonuca ulastigini gostermiyor');
+  assert.equal(dikmeOrnegi.cevap, '90 derece');
+});

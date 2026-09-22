@@ -118,8 +118,9 @@ export default {
           soru: 'Bir doğruya, üzerindeki bir noktadan dikme çizdin. Oluşan dört açıdan birini gönyeyle ölçtün ve 90 derece buldun. Diğer üç açı kaç derecedir?',
           adimlar: [
             'Dikme, çizildiği doğruyla 90 derecelik açı yapan doğrudur.',
-            'Dik kesişen iki doğrunun oluşturduğu dört açı birbirine eşittir.',
-            'Biri 90 derece olduğuna göre kalan üçü de 90 derecedir.'
+            'Bir doğru üzerinde yan yana duran iki açının ölçüleri toplandığında 180 derece eder, çünkü doğrunun kendisi düz bir çizgidir.',
+            'Ölçtüğün açının yanındaki açı için 180 eksi 90, yani 90 derece bulursun.',
+            'Doğrunun öbür tarafında da aynı hesap geçerlidir, bu yüzden kalan iki açı da 90 derecedir.'
           ],
           cevap: '90 derece'
         }

@@ -99,3 +99,19 @@ test('her varligin araci arac tablosunda vardir', () => {
 test('ayni tohum ayni soruyu uretir', () => {
   assert.deepEqual(uret(1, tohumluRng(99)), uret(1, tohumluRng(99)));
 });
+
+// Regresyon: dikme de bir dogrudur (bkz. data/konular/temel-cizimler.js
+// seviye 2 a4: "Dikme de bir dogru oldugu icin onun da ucu yoktur").
+// dogru'nun tanimi ("iki yonde de sonsuza giden, basi ve sonu olmayan
+// sekil") dikmeye de tipatip uyar. Eskiden celdirici havuzunda dikme de
+// bulunuyordu ve dikme sansla secildiginde soru iki dogru cevapli
+// oluyordu (olcum: 3000 tohumun 208'inde, yaklasik yuzde 7). 3000 tohum
+// tarayarak bu payin sifira indigini dogruduk.
+test('dogru tanim sorusunda dikme celdirici olarak sunulmaz (regresyon: dikme de bir dogrudur)', () => {
+  const dogru = VARLIKLAR.find((v) => v.id === 'dogru');
+  for (let t = 1; t <= 3000; t++) {
+    const soru = tanimSorusu(dogru, tohumluRng(t));
+    assert.ok(!soru.secenekler.includes('Dikme'),
+      `tohum ${t}: dikme celdirici olarak sunuldu, iki dogru cevapli soru olustu`);
+  }
+});

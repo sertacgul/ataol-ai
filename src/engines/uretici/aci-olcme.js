@@ -140,7 +140,13 @@ function tersSorusu(rng) {
     cozum: [
       'İki doğru kesiştiğinde karşılıklı duran açılar birbirine eşittir.',
       `Bu yüzden ters açı da ${d} derecedir.`,
-      `Komşu açı olsaydı 180 - ${d} = ${butunler(d)} olurdu; ters açı farklıdır.`
+      // d = 90 oldugunda butunler(d) de 90'dir, yani komsu ile ters aci
+      // ayni sayiya esit olur; bu durumda "farklidir" iddiasi yanlis
+      // olacagindan adim yalniz d !== 90 iken (yani butunler(d) !== d
+      // iken) uretilir.
+      ...(butunler(d) !== d
+        ? [`Komşu açı olsaydı 180 - ${d} = ${butunler(d)} olurdu; ters açı farklıdır.`]
+        : [])
     ]
   }, rng);
 }

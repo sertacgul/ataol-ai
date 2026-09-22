@@ -175,3 +175,33 @@ test('butunlerSorusu ve tersSorusu 90 derecede en az iki celdirici uretir (regre
   assert.ok(butunlerBulundu, 'd = 90 icin butunlerSorusu 5000 tohumda hic uretilmedi');
   assert.ok(tersBulundu, 'd = 90 icin tersSorusu 5000 tohumda hic uretilmedi');
 });
+
+// Regresyon: tersSorusu'nun ucuncu cozum adimi "komsu aci olsaydi
+// 180 - d = butunler(d) olurdu; ters aci farklidir" diyordu. d = 90
+// oldugunda butunler(90) = 90 olur, yani komsu aci da olculen aciyla
+// AYNI sayiya esittir; adim yine de "farklidir" diyerek kendiyle
+// celisiyordu. Olcum: 980 ters aci ciziminin 41'inde (yaklasik yuzde 4).
+// Bu test butunler(derece) === derece olan HER durumda (yalniz d = 90
+// degil, sinir kosulunun kendisi) ucuncu adimin hic uretilmedigini,
+// aksi durumda dogru sekilde uretildigini 5000 tohumda dogrular.
+test('ters aci cozumunun ucuncu adimi yalniz gercekten farkliyken uretilir (regresyon: d=90 sinirinda butunler(d)=d)', () => {
+  let sinirBulundu = false;
+
+  for (let t = 1; t <= 5000; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-ters') continue;
+    const derece = dereceAl(soru.soru.tr);
+    const ucuncuAdim = soru.cozum[2];
+
+    if (butunler(derece) === derece) {
+      sinirBulundu = true;
+      assert.equal(ucuncuAdim, undefined,
+        `tohum ${t}: derece ${derece} iken komsu aci da ayni degere esit, ucuncu adim yine de uretildi: "${ucuncuAdim}"`);
+    } else {
+      assert.ok(ucuncuAdim && ucuncuAdim.includes('farklıdır'),
+        `tohum ${t}: derece ${derece} icin beklenen ucuncu cozum adimi eksik`);
+    }
+  }
+
+  assert.ok(sinirBulundu, 'butunler(derece) === derece siniri 5000 tohumda hic yakalanmadi');
+});
