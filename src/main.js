@@ -49,7 +49,7 @@ import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, 
 import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
-import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME, haftaDurumu } from './engines/ders.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME } from './engines/ders.js';
 import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
 
@@ -925,12 +925,34 @@ function dersAdimiSeslendir() {
   ses.oku({ metin: model.aktif.metin, ses: model.aktif.kimlik });
 }
 
+// Tum ders ilerleme yazmalari buradan gecer (tek funnel). Hafta rozeti
+// ("ogrenci") burada kontrol edilir cunku dort asama dugmesi de
+// (anlatim/etkilesim/alistirma/quiz) serbest sirada tiklanabiliyor;
+// kontrolu tek bir cagirana (orn. quiz bitisine) koymak diger uc sirada
+// haftayi bitiren cocugu rozetsiz birakirdi.
+//
+// Hafta, dersModeli()'nin ekrandaki haftasindan degil, yazilan
+// haftaNumarasi'ndan cozulur: ekrandaki hafta ile yazilan hafta ayni
+// olmayabilir.
 function dersIlerlemeYaz(haftaNumarasi, kayit) {
   const ilerleme = state.loadDersIlerleme();
-  state.saveDersIlerleme({
+  const sonraki = {
     ...ilerleme,
     haftalar: { ...ilerleme.haftalar, [String(haftaNumarasi)]: kayit }
-  });
+  };
+
+  const hafta = TAKVIM.find((h) => h.hafta === haftaNumarasi);
+  const kart = hafta ? haftaKarti(hafta, KONULAR, '', sonraki) : null;
+  // 'hafta' isareti yildiz VERMEZ, yalniz sayacin iki kez artmasini onler.
+  if (kart && kart.durum.bitti && !kayit.yildizAlinan.includes('hafta')) {
+    istArtir((ist) => { ist.dersHaftalari += 1; });
+    sonraki.haftalar[String(haftaNumarasi)] = {
+      ...kayit,
+      yildizAlinan: [...kayit.yildizAlinan, 'hafta']
+    };
+  }
+
+  state.saveDersIlerleme(sonraki);
 }
 
 /**
@@ -975,13 +997,6 @@ function konuHaftasiBul(uniteId, konuId) {
   return adaylar.reduce((enIyi, h) => (enYuksekSeviye(h) > enYuksekSeviye(enIyi) ? h : enIyi)).hafta;
 }
 
-// Aktif haftanin dort asamasi da bitti mi. Ders rozetinin ("ogrenci")
-// sayacini haftada bir kez artirmak icin kullanilir.
-function dersHaftaBittiMi(kayit) {
-  const m = dersModeli();
-  return m.tip === 'ders' && haftaDurumu(m.kart.adimIdleri, kayit).bitti;
-}
-
 // Quizi bitirir: puanlar, ilerlemeye yazar, yildiz kazanildiysa verir
 // ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
 // verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
@@ -995,19 +1010,6 @@ function dersSinavBitir() {
     ses.efekt('kutlama');
   }
   if (p.yuzde >= 100) istArtir((ist) => { ist.tamPuanQuiz += 1; });
-
-  // Hafta rozeti: dort asama da bittiyse rozet sayaci bir kez artar.
-  // 'hafta' isareti yildiz VERMEZ, yalniz sayacin iki kez artmasini
-  // onler. guncelKayit yukarida yazilan sonuc.kayit'i ELDE OKUR: baska
-  // bir kayittan okuyup baskasina yazmak tam da cifte sayimin yolu olurdu.
-  const guncelKayit = haftaKaydi(state.loadDersIlerleme(), hafta.hafta);
-  if (dersHaftaBittiMi(guncelKayit) && !guncelKayit.yildizAlinan.includes('hafta')) {
-    istArtir((ist) => { ist.dersHaftalari += 1; });
-    dersIlerlemeYaz(hafta.hafta, {
-      ...guncelKayit,
-      yildizAlinan: [...guncelKayit.yildizAlinan, 'hafta']
-    });
-  }
 
   dersSinavSonuc = {
     baslik: ceviri('ders.quiz'),
@@ -2921,14 +2923,16 @@ async function sohbetGonder(metin) {
 async function dersAiSor(adim) {
   const konu = KONULAR[adim.konuId];
   const kazanim = konu.kazanimlar[0]?.metin ?? '';
+  const dogumYili = profile.child?.birthYear;
+  const yas = Number.isInteger(dogumYili) ? now().getFullYear() - dogumYili : undefined;
 
   try {
     const anahtar = state.loadApiKey();
     const govde = istekGovdesi(
-      dersIstemi({ konuAd: konu.ad.tr, kazanim, adimMetni: adim.metin, yas: profile.child?.age }),
+      dersIstemi({ konuAd: konu.ad.tr, kazanim, adimMetni: adim.metin, yas }),
       []
     );
-    dersAiMetin = yanitAyikla(await sohbetIste(anahtar, govde));
+    dersAiMetin = yanitAyikla(await sohbetIste(anahtar, govde)) ?? ceviri('ders.explainError');
   } catch {
     dersAiMetin = ceviri('ders.explainError');
   }
