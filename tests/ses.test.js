@@ -2,23 +2,40 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSes } from '../src/ui/ses.js';
 
+class SahteUtterance {
+  constructor(text) {
+    this.text = text;
+  }
+}
+
 function sahteTts() {
-  const soylenen = [];
+  const olusturulanlar = [];
+  let iptalSayisi = 0;
   return {
-    soylenen,
+    olusturulanlar,
+    iptalSayisi: () => iptalSayisi,
     speaking: false,
-    speak(u) { soylenen.push(u); if (u.onend) u.onend(); },
-    cancel() { soylenen.length = 0; }
+    speak(u) {
+      olusturulanlar.push(u);
+      assert.ok(u instanceof SahteUtterance, 'utterance must be instanceof SahteUtterance');
+      if (u.onend) setTimeout(() => u.onend(), 0);
+    },
+    cancel() {
+      iptalSayisi++;
+      olusturulanlar.length = 0;
+    }
   };
 }
 
 // calabilir=false ise error olayini tetikler, yani dosya yok demektir.
 function sahteAudioSinifi(calabilir) {
   const kurulan = [];
+  const ornekler = [];
   class SahteAudio {
     constructor(src) {
       this.src = src;
       kurulan.push(src);
+      ornekler.push(this);
       this._olaylar = {};
     }
     addEventListener(ad, fn) { this._olaylar[ad] = fn; }
@@ -33,6 +50,7 @@ function sahteAudioSinifi(calabilir) {
     pause() { this.duraklatildi = true; }
   }
   SahteAudio.kurulan = kurulan;
+  SahteAudio.ornekler = ornekler;
   return SahteAudio;
 }
 
@@ -68,32 +86,32 @@ function sahteAudioContext() {
 test('ses dosyasi varsa dosya calinir, TTS kullanilmaz', async () => {
   const tts = sahteTts();
   const Audio = sahteAudioSinifi(true);
-  const ses = createSes({ speechSynthesis: tts, AudioContext: sahteAudioContext(), Audio });
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
 
   const sonuc = await ses.oku({ metin: 'Merhaba', ses: 'temel-cizimler-1-a1' });
 
   assert.equal(sonuc, 'dosya');
   assert.equal(Audio.kurulan[0], 'sesler/temel-cizimler-1-a1.mp3');
-  assert.equal(tts.soylenen.length, 0);
+  assert.equal(tts.olusturulanlar.length, 0);
 });
 
 test('ses dosyasi yoksa TTS ile okunur', async () => {
   const tts = sahteTts();
   const Audio = sahteAudioSinifi(false);
-  const ses = createSes({ speechSynthesis: tts, AudioContext: sahteAudioContext(), Audio });
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
 
   const sonuc = await ses.oku({ metin: 'Merhaba', ses: 'yok-boyle-bir-dosya' });
 
   assert.equal(sonuc, 'tts');
-  assert.equal(tts.soylenen.length, 1);
-  assert.equal(tts.soylenen[0].text, 'Merhaba');
-  assert.equal(tts.soylenen[0].lang, 'tr-TR');
+  assert.equal(tts.olusturulanlar.length, 1);
+  assert.equal(tts.olusturulanlar[0].text, 'Merhaba');
+  assert.equal(tts.olusturulanlar[0].lang, 'tr-TR');
 });
 
 test('ses alani hic yoksa dogrudan TTS kullanilir, dosya denenmez', async () => {
   const tts = sahteTts();
   const Audio = sahteAudioSinifi(true);
-  const ses = createSes({ speechSynthesis: tts, AudioContext: sahteAudioContext(), Audio });
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
 
   const sonuc = await ses.oku({ metin: 'Sadece metin' });
 
@@ -104,19 +122,19 @@ test('ses alani hic yoksa dogrudan TTS kullanilir, dosya denenmez', async () => 
 test('ses kapaliyken hicbir sey calinmaz', async () => {
   const tts = sahteTts();
   const Audio = sahteAudioSinifi(true);
-  const ses = createSes({ speechSynthesis: tts, AudioContext: sahteAudioContext(), Audio });
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
   ses.ayarla({ sesAcik: false });
 
   const sonuc = await ses.oku({ metin: 'Merhaba', ses: 'temel-cizimler-1-a1' });
 
   assert.equal(sonuc, 'kapali');
   assert.equal(Audio.kurulan.length, 0);
-  assert.equal(tts.soylenen.length, 0);
+  assert.equal(tts.olusturulanlar.length, 0);
 });
 
 test('hazirla AudioContext i resume eder (iOS kilidi)', async () => {
   const Ctx = sahteAudioContext();
-  const ses = createSes({ speechSynthesis: sahteTts(), AudioContext: Ctx, Audio: sahteAudioSinifi(true) });
+  const ses = createSes({ speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance, AudioContext: Ctx, Audio: sahteAudioSinifi(true) });
 
   await ses.hazirla();
 
@@ -124,7 +142,7 @@ test('hazirla AudioContext i resume eder (iOS kilidi)', async () => {
 });
 
 test('efekt osilator olusturur ve calistirir', async () => {
-  const ses = createSes({ speechSynthesis: sahteTts(), AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
+  const ses = createSes({ speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
   await ses.hazirla();
 
   ses.efekt('dogru');
@@ -133,7 +151,7 @@ test('efekt osilator olusturur ve calistirir', async () => {
 });
 
 test('bilinmeyen efekt adi sessizce yok sayilir', async () => {
-  const ses = createSes({ speechSynthesis: sahteTts(), AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
+  const ses = createSes({ speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
   await ses.hazirla();
 
   ses.efekt('boyle-bir-efekt-yok');
@@ -142,7 +160,7 @@ test('bilinmeyen efekt adi sessizce yok sayilir', async () => {
 });
 
 test('ses kapaliyken efekt calmaz', async () => {
-  const ses = createSes({ speechSynthesis: sahteTts(), AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
+  const ses = createSes({ speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
   await ses.hazirla();
   ses.ayarla({ sesAcik: false });
 
@@ -154,12 +172,12 @@ test('ses kapaliyken efekt calmaz', async () => {
 test('dur calan dosyayi duraklatir ve TTS i iptal eder', async () => {
   const tts = sahteTts();
   const Audio = sahteAudioSinifi(true);
-  const ses = createSes({ speechSynthesis: tts, AudioContext: sahteAudioContext(), Audio });
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
   await ses.oku({ metin: 'Merhaba', ses: 'temel-cizimler-1-a1' });
 
   ses.dur();
 
-  assert.equal(tts.soylenen.length, 0);
+  assert.equal(Audio.ornekler[0].duraklatildi, true);
 });
 
 test('tarayici yetenekleri yoksa cokmez', async () => {
@@ -168,4 +186,31 @@ test('tarayici yetenekleri yoksa cokmez', async () => {
   ses.efekt('dogru');
   ses.dur();
   await ses.hazirla();
+});
+
+test('TTS gercek SpeechSynthesisUtterance ornegi ile cagrilir', async () => {
+  const tts = sahteTts();
+  const Audio = sahteAudioSinifi(false);
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
+
+  await ses.oku({ metin: 'Kontrol', ses: 'yok' });
+
+  assert.equal(tts.olusturulanlar.length, 1);
+  assert.ok(tts.olusturulanlar[0] instanceof SahteUtterance);
+  assert.equal(tts.olusturulanlar[0].lang, 'tr-TR');
+});
+
+test('TTS hatasi da tts ile settle eder, ekran donmaz', async () => {
+  const tts = sahteTts();
+  const Audio = sahteAudioSinifi(false);
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio });
+  // speak() e gelis onerror() triggerli
+  tts.speak = (u) => {
+    tts.olusturulanlar.push(u);
+    if (u.onerror) setTimeout(() => u.onerror(), 0);
+  };
+
+  const sonuc = await ses.oku({ metin: 'Kontrol', ses: 'yok' });
+
+  assert.equal(sonuc, 'tts');
 });

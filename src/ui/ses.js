@@ -25,13 +25,13 @@ const EFEKTLER = {
   tik: [[1200, 0.03]]
 };
 
-export function createSes({ speechSynthesis, AudioContext, Audio, sesKok = 'sesler/' } = {}) {
+export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioContext, Audio, sesKok = 'sesler/' } = {}) {
   let sesAcik = true;
   let ctx = null;
   let calan = null;
   let sonEfekt = null;
 
-  const ttsVar = () => Boolean(speechSynthesis && typeof speechSynthesis.speak === 'function');
+  const ttsVar = () => Boolean(speechSynthesis && typeof speechSynthesis.speak === 'function' && typeof SpeechSynthesisUtterance === 'function');
 
   /**
    * iOS'ta ses ancak bir kullanici dokunusunun icinde baslatilabilir.
@@ -60,10 +60,15 @@ export function createSes({ speechSynthesis, AudioContext, Audio, sesKok = 'sesl
   function ttsOku(metin) {
     return new Promise((coz) => {
       if (!ttsVar()) return coz('kapali');
-      const u = { text: metin, lang: 'tr-TR', rate: 0.95, onend: () => coz('tts') };
+      const u = new SpeechSynthesisUtterance(metin);
+      u.lang = 'tr-TR';
+      u.rate = 0.95;
+      // Hem bitis hem hata 'tts' ile settle eder. Sessiz dusme kurali
+      // geregi cocuga hata gosterilmez; onemli olan sozun asili
+      // kalmamasi, yoksa ders ekrani donar.
+      u.onend = () => coz('tts');
+      u.onerror = () => coz('tts');
       speechSynthesis.speak(u);
-      // Sahte veya eski motorlar onend cagirmazsa soz asili kalmasin.
-      if (!speechSynthesis.speaking) coz('tts');
     });
   }
 
@@ -97,8 +102,8 @@ export function createSes({ speechSynthesis, AudioContext, Audio, sesKok = 'sesl
   function efekt(ad) {
     sonEfekt = null;
     if (!sesAcik || !ctx) return;
+    if (!Object.hasOwn(EFEKTLER, ad)) return;
     const tarif = EFEKTLER[ad];
-    if (!tarif) return;
 
     let t = ctx.currentTime;
     for (const [hz, sure] of tarif) {
