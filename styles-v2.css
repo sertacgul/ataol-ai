@@ -2679,3 +2679,868 @@ body {
   background: var(--primary) !important;
   color: #fff !important;
 }
+
+/* =========================================================
+   Ders modulu (5. sinif matematik mufredati)
+   Siniflar src/ui/ders-dom.js ve src/main.js#ebeveynDersBolumu'ndan
+   taranarak listelendi (bkz. task-20-brief.md). Tasarim dili
+   games-card, drill__ ve v2-modal__ kaliplarindan alinir: ayni
+   kose yaricapi, boslama ritmi, golge ve renk jetonlari.
+   ========================================================= */
+
+/* --- Hafta karti --- */
+
+.ders-kart {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+/* Hazir olmayan hafta: cocuk henuz baslayamaz. Kesikli cerceve ve
+   dusuk opaklik "burada is var ama simdi degil" hissi versin. */
+.ders-kart--bos {
+  border-style: dashed;
+  border-color: var(--text-muted);
+  opacity: 0.85;
+}
+
+/* Bilgi karti (tatil / mufredat oncesi-sonrasi): ders karti degil,
+   sol kenarda altin serit ile ayirt edilir. */
+.ders-kart--bilgi {
+  border-left: 4px solid var(--gold);
+}
+
+.ders-kart__ust {
+  margin-bottom: 10px;
+}
+
+.ders-kart__etiket {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.ders-kart__hafta {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 4px;
+}
+
+.ders-kart__unite {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  margin: 0 0 2px;
+}
+
+.ders-kart__tarih {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.ders-kart__konular {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ders-konu {
+  background: rgba(131, 149, 167, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.ders-konu__ad {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.ders-konu__baslik {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.ders-kart__asamalar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ders-asama {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 8px 2px;
+  border: 1px solid var(--primary-light);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.ders-asama .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.ders-asama__etiket {
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Tamamlanmis asama: ikon zaten check_circle'a donusmustu (bkz.
+   ders-dom.js asamaRozeti); renk burada YALNIZCA pekistirir, tek
+   basina isaret degil. */
+.ders-asama--tamam {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.ders-kart__ilerleme {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 0 0 12px;
+}
+
+.ders-kart__basla {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ders-kart__basla:active {
+  transform: scale(0.98);
+}
+
+/* haftaKartiDom, bilgiKarti ve ders-sinav ucunde ayni "not" metni
+   icin kullanilir (hazir degil / sinav kapali sebebi). */
+.ders-kart__not {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.ders-gezinme {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ders-gezinme__dugme {
+  flex: 1;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ders-gezinme__dugme:active {
+  transform: scale(0.97);
+}
+
+.ders-not-tr {
+  background: rgba(255, 210, 94, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-dark);
+  margin: 0 0 14px;
+}
+
+.ders-sinav {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.ders-sinav__baslik {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 10px;
+}
+
+.ders-sinav__gir {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--gold);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ders-sinav__gir:active {
+  transform: scale(0.98);
+}
+
+/* --- Anlatim --- */
+
+.anlatim__ust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.anlatim__kapat {
+  min-height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.anlatim__sayac {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.anlatim__govde {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 20px 18px;
+  margin-bottom: 16px;
+}
+
+.anlatim__konu {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin: 0 0 10px;
+}
+
+/* Anlatim metni sesle birlikte okunur: cocuk hem dinliyor hem
+   satirlari takip ediyor. drill__question--problem'daki 18px/1.5
+   (sozel problem icin tasarlanmisti) burada yetersiz kalir; daha
+   buyuk punto ve daha genis satir araligi gerekir. */
+.anlatim__metin {
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.75;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.anlatim__dinle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 14px 0 12px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.anlatim__dinle .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.anlatim__dinle:active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  transform: scale(0.98);
+}
+
+.anlatim__ai {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(108, 92, 231, 0.12);
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.anlatim__ai-metin {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-dark);
+  background: rgba(255, 210, 94, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 14px;
+}
+
+.anlatim__alt {
+  display: flex;
+  gap: 10px;
+}
+
+/* anlatim__gez ayni zamanda ornek/soru/sinav ekranlarinin "geri/ileri"
+   dugmeleri icin de kullanilir (bkz. ders-dom.js). */
+.anlatim__gez {
+  flex: 1;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(131, 149, 167, 0.15);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.anlatim__gez:active {
+  transform: scale(0.97);
+}
+
+.anlatim__gez:disabled {
+  opacity: 0.4;
+}
+
+.anlatim__gez--vurgu {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* --- Ornek cozum --- */
+
+.ornek__konu {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin: 0 0 6px;
+}
+
+.ornek__soru {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0 0 14px;
+}
+
+.ornek__adimlar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ornek__adim {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.ornek__cevap {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: rgba(0, 206, 201, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 14px;
+}
+
+/* --- Etkilesim (geometri tuvali) --- */
+
+.etkilesim__gorev {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  background: rgba(108, 92, 231, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+}
+
+.etkilesim__araclar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.etkilesim__arac {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.2;
+  border: 1px solid var(--primary-light);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-dark);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+
+.etkilesim__arac--aktif {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* Cizim cozunurlugu main.js'de clientWidth uzerinden 4:3 sabitlenir
+   (canvas.width = clientWidth * oran; canvas.height = clientWidth *
+   0.75 * oran). CSS ayni orani vermeli, yoksa cizim koordinatlari
+   gerilir/basilir. atolye__canvas'in position:absolute + esnek
+   yukseklikli kapsayici kalibi burada kasten kullanilmadi: orada
+   kapsayici tum ekrani doldurur, burada oran sabittir ve tek eleman
+   yeterlidir. */
+.etkilesim__tuval {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  touch-action: none;
+  margin-bottom: 10px;
+}
+
+.etkilesim__mesaj {
+  min-height: 20px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-dark);
+  margin: 0 0 12px;
+}
+
+/* ornek/sinav ekranlarinda da ayni dugme-sirasi kabini olarak
+   kullanilir (bkz. ders-dom.js). */
+.etkilesim__alt {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Soru ve sinav --- */
+
+.soru__baslik {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+}
+
+.soru__metin {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0 0 14px;
+}
+
+.soru__secenekler {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Sol tarafta ikon icin sabit bosluk hazirdan birakilir; secili/dogru/
+   yanlis durumlarinda ikon eklenince metin kaymasin diye. */
+.soru__secenek {
+  position: relative;
+  min-height: 52px;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: transparent;
+  border: 2px solid var(--primary-light);
+  border-radius: 14px;
+  padding: 12px 14px 12px 40px;
+  text-align: left;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.soru__secenek:active {
+  transform: scale(0.98);
+}
+
+/* Secim isareti: cevaplanmadan once cocuk dokunusunun kaydedildigini
+   gormeli. Dogru/yanlis renklendirmesinden BAGIMSIZDIR (bkz.
+   ders-dom.js secenekListesi yorumu). */
+.soru__secenek--secili {
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.08);
+}
+
+/* Dogru/yanlis: renk TEK basina isaret degil. Ikon (::before), kenarlik
+   ve kalinlik/stil birlikte degisir; renk korlugu bir yana, gunes
+   altinda da ayirt edilsin diye (bkz. task-20-brief.md). */
+.soru__secenek--dogru {
+  border-color: var(--secondary);
+  background: rgba(0, 206, 201, 0.12);
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+.soru__secenek--dogru::before {
+  content: '\2713';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.soru__secenek--yanlis {
+  border-color: var(--danger);
+  background: rgba(214, 48, 49, 0.08);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.soru__secenek--yanlis::before {
+  content: '\2717';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.soru__cozum {
+  margin-bottom: 14px;
+}
+
+.soru__geri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 8px;
+}
+
+.soru__geri::before {
+  font-size: 18px;
+}
+
+.soru__geri--dogru {
+  color: var(--secondary);
+  background: rgba(0, 206, 201, 0.12);
+}
+
+.soru__geri--dogru::before {
+  content: '\2713';
+}
+
+.soru__geri--yanlis {
+  color: var(--danger);
+  background: rgba(214, 48, 49, 0.1);
+}
+
+.soru__geri--yanlis::before {
+  content: '\2717';
+}
+
+.soru__cozum-adim {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  background: rgba(131, 149, 167, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 0 0 6px;
+}
+
+.sinav__not {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.sinav__uyari {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  background: rgba(214, 48, 49, 0.1);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 0 0 12px;
+}
+
+.sinav__uyari::before {
+  content: '\26A0';
+  font-size: 14px;
+}
+
+/* --- Sonuc --- */
+
+.sonuc__baslik {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+  margin: 8px 0 4px;
+}
+
+.sonuc__puan {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+.sonuc__durum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+  background: rgba(131, 149, 167, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 0 16px;
+}
+
+.sonuc__durum::before {
+  content: '\21BB';
+  font-size: 16px;
+}
+
+/* Gecti durumu da renkten bagimsiz bir ikon ve kalinlik farkiyla
+   isaretlenir (yildiz + koyu yazi), yalniz renge guvenilmez. */
+.sonuc__durum--gecti {
+  color: var(--secondary);
+  background: rgba(0, 206, 201, 0.12);
+  font-weight: 700;
+}
+
+.sonuc__durum--gecti::before {
+  content: '\2605';
+}
+
+.sonuc__kirilim {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sonuc__konu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.sonuc__konu-ad {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.sonuc__calis {
+  flex-shrink: 0;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--gold);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+.sonuc__alt {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Ebeveyn paneli eki (Task 18) ---
+   Eski tek-tireli siniflarla (parent-gorev, parent-queue, parent-
+   guardians...) ayni kart/liste/dugme dilini kullanir. Sinif adlandirma
+   kalibi farkli (cift alt cizgi) ama gorsel dil aynidir; bu tutarsizlik
+   kasten DUZELTILMEDI, sinif adini degistirmek JS'e dokunmak demek ve
+   bu gorevin kapsami disinda (bkz. task-20-brief.md). */
+
+.parent__bolum {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.parent__bolum h2 {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.parent__bolum h3 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 14px 0 8px;
+}
+
+/* Sinavlar listesi ve "sinav yok" metni JS'te sinif almadan
+   basiliyor; ozel siniflarla (parent__not, parent__kazanim...)
+   catismamasi icin yalniz siniflandirilmamis <p> hedeflenir. */
+.parent__bolum p:not([class]) {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+}
+
+.parent__satir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 0;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.parent__satir span {
+  flex: 1;
+}
+
+.parent__satir input[type="number"],
+.parent__satir input[type="text"] {
+  width: 90px;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-align: center;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #fff;
+  color: var(--text-dark);
+}
+
+.parent__satir input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--primary);
+}
+
+.parent__not {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.parent__kazanimlar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parent__kazanim {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: rgba(131, 149, 167, 0.08);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 0;
+}
+
+.parent__kazanim--tamam {
+  color: var(--secondary);
+  font-weight: 600;
+  background: rgba(0, 206, 201, 0.1);
+}
