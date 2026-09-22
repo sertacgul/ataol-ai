@@ -2238,3 +2238,1464 @@ sesler/ precache disinda birakildi, iOS kurulumunu cokertmesin."
 ```
 
 **FAZ 0 BITTI.** Iskelet calisiyor, icerik yazilmaya hazir.
+
+---
+
+# FAZ 1: Geometrik Sekiller Unitesi (1-8. haftalar)
+
+## Task 8: Uretici sozlesmesi ve kayit defteri
+
+Her soru ureticisi ayni sekli uretmek zorunda. Sozlesme tek yerde
+tanimlanir ve her ureticinin testi onu 200 tohumla zorlar. Bu, "yanlis
+matematik ogretme" riskine karsi asil savunmadir.
+
+**Files:**
+- Create: `src/engines/uretici/ortak.js`
+- Create: `src/engines/uretici/index.js`
+- Create: `tests/yardim/soru-sozlesmesi.js`
+- Test: `tests/uretici-index.test.js`
+
+**Interfaces:**
+- Consumes: yok
+- Produces (`ortak.js`):
+  - `BICIMLER: ['secmeli', 'sayi']`
+  - `karistir(dizi, rng)` -> yeni dizi (Fisher-Yates, rng enjekte)
+  - `secmeliKur({ tip, soru, dogruCevap, celdiriciler, cozum, gorsel }, rng)` -> soru nesnesi
+  - `sec(dizi, rng)` -> diziden bir oge
+- Produces (`index.js`):
+  - `URETICILER: { [ureticiId]: (seviye, rng) => soru }`
+  - `soruUret(ureticiId, seviye, rng)` -> soru; bilinmeyen id'de `null`
+  - `ureticiVarMi(ureticiId)` -> boolean
+  - `ortak.js` ciktilarini yeniden disa aktarir
+- Test yardimcisi: `sozlesmeyiDogrula(soru, baglam)`, `tohumluRng(tohum)`,
+  `ureticiyiSina(uret, seviye, ekDogrula, tur)`
+
+**Neden iki dosya:** `index.js` ureticileri import ediyor, ureticiler de
+ortak yardimcilari kullaniyor. Ikisi ayni dosyada olsaydi dongusel import
+olurdu. ESM bunu cogu zaman tolere eder ama kirilgandir ve yukleme
+sirasina bagimli hatalar uretir. Yardimcilar bu yuzden `ortak.js`'te
+durur: `index.js -> uretici -> ortak.js`, tek yonlu.
+
+Soru sozlesmesi:
+
+```js
+{
+  tip: string,            // Leitner kutu anahtari; ORNEK degil TIP
+  bicim: 'secmeli' | 'sayi',
+  soru: { tr: string },
+  secenekler: string[],   // yalniz bicim === 'secmeli'
+  dogru: number,          // yalniz bicim === 'secmeli'; secenekler icindeki indeks
+  cevap: string,          // yalniz bicim === 'sayi'; metin olarak karsilastirilir
+  cozum: string[],        // en az 1 adim, hicbiri bos degil
+  gorsel: object | null   // istege bagli widget verisi
+}
+```
+
+- [ ] **Step 1: Test yardimcisini yaz**
+
+Bu bir test destek dosyasidir, `.test.js` uzantisi YOKTUR; `npm test`
+onu ayri bir test dosyasi olarak calistirmaz.
+
+```js
+// tests/yardim/soru-sozlesmesi.js
+import assert from 'node:assert/strict';
+
+/**
+ * Tohumlu, belirlenimci rastgele sayi uretici.
+ *
+ * Math.random yerine bunu kullaniyoruz ki basarisiz bir test tekrar
+ * calistirildiginda AYNI soruyu uretsin. Rastgele basarisiz olan bir
+ * test hic olmayan testten daha kotudur.
+ *
+ * mulberry32: kucuk, hizli ve testler icin yeterince dagilimli.
+ */
+export function tohumluRng(tohum) {
+  let a = tohum >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const BICIMLER = ['secmeli', 'sayi'];
+
+/**
+ * Ortak soru sozlesmesi. Her uretici testi her tohumda bunu cagirir.
+ * Cevabin DOGRULUGU burada denetlenmez; onu her ureticinin kendi testi
+ * parametrelerden bagimsiz olarak yeniden hesaplayarak dogrular.
+ */
+export function sozlesmeyiDogrula(soru, baglam) {
+  const b = (m) => `${baglam}: ${m}`;
+
+  assert.ok(soru && typeof soru === 'object', b('soru nesnesi degil'));
+  assert.ok(typeof soru.tip === 'string' && soru.tip.length > 0, b('tip bos'));
+  assert.ok(BICIMLER.includes(soru.bicim), b(`gecersiz bicim "${soru.bicim}"`));
+
+  assert.ok(soru.soru && typeof soru.soru.tr === 'string', b('soru.tr yok'));
+  assert.ok(soru.soru.tr.trim().length >= 10, b('soru metni fazla kisa'));
+
+  assert.ok(Array.isArray(soru.cozum), b('cozum dizi degil'));
+  assert.ok(soru.cozum.length >= 1, b('cozum adimi yok'));
+  for (const adim of soru.cozum) {
+    assert.ok(typeof adim === 'string' && adim.trim().length > 0, b('bos cozum adimi'));
+  }
+
+  if (soru.bicim === 'secmeli') {
+    assert.ok(Array.isArray(soru.secenekler), b('secenekler dizi degil'));
+    assert.ok(soru.secenekler.length >= 3 && soru.secenekler.length <= 5,
+      b(`secenek sayisi ${soru.secenekler.length}`));
+
+    for (const s of soru.secenekler) {
+      assert.ok(typeof s === 'string' && s.trim().length > 0, b('bos secenek'));
+    }
+
+    const benzersiz = new Set(soru.secenekler);
+    assert.equal(benzersiz.size, soru.secenekler.length,
+      b(`tekrar eden secenek: ${soru.secenekler.join(', ')}`));
+
+    assert.ok(Number.isInteger(soru.dogru), b('dogru indeks degil'));
+    assert.ok(soru.dogru >= 0 && soru.dogru < soru.secenekler.length,
+      b(`dogru indeks disarida: ${soru.dogru}`));
+  }
+
+  if (soru.bicim === 'sayi') {
+    assert.ok(typeof soru.cevap === 'string' && soru.cevap.length > 0,
+      b('sayi biciminde cevap metni yok'));
+  }
+}
+
+/**
+ * Bir ureticiyi N tohumla calistirip sozlesmeyi ve cagiranin verdigi
+ * ek dogrulamayi uygular.
+ *
+ * ekDogrula(soru, rngTohumu): ureticiye ozel kontrol. Burasi cevabin
+ * parametrelerden bagimsiz olarak yeniden hesaplandigi yerdir.
+ */
+export function ureticiyiSina(uret, seviye, ekDogrula, tur = 200) {
+  for (let tohum = 1; tohum <= tur; tohum++) {
+    const soru = uret(seviye, tohumluRng(tohum));
+    sozlesmeyiDogrula(soru, `seviye ${seviye}, tohum ${tohum}`);
+    if (ekDogrula) ekDogrula(soru, tohum);
+  }
+}
+```
+
+- [ ] **Step 2: Kayit defteri testini yaz**
+
+```js
+// tests/uretici-index.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { URETICILER, soruUret, ureticiVarMi, karistir, secmeliKur } from '../src/engines/uretici/index.js';
+import { tohumluRng, sozlesmeyiDogrula } from './yardim/soru-sozlesmesi.js';
+
+test('Faz 1 ureticileri kayitlidir', () => {
+  for (const id of ['temel-cizimler', 'aci-olcme', 'cokgenler-cember']) {
+    assert.ok(ureticiVarMi(id), `${id} kayitli degil`);
+    assert.equal(typeof URETICILER[id], 'function');
+  }
+});
+
+test('bilinmeyen uretici null dondurur, atmaz', () => {
+  assert.equal(soruUret('boyle-bir-konu-yok', 1, tohumluRng(1)), null);
+  assert.equal(ureticiVarMi('boyle-bir-konu-yok'), false);
+});
+
+test('soruUret kayitli ureticiyi cagirir', () => {
+  const soru = soruUret('aci-olcme', 1, tohumluRng(42));
+  sozlesmeyiDogrula(soru, 'soruUret');
+});
+
+test('karistir tum ogeleri korur', () => {
+  const kaynak = ['a', 'b', 'c', 'd', 'e'];
+  for (let t = 1; t <= 50; t++) {
+    const sonuc = karistir(kaynak, tohumluRng(t));
+    assert.equal(sonuc.length, kaynak.length);
+    assert.deepEqual([...sonuc].sort(), [...kaynak].sort());
+  }
+});
+
+test('karistir kaynagi degistirmez', () => {
+  const kaynak = ['a', 'b', 'c'];
+  karistir(kaynak, tohumluRng(1));
+  assert.deepEqual(kaynak, ['a', 'b', 'c']);
+});
+
+test('karistir gercekten karistirir', () => {
+  const kaynak = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  let farkli = 0;
+  for (let t = 1; t <= 50; t++) {
+    if (karistir(kaynak, tohumluRng(t)).join('') !== kaynak.join('')) farkli++;
+  }
+  assert.ok(farkli > 40, `50 denemede yalniz ${farkli} kez karisti`);
+});
+
+test('secmeliKur dogru indeksi karistirmadan sonra dogru gosterir', () => {
+  for (let t = 1; t <= 100; t++) {
+    const soru = secmeliKur({
+      tip: 'deneme',
+      soru: 'Bu bir deneme sorusudur, cevabi nedir?',
+      dogruCevap: '42',
+      celdiriciler: ['41', '43', '24'],
+      cozum: ['Cunku oyle']
+    }, tohumluRng(t));
+
+    sozlesmeyiDogrula(soru, `secmeliKur tohum ${t}`);
+    assert.equal(soru.secenekler[soru.dogru], '42');
+  }
+});
+
+test('secmeliKur tekrar eden celdiriciyi eler', () => {
+  const soru = secmeliKur({
+    tip: 'deneme',
+    soru: 'Bu bir deneme sorusudur, cevabi nedir?',
+    dogruCevap: '42',
+    celdiriciler: ['41', '41', '42', '43'],
+    cozum: ['Cunku oyle']
+  }, tohumluRng(7));
+
+  assert.equal(new Set(soru.secenekler).size, soru.secenekler.length);
+  assert.ok(soru.secenekler.includes('42'));
+});
+```
+
+- [ ] **Step 3: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/uretici-index.test.js`
+Expected: FAIL, `Cannot find module '../src/engines/uretici/index.js'`.
+
+- [ ] **Step 4: `src/engines/uretici/ortak.js` yaz**
+
+```js
+/**
+ * Soru ureticilerinin ortak yardimcilari.
+ *
+ * index.js'ten AYRI bir dosyadir cunku index.js ureticileri import
+ * ediyor, ureticiler de bu yardimcilari kullaniyor. Tek dosya olsaydi
+ * dongusel import olurdu; boyle akis tek yonlu kalir:
+ *   index.js -> uretici/<konu>.js -> ortak.js
+ *
+ * TEMEL KURAL: cevap, ureticinin sectigi parametrelerden HESAPLANIR.
+ * Hicbir yerde "cevap muhtemelen su" yoktur. Celdiriciler de rastgele
+ * sayi degil, cocugun gercekten yaptigi hatalarin sonucudur; yanlis
+ * secildiginde cozum adimlari hangi hatanin yapildigini gosterir.
+ */
+
+export const BICIMLER = ['secmeli', 'sayi'];
+
+/** Diziden rastgele bir oge. rng disaridan gelir. */
+export const sec = (dizi, rng) => dizi[Math.floor(rng() * dizi.length)];
+
+/**
+ * Fisher-Yates. Kaynagi degistirmez.
+ */
+export function karistir(dizi, rng) {
+  const out = [...dizi];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * Secmeli soru kurar.
+ *
+ * Celdiriciler once benzersizlestirilir ve dogru cevapla cakisanlar
+ * elenir; yoksa ayni sik iki kez cikar ve cocuk hakli olarak sasirir.
+ * En fazla 3 celdirici alinir, yani 4 sik olur.
+ *
+ * dogru indeksi karistirmadan SONRA bulunur, sabit tutulmaz. Sabit
+ * kalsaydi cocuk bir sure sonra "cevap hep ikinci sik" diye ogrenirdi.
+ */
+export function secmeliKur({ tip, soru, dogruCevap, celdiriciler, cozum, gorsel = null }, rng) {
+  const dogruMetin = String(dogruCevap);
+  const temiz = [];
+  for (const c of celdiriciler.map(String)) {
+    if (c !== dogruMetin && !temiz.includes(c)) temiz.push(c);
+    if (temiz.length === 3) break;
+  }
+
+  const secenekler = karistir([dogruMetin, ...temiz], rng);
+
+  return {
+    tip,
+    bicim: 'secmeli',
+    soru: { tr: soru },
+    secenekler,
+    dogru: secenekler.indexOf(dogruMetin),
+    cozum,
+    gorsel
+  };
+}
+```
+
+- [ ] **Step 5: `src/engines/uretici/index.js` yaz**
+
+```js
+/**
+ * Soru ureticilerinin kayit defteri.
+ *
+ * Her uretici uret(seviye, rng) imzasini tasir ve soru sozlesmesine
+ * uyan bir nesne dondurur. rng disaridan gelir: motorlar saf kalir ve
+ * testler tohumlu calisir.
+ *
+ * Ortak yardimcilar ortak.js'tedir ve buradan yeniden disa aktarilir;
+ * cagiranlar tek yerden import edebilsin diye.
+ */
+
+import { uret as temelCizimler } from './temel-cizimler.js';
+import { uret as aciOlcme } from './aci-olcme.js';
+import { uret as cokgenlerCember } from './cokgenler-cember.js';
+
+export { BICIMLER, sec, karistir, secmeliKur } from './ortak.js';
+
+export const URETICILER = {
+  'temel-cizimler': temelCizimler,
+  'aci-olcme': aciOlcme,
+  'cokgenler-cember': cokgenlerCember
+};
+
+export function ureticiVarMi(id) {
+  return typeof URETICILER[id] === 'function';
+}
+
+export function soruUret(id, seviye, rng) {
+  const uret = URETICILER[id];
+  return typeof uret === 'function' ? uret(seviye, rng) : null;
+}
+```
+
+- [ ] **Step 6: Kismi testi calistir**
+
+Run: `node --test tests/uretici-index.test.js`
+Expected: FAIL, `Cannot find module './temel-cizimler.js'`. Bu beklenen
+haldir; uretici dosyalari Task 9, 10 ve 11'de yazilacak ve bu test
+Task 11'in sonunda yesil olacak. `ortak.js` yardimcilarini sinayan
+testler (`karistir`, `secmeliKur`) da o zaman calisacak.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/engines/uretici/ortak.js src/engines/uretici/index.js \
+        tests/yardim/soru-sozlesmesi.js tests/uretici-index.test.js
+git commit -m "feat(ders): soru ureticisi sozlesmesi ve kayit defteri
+
+Ortak soru sekli, tohumlu rng yardimcisi ve 200 turlu sozlesme
+dogrulayicisi. secmeliKur celdiricileri benzersizlestirir ve dogru
+indeksi karistirmadan sonra bulur; sabit indeks olsa cocuk bir sure
+sonra cevabin yerini ezberlerdi.
+
+Uretici dosyalari Task 9-11'de gelecek; uretici-index testi o zamana
+kadar kirmizi kalir."
+```
+
+---
+
+## Task 9: Temel cizimler ureticisi
+
+Kazanim MAT.5.3.1 (arac ve teknoloji) ve MAT.5.3.2 (ozelliklere dair
+cikarim). Bu konu parametrik degil kavramsal: sorular bir varlik
+tablosundan uretilir. "Insa yoluyla dogruluk" burada su demek: cevap
+tablodan okunur, tahmin edilmez, ve test AYNI tabloyu bagimsiz olarak
+tarayip her kaydi tek tek dogrular.
+
+**Files:**
+- Create: `src/engines/uretici/temel-cizimler.js`
+- Test: `tests/uretici-temel-cizimler.test.js`
+
+**Interfaces:**
+- Consumes: `secmeliKur`, `karistir`, `sec` (`src/engines/uretici/ortak.js`, Task 8)
+- Produces:
+  - `uret(seviye, rng)` -> soru
+  - `VARLIKLAR` -> `Array<{ id, ad, tanim, arac, uc, gosterim }>`
+  - `ARACLAR` -> `Array<{ id, ad }>`
+  - `aracSorusu(varlik, rng)`, `tanimSorusu(varlik, rng)`,
+    `ucSorusu(varlik, rng)`, `gosterimSorusu(varlik, rng)`
+  - Soru tipleri: `temel-cizimler-arac`, `temel-cizimler-tanim`,
+    `temel-cizimler-uc`, `temel-cizimler-gosterim`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/uretici-temel-cizimler.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  uret, VARLIKLAR, ARACLAR,
+  aracSorusu, tanimSorusu, ucSorusu, gosterimSorusu
+} from '../src/engines/uretici/temel-cizimler.js';
+import { ureticiyiSina, sozlesmeyiDogrula, tohumluRng } from './yardim/soru-sozlesmesi.js';
+
+test('seviye 1 sozlesmeye 200 tohumda uyar', () => {
+  ureticiyiSina(uret, 1, (soru) => {
+    assert.ok(soru.tip.startsWith('temel-cizimler-'), `beklenmeyen tip ${soru.tip}`);
+  });
+});
+
+test('seviye 2 sozlesmeye 200 tohumda uyar', () => {
+  ureticiyiSina(uret, 2, (soru) => {
+    assert.ok(soru.tip.startsWith('temel-cizimler-'), `beklenmeyen tip ${soru.tip}`);
+  });
+});
+
+test('seviye 1 yalniz arac ve tanim sorusu uretir', () => {
+  const tipler = new Set();
+  for (let t = 1; t <= 200; t++) tipler.add(uret(1, tohumluRng(t)).tip);
+  assert.deepEqual([...tipler].sort(), ['temel-cizimler-arac', 'temel-cizimler-tanim']);
+});
+
+test('seviye 2 yalniz uc ve gosterim sorusu uretir', () => {
+  const tipler = new Set();
+  for (let t = 1; t <= 200; t++) tipler.add(uret(2, tohumluRng(t)).tip);
+  assert.deepEqual([...tipler].sort(), ['temel-cizimler-gosterim', 'temel-cizimler-uc']);
+});
+
+test('her varligin arac sorusunda dogru cevap tablodaki aractir', () => {
+  for (const v of VARLIKLAR) {
+    for (let t = 1; t <= 20; t++) {
+      const soru = aracSorusu(v, tohumluRng(t));
+      sozlesmeyiDogrula(soru, `arac ${v.id} tohum ${t}`);
+      const beklenen = ARACLAR.find((a) => a.id === v.arac).ad;
+      assert.equal(soru.secenekler[soru.dogru], beklenen, `${v.ad} icin yanlis arac`);
+      assert.ok(soru.soru.tr.includes(v.ad), `${v.ad} soru metninde gecmiyor`);
+    }
+  }
+});
+
+test('her varligin tanim sorusunda dogru cevap varligin adidir', () => {
+  for (const v of VARLIKLAR) {
+    for (let t = 1; t <= 20; t++) {
+      const soru = tanimSorusu(v, tohumluRng(t));
+      sozlesmeyiDogrula(soru, `tanim ${v.id} tohum ${t}`);
+      assert.equal(soru.secenekler[soru.dogru], v.ad);
+      assert.ok(soru.soru.tr.includes(v.tanim), 'tanim metni soruda yok');
+    }
+  }
+});
+
+test('uc sorusu yalniz uc sayisi tanimli varliklar icin kurulur', () => {
+  const ucluVarliklar = VARLIKLAR.filter((v) => Number.isInteger(v.uc));
+  assert.ok(ucluVarliklar.length >= 3, 'uc sayisi tanimli varlik az');
+  for (const v of ucluVarliklar) {
+    for (let t = 1; t <= 20; t++) {
+      const soru = ucSorusu(v, tohumluRng(t));
+      sozlesmeyiDogrula(soru, `uc ${v.id} tohum ${t}`);
+      assert.equal(soru.secenekler[soru.dogru], String(v.uc));
+    }
+  }
+});
+
+test('gosterim sorusunda dogru cevap varligin adidir', () => {
+  const gosterimli = VARLIKLAR.filter((v) => v.gosterim);
+  assert.ok(gosterimli.length >= 3, 'gosterimi olan varlik az');
+  for (const v of gosterimli) {
+    for (let t = 1; t <= 20; t++) {
+      const soru = gosterimSorusu(v, tohumluRng(t));
+      sozlesmeyiDogrula(soru, `gosterim ${v.id} tohum ${t}`);
+      assert.equal(soru.secenekler[soru.dogru], v.ad);
+      assert.ok(soru.soru.tr.includes(v.gosterim), 'gosterim soruda yok');
+    }
+  }
+});
+
+test('varlik tablosu kazanimin tum ogelerini kapsar', () => {
+  const adlar = VARLIKLAR.map((v) => v.ad.toLocaleLowerCase('tr'));
+  for (const gereken of ['nokta', 'doğru', 'doğru parçası', 'ışın', 'açı', 'çember', 'dikme']) {
+    assert.ok(adlar.includes(gereken), `MAT.5.3.1 ogesi eksik: ${gereken}`);
+  }
+});
+
+test('varlik kimlikleri benzersizdir', () => {
+  const idler = VARLIKLAR.map((v) => v.id);
+  assert.equal(new Set(idler).size, idler.length);
+});
+
+test('her varligin araci arac tablosunda vardir', () => {
+  for (const v of VARLIKLAR) {
+    assert.ok(ARACLAR.some((a) => a.id === v.arac), `${v.ad} araci tanimsiz: ${v.arac}`);
+  }
+});
+
+test('ayni tohum ayni soruyu uretir', () => {
+  assert.deepEqual(uret(1, tohumluRng(99)), uret(1, tohumluRng(99)));
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/uretici-temel-cizimler.test.js`
+Expected: FAIL, `Cannot find module '../src/engines/uretici/temel-cizimler.js'`.
+
+- [ ] **Step 3: Ureticiyi yaz**
+
+```js
+/**
+ * Temel geometrik cizimler soru ureticisi.
+ * Kazanimlar: MAT.5.3.1 (arac ve teknoloji), MAT.5.3.2 (cikarim).
+ *
+ * Bu konu parametrik degil kavramsaldir; sorular asagidaki varlik
+ * tablosundan uretilir. Cevap her zaman tablodan OKUNUR. Celdiriciler
+ * de tablodan gelir, yani hepsi makul ama yanlis secenekler olur;
+ * rastgele uydurulmus bir sik cocuga hicbir sey ogretmez.
+ */
+
+import { secmeliKur, karistir, sec } from './ortak.js';
+
+export const ARACLAR = [
+  { id: 'cetvel', ad: 'Cetvel' },
+  { id: 'pergel', ad: 'Pergel' },
+  { id: 'aciolcer', ad: 'Açıölçer' },
+  { id: 'gonye', ad: 'Gönye' }
+];
+
+export const VARLIKLAR = [
+  {
+    id: 'nokta', ad: 'Nokta', arac: 'cetvel', uc: 0, gosterim: 'A',
+    tanim: 'Yeri belli olan, boyu ve eni olmayan şekil'
+  },
+  {
+    id: 'dogru', ad: 'Doğru', arac: 'cetvel', uc: 0, gosterim: 'AB doğrusu',
+    tanim: 'İki yönde de sonsuza giden, başı ve sonu olmayan şekil'
+  },
+  {
+    id: 'dogru-parcasi', ad: 'Doğru parçası', arac: 'cetvel', uc: 2, gosterim: '[AB]',
+    tanim: 'İki ucu belli olan, uzunluğu ölçülebilen şekil'
+  },
+  {
+    id: 'isin', ad: 'Işın', arac: 'cetvel', uc: 1, gosterim: '[AB',
+    tanim: 'Bir ucu belli olan, diğer yönde sonsuza giden şekil'
+  },
+  {
+    id: 'aci', ad: 'Açı', arac: 'aciolcer', uc: null, gosterim: 'ABC açısı',
+    tanim: 'Başlangıç noktaları aynı olan iki ışının oluşturduğu şekil'
+  },
+  {
+    id: 'cember', ad: 'Çember', arac: 'pergel', uc: null, gosterim: null,
+    tanim: 'Bir noktaya eşit uzaklıktaki noktaların oluşturduğu kapalı eğri'
+  },
+  {
+    id: 'dikme', ad: 'Dikme', arac: 'gonye', uc: null, gosterim: null,
+    tanim: 'Bir doğruya 90 derecelik açıyla çizilen doğru'
+  }
+];
+
+const varlikAdi = (id) => VARLIKLAR.find((v) => v.id === id).ad;
+
+export function aracSorusu(varlik, rng) {
+  const dogru = ARACLAR.find((a) => a.id === varlik.arac);
+  const celdiriciler = ARACLAR.filter((a) => a.id !== varlik.arac).map((a) => a.ad);
+
+  return secmeliKur({
+    tip: 'temel-cizimler-arac',
+    soru: `${varlik.ad} çizmek için hangi aracı kullanırsın?`,
+    dogruCevap: dogru.ad,
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      `${varlik.ad}: ${varlik.tanim.toLocaleLowerCase('tr')}.`,
+      `Bunu çizmek için ${dogru.ad.toLocaleLowerCase('tr')} gerekir.`
+    ]
+  }, rng);
+}
+
+export function tanimSorusu(varlik, rng) {
+  const celdiriciler = VARLIKLAR.filter((v) => v.id !== varlik.id).map((v) => v.ad);
+
+  return secmeliKur({
+    tip: 'temel-cizimler-tanim',
+    soru: `${varlik.tanim} hangisidir?`,
+    dogruCevap: varlik.ad,
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      `Tanım "${varlik.tanim.toLocaleLowerCase('tr')}" diyor.`,
+      `Bu tanıma uyan şekil ${varlik.ad.toLocaleLowerCase('tr')}.`
+    ]
+  }, rng);
+}
+
+export function ucSorusu(varlik, rng) {
+  // Celdiriciler diger varliklarin uc sayilari: "isin ile dogru
+  // parcasini karistirma" hatasini dogrudan hedefler.
+  const celdiriciler = [0, 1, 2, 3]
+    .filter((n) => n !== varlik.uc)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'temel-cizimler-uc',
+    soru: `Bir ${varlik.ad.toLocaleLowerCase('tr')} şeklinin kaç ucu vardır?`,
+    dogruCevap: String(varlik.uc),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      `${varlik.ad}: ${varlik.tanim.toLocaleLowerCase('tr')}.`,
+      `Buna göre uç sayısı ${varlik.uc}.`
+    ]
+  }, rng);
+}
+
+export function gosterimSorusu(varlik, rng) {
+  const celdiriciler = VARLIKLAR
+    .filter((v) => v.id !== varlik.id && v.gosterim)
+    .map((v) => v.ad);
+
+  return secmeliKur({
+    tip: 'temel-cizimler-gosterim',
+    soru: `"${varlik.gosterim}" gösterimi neyi ifade eder?`,
+    dogruCevap: varlik.ad,
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      `"${varlik.gosterim}" gösterimi ${varlik.ad.toLocaleLowerCase('tr')} demektir.`,
+      `${varlik.tanim}.`
+    ]
+  }, rng);
+}
+
+export function uret(seviye, rng) {
+  if (seviye === 1) {
+    const varlik = sec(VARLIKLAR, rng);
+    return rng() < 0.5 ? aracSorusu(varlik, rng) : tanimSorusu(varlik, rng);
+  }
+
+  // Seviye 2: ozellik cikarimi. uc sorusu yalniz uc sayisi tanimli,
+  // gosterim sorusu yalniz gosterimi olan varliklar icin kurulabilir.
+  const ucluler = VARLIKLAR.filter((v) => Number.isInteger(v.uc));
+  const gosterimliler = VARLIKLAR.filter((v) => v.gosterim);
+
+  return rng() < 0.5
+    ? ucSorusu(sec(ucluler, rng), rng)
+    : gosterimSorusu(sec(gosterimliler, rng), rng);
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/uretici-temel-cizimler.test.js`
+Expected: PASS, 12 test gecer.
+
+Not: `secmeliKur` en fazla 3 celdirici alir, yani `ucSorusu` icin 4 sik
+olur. `aracSorusu` icin de 3 celdirici vardir (4 arac, biri dogru).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/engines/uretici/temel-cizimler.js tests/uretici-temel-cizimler.test.js
+git commit -m "feat(ders): temel cizimler soru ureticisi
+
+MAT.5.3.1 ve MAT.5.3.2. Sorular varlik tablosundan uretilir, cevap
+tablodan okunur. Celdiriciler tablonun diger kayitlarindan gelir:
+'isin ile dogru parcasini karistirma' hatasini dogrudan hedefler.
+Test her varligi tek tek dogrular, rastgele orneklemez."
+```
+
+---
+
+## Task 10: Aci motoru ve aci olcme ureticisi
+
+Kazanim MAT.5.3.3 (aci olcme araci) ve MAT.5.3.4 (iki-uc dogrunun
+olusturdugu acilar). Burasi gercekten parametrik: derece secilir, cevap
+hesaplanir.
+
+**Files:**
+- Create: `src/engines/widgets/aci.js`
+- Create: `src/engines/uretici/aci-olcme.js`
+- Test: `tests/widgets-aci.test.js`
+- Test: `tests/uretici-aci-olcme.test.js`
+
+**Interfaces:**
+- Consumes: `secmeliKur`, `karistir`, `sec` (`src/engines/uretici/ortak.js`, Task 8)
+- Produces (`engines/widgets/aci.js`):
+  - `aciTuru(derece)` -> `'dar' | 'dik' | 'genis' | 'dogru' | 'tam'`
+  - `ACI_TURU_ADI: { dar: 'Dar açı', dik: 'Dik açı', genis: 'Geniş açı', dogru: 'Doğru açı', tam: 'Tam açı' }`
+  - `butunler(a)` -> `180 - a`
+  - `tumler(a)` -> `90 - a`
+  - `tersAci(a)` -> `a`
+  - `komsuAci(a)` -> `180 - a`
+- Produces (`engines/uretici/aci-olcme.js`):
+  - `uret(seviye, rng)` -> soru
+  - Soru tipleri: `aci-olcme-tur`, `aci-olcme-okuma`, `aci-olcme-butunler`,
+    `aci-olcme-tumler`, `aci-olcme-ters`
+
+- [ ] **Step 1: Aci motoru testini yaz**
+
+```js
+// tests/widgets-aci.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { aciTuru, ACI_TURU_ADI, butunler, tumler, tersAci, komsuAci } from '../src/engines/widgets/aci.js';
+
+test('aci turleri sinirlariyla birlikte dogru siniflanir', () => {
+  assert.equal(aciTuru(1), 'dar');
+  assert.equal(aciTuru(89), 'dar');
+  assert.equal(aciTuru(90), 'dik');
+  assert.equal(aciTuru(91), 'genis');
+  assert.equal(aciTuru(179), 'genis');
+  assert.equal(aciTuru(180), 'dogru');
+  assert.equal(aciTuru(360), 'tam');
+});
+
+test('her aci turunun Turkce adi vardir', () => {
+  for (const tur of ['dar', 'dik', 'genis', 'dogru', 'tam']) {
+    assert.ok(ACI_TURU_ADI[tur], `${tur} icin ad yok`);
+  }
+});
+
+test('butunler acilari 180 yapar', () => {
+  for (let a = 1; a <= 179; a++) {
+    assert.equal(a + butunler(a), 180);
+  }
+});
+
+test('tumler acilari 90 yapar', () => {
+  for (let a = 1; a <= 89; a++) {
+    assert.equal(a + tumler(a), 90);
+  }
+});
+
+test('ters aci kendisine esittir', () => {
+  for (let a = 1; a <= 179; a++) assert.equal(tersAci(a), a);
+});
+
+test('komsu aci butunleridir', () => {
+  for (let a = 1; a <= 179; a++) assert.equal(komsuAci(a), butunler(a));
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/widgets-aci.test.js`
+Expected: FAIL, modul yok.
+
+- [ ] **Step 3: Aci motorunu yaz**
+
+```js
+/**
+ * Aci hesaplari. Saf, DOM yok, rastgele yok.
+ *
+ * Hem soru ureticisi hem aciolcer widget'i buradan okur; boylece
+ * ekranda gosterilen ile soruda sorulan ayni kuraldan gelir.
+ */
+
+export const ACI_TURU_ADI = {
+  dar: 'Dar açı',
+  dik: 'Dik açı',
+  genis: 'Geniş açı',
+  dogru: 'Doğru açı',
+  tam: 'Tam açı'
+};
+
+export function aciTuru(derece) {
+  if (derece === 360) return 'tam';
+  if (derece === 180) return 'dogru';
+  if (derece === 90) return 'dik';
+  return derece < 90 ? 'dar' : 'genis';
+}
+
+/** Butunler acilar toplami 180'dir. */
+export function butunler(a) {
+  return 180 - a;
+}
+
+/** Tumler acilar toplami 90'dir. */
+export function tumler(a) {
+  return 90 - a;
+}
+
+/**
+ * Iki dogru kesistiginde karsilikli (ters) acilar esittir. Fonksiyon
+ * ayni degeri donduruyor gibi gorunuyor ama kurali adlandirmak onemli:
+ * ureticideki cozum adimi bu kurali gosteriyor ve testi de var.
+ */
+export function tersAci(a) {
+  return a;
+}
+
+/** Kesisen iki dogruda komsu acilar butunlerdir. */
+export function komsuAci(a) {
+  return butunler(a);
+}
+```
+
+- [ ] **Step 4: Aci motoru testini calistir**
+
+Run: `node --test tests/widgets-aci.test.js`
+Expected: PASS, 6 test gecer.
+
+- [ ] **Step 5: Uretici testini yaz**
+
+```js
+// tests/uretici-aci-olcme.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { uret } from '../src/engines/uretici/aci-olcme.js';
+import { aciTuru, ACI_TURU_ADI, butunler, tumler } from '../src/engines/widgets/aci.js';
+import { ureticiyiSina, tohumluRng } from './yardim/soru-sozlesmesi.js';
+
+// Soru metninden dereceyi geri okur; test cevabi BAGIMSIZ olarak
+// yeniden hesaplayabilsin diye.
+const dereceAl = (metin) => Number(metin.match(/(\d+)\s*derece/)[1]);
+
+test('seviye 1 sozlesmeye 200 tohumda uyar', () => {
+  ureticiyiSina(uret, 1, (soru) => {
+    assert.ok(['aci-olcme-tur', 'aci-olcme-okuma'].includes(soru.tip), soru.tip);
+  });
+});
+
+test('seviye 2 sozlesmeye 200 tohumda uyar', () => {
+  ureticiyiSina(uret, 2, (soru) => {
+    assert.ok(['aci-olcme-butunler', 'aci-olcme-tumler', 'aci-olcme-ters'].includes(soru.tip), soru.tip);
+  });
+});
+
+test('aci turu sorusunun cevabi bagimsiz hesapla dogrulanir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(1, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-tur') continue;
+    const derece = dereceAl(soru.soru.tr);
+    assert.equal(soru.secenekler[soru.dogru], ACI_TURU_ADI[aciTuru(derece)],
+      `${derece} derece icin yanlis tur, tohum ${t}`);
+  }
+});
+
+test('aciolcer okuma sorusunda cevap gorsel verideki derecedir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(1, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-okuma') continue;
+    assert.ok(soru.gorsel && soru.gorsel.widget === 'aciolcer', 'gorsel verisi yok');
+    assert.equal(soru.secenekler[soru.dogru], String(soru.gorsel.derece));
+  }
+});
+
+test('butunler sorusunun cevabi 180 den cikarmayla dogrulanir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-butunler') continue;
+    const derece = dereceAl(soru.soru.tr);
+    assert.equal(Number(soru.secenekler[soru.dogru]), butunler(derece));
+    assert.equal(derece + Number(soru.secenekler[soru.dogru]), 180);
+  }
+});
+
+test('tumler sorusunun cevabi 90 dan cikarmayla dogrulanir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-tumler') continue;
+    const derece = dereceAl(soru.soru.tr);
+    assert.equal(Number(soru.secenekler[soru.dogru]), tumler(derece));
+    assert.ok(tumler(derece) > 0, 'tumleri sifir veya negatif olmamali');
+  }
+});
+
+test('ters aci sorusunun cevabi verilen aciya esittir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-ters') continue;
+    const derece = dereceAl(soru.soru.tr);
+    assert.equal(Number(soru.secenekler[soru.dogru]), derece);
+  }
+});
+
+test('celdiriciler gercek hatalardan gelir, dogruya esit degildir', () => {
+  for (let t = 1; t <= 300; t++) {
+    for (const seviye of [1, 2]) {
+      const soru = uret(seviye, tohumluRng(t));
+      const dogru = soru.secenekler[soru.dogru];
+      const digerleri = soru.secenekler.filter((_, i) => i !== soru.dogru);
+      assert.ok(!digerleri.includes(dogru), `tohum ${t}: celdirici dogruya esit`);
+    }
+  }
+});
+
+test('butunler sorusunda 90 dan cikarma hatasi celdirici olarak bulunur', () => {
+  let bulundu = 0;
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'aci-olcme-butunler') continue;
+    const derece = dereceAl(soru.soru.tr);
+    if (derece < 90 && soru.secenekler.includes(String(tumler(derece)))) bulundu++;
+  }
+  assert.ok(bulundu > 0, 'yaygin hata celdirici olarak hic kullanilmamis');
+});
+
+test('uretilen dereceler makul araliktadir', () => {
+  for (let t = 1; t <= 300; t++) {
+    for (const seviye of [1, 2]) {
+      const soru = uret(seviye, tohumluRng(t));
+      const eslesme = soru.soru.tr.match(/(\d+)\s*derece/);
+      if (!eslesme) continue;
+      const d = Number(eslesme[1]);
+      assert.ok(d >= 5 && d <= 175, `mantiksiz derece ${d}`);
+    }
+  }
+});
+
+test('ayni tohum ayni soruyu uretir', () => {
+  assert.deepEqual(uret(2, tohumluRng(55)), uret(2, tohumluRng(55)));
+});
+```
+
+- [ ] **Step 6: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/uretici-aci-olcme.test.js`
+Expected: FAIL, modul yok.
+
+- [ ] **Step 7: Ureticiyi yaz**
+
+```js
+/**
+ * Aci olcme soru ureticisi.
+ * Kazanimlar: MAT.5.3.3 (olcme araci), MAT.5.3.4 (kesisen dogrularin
+ * olusturdugu acilar).
+ *
+ * Gercekten parametriktir: once derece secilir, sonra cevap o dereceden
+ * HESAPLANIR. Celdiriciler cocugun gercekten yaptigi hatalardir:
+ *   - butunler yerine tumler almak (180 yerine 90'dan cikarmak)
+ *   - aciyi oldugu gibi birakmak
+ *   - komsu ile ters aciyi karistirmak
+ * Yanlis secildiginde cozum adimlari hangi hatanin yapildigini gosterir.
+ */
+
+import { secmeliKur, karistir, sec } from './ortak.js';
+import { aciTuru, ACI_TURU_ADI, butunler, tumler } from '../widgets/aci.js';
+
+// Beste bir katlari: aciolcerle gercekten okunabilir degerler. 1 derece
+// hassasiyetinde soru sormak cocuga olcmeyi degil goz karariyla tahmini
+// ogretirdi.
+const derece = (rng, en, encok) => {
+  const adim = 5;
+  const kac = Math.floor(((encok - en) / adim) + 1);
+  return en + adim * Math.floor(rng() * kac);
+};
+
+function turSorusu(rng) {
+  // Dik ve dogru aciyi da ara sira sor: yalniz rastgele deger secersek
+  // tam 90 ve 180 neredeyse hic cikmaz.
+  const ozel = [90, 180];
+  const d = rng() < 0.25 ? sec(ozel, rng) : derece(rng, 10, 175);
+  const tur = aciTuru(d);
+  const celdiriciler = Object.keys(ACI_TURU_ADI)
+    .filter((k) => k !== tur && k !== 'tam')
+    .map((k) => ACI_TURU_ADI[k]);
+
+  return secmeliKur({
+    tip: 'aci-olcme-tur',
+    soru: `Ölçüsü ${d} derece olan açı hangi türdendir?`,
+    dogruCevap: ACI_TURU_ADI[tur],
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      '90 dereceden küçük açı dardır, 90 derece diktir, 90 ile 180 arası geniştir, 180 derece doğru açıdır.',
+      `${d} derece bu kurala göre ${ACI_TURU_ADI[tur].toLocaleLowerCase('tr')}dır.`
+    ],
+    gorsel: { widget: 'aciolcer', derece: d, mod: 'goster' }
+  }, rng);
+}
+
+function okumaSorusu(rng) {
+  const d = derece(rng, 15, 165);
+  // Celdiriciler aciolcerin ters skalasini okuma hatasi (180 - d) ve
+  // bir buyuk/kucuk bolme kaymasi.
+  const celdiriciler = [180 - d, d + 10, d - 10]
+    .filter((x) => x > 0 && x < 180 && x !== d)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'aci-olcme-okuma',
+    soru: 'Açıölçerde gösterilen açı kaç derecedir?',
+    dogruCevap: String(d),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Açıölçerin merkezini açının köşesine, sıfır çizgisini bir kenarına koy.',
+      'Diğer kenarın geçtiği sayıyı, sıfırın başladığı skaladan oku.',
+      `Bu açı ${d} derecedir.`
+    ],
+    gorsel: { widget: 'aciolcer', derece: d, mod: 'olc' }
+  }, rng);
+}
+
+function butunlerSorusu(rng) {
+  const d = derece(rng, 15, 165);
+  const dogru = butunler(d);
+  const celdiriciler = [tumler(d), d, dogru + 10]
+    .filter((x) => x > 0 && x !== dogru)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'aci-olcme-butunler',
+    soru: `Bir doğru üzerinde açılardan biri ${d} derece ise, komşusu kaç derecedir?`,
+    dogruCevap: String(dogru),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Bir doğru üzerindeki komşu açılar bütünlerdir, toplamları 180 derecedir.',
+      `180 - ${d} = ${dogru}`,
+      'Dikkat: 90 değil 180 kullanılır. 90 kullanırsan tümler açıyı bulursun.'
+    ]
+  }, rng);
+}
+
+function tumlerSorusu(rng) {
+  const d = derece(rng, 15, 75);
+  const dogru = tumler(d);
+  const celdiriciler = [butunler(d), d, dogru + 10]
+    .filter((x) => x > 0 && x !== dogru)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'aci-olcme-tumler',
+    soru: `Bir dik açı ${d} derece ve başka bir açıya bölünmüş. Diğer açı kaç derecedir?`,
+    dogruCevap: String(dogru),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Dik açı 90 derecedir, iki parçanın toplamı 90 eder.',
+      `90 - ${d} = ${dogru}`,
+      'Dikkat: 180 kullanırsan bütünler açıyı bulursun, burada 90 kullanılır.'
+    ]
+  }, rng);
+}
+
+function tersSorusu(rng) {
+  const d = derece(rng, 25, 155);
+  const celdiriciler = [butunler(d), 90, d + 10]
+    .filter((x) => x > 0 && x !== d)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'aci-olcme-ters',
+    soru: `İki doğru kesişiyor. Oluşan açılardan biri ${d} derece ise, karşısındaki (ters) açı kaç derecedir?`,
+    dogruCevap: String(d),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'İki doğru kesiştiğinde karşılıklı duran açılar birbirine eşittir.',
+      `Bu yüzden ters açı da ${d} derecedir.`,
+      `Komşu açı olsaydı 180 - ${d} = ${butunler(d)} olurdu; ters açı farklıdır.`
+    ]
+  }, rng);
+}
+
+export function uret(seviye, rng) {
+  if (seviye === 1) {
+    return rng() < 0.5 ? turSorusu(rng) : okumaSorusu(rng);
+  }
+  const p = rng();
+  if (p < 0.34) return butunlerSorusu(rng);
+  if (p < 0.67) return tumlerSorusu(rng);
+  return tersSorusu(rng);
+}
+```
+
+- [ ] **Step 8: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/uretici-aci-olcme.test.js`
+Expected: PASS, 11 test gecer.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/engines/widgets/aci.js src/engines/uretici/aci-olcme.js \
+        tests/widgets-aci.test.js tests/uretici-aci-olcme.test.js
+git commit -m "feat(ders): aci motoru ve aci olcme ureticisi
+
+MAT.5.3.3 ve MAT.5.3.4. Derece once secilir, cevap ondan hesaplanir;
+test cevabi soru metninden dereceyi geri okuyup bagimsiz olarak
+yeniden hesaplar.
+
+Dereceler beste bir katlari, cunku aciolcerle gercekten okunabilmeli.
+Celdiriciler gercek hatalar: 180 yerine 90'dan cikarmak, aciyi oldugu
+gibi birakmak, komsu ile ters aciyi karistirmak."
+```
+
+---
+
+## Task 11: Cokgenler ve cember ureticisi
+
+Kazanimlar MAT.5.3.5 (cokgen olusumu), MAT.5.3.6 (kenar ve aci
+ozellikleri), MAT.5.3.7 (kesisen cember ciftinden insa edilen ucgenler).
+
+Seviye 3 ve 4 gercek bir insa problemidir: iki cemberin yaricaplari ve
+merkezler arasi uzaklik secilir, olusan ucgenin kenarlari bunlardir, tur
+kenarlardan HESAPLANIR. Ayrica cemberlerin gercekten iki noktada
+kesismesi gerekir; uretici bu kosulu saglamak zorundadir, yoksa var
+olmayan bir ucgen sorulur.
+
+**Files:**
+- Create: `src/engines/uretici/cokgenler-cember.js`
+- Test: `tests/uretici-cokgenler-cember.test.js`
+
+**Interfaces:**
+- Consumes: `secmeliKur`, `karistir`, `sec` (`src/engines/uretici/ortak.js`, Task 8)
+- Produces:
+  - `uret(seviye, rng)` -> soru
+  - `COKGENLER` -> `Array<{ kenar, ad }>` (3-8 kenar)
+  - `ucgenTuru(a, b, c)` -> `'eskenar' | 'ikizkenar' | 'cesitkenar'`
+  - `kesisirMi(r1, r2, d)` -> boolean
+  - `UCGEN_TURU_ADI` -> `{ eskenar: 'Eşkenar üçgen', ... }`
+  - Soru tipleri: `cokgen-olusum`, `cokgen-ad`, `cokgen-kenar-kose`,
+    `cember-ucgen-tur`, `cember-yaricap`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+```js
+// tests/uretici-cokgenler-cember.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  uret, COKGENLER, ucgenTuru, kesisirMi, UCGEN_TURU_ADI
+} from '../src/engines/uretici/cokgenler-cember.js';
+import { ureticiyiSina, tohumluRng } from './yardim/soru-sozlesmesi.js';
+
+test('ucgenTuru kenarlardan turu dogru hesaplar', () => {
+  assert.equal(ucgenTuru(5, 5, 5), 'eskenar');
+  assert.equal(ucgenTuru(5, 5, 8), 'ikizkenar');
+  assert.equal(ucgenTuru(5, 8, 5), 'ikizkenar');
+  assert.equal(ucgenTuru(8, 5, 5), 'ikizkenar');
+  assert.equal(ucgenTuru(3, 5, 7), 'cesitkenar');
+});
+
+test('her ucgen turunun Turkce adi vardir', () => {
+  for (const t of ['eskenar', 'ikizkenar', 'cesitkenar']) {
+    assert.ok(UCGEN_TURU_ADI[t], `${t} icin ad yok`);
+  }
+});
+
+test('kesisirMi ucgen esitsizligini uygular', () => {
+  assert.equal(kesisirMi(5, 5, 6), true);
+  assert.equal(kesisirMi(5, 5, 10), false, 'teget durum iki noktada kesismez');
+  assert.equal(kesisirMi(5, 5, 11), false, 'ayrik cemberler kesismez');
+  assert.equal(kesisirMi(3, 9, 5), false, 'ic ice cemberler kesismez');
+  assert.equal(kesisirMi(3, 9, 7), true);
+});
+
+test('cokgen tablosu 3 ile 8 kenar arasini kapsar', () => {
+  const kenarlar = COKGENLER.map((c) => c.kenar).sort((a, b) => a - b);
+  assert.deepEqual(kenarlar, [3, 4, 5, 6, 7, 8]);
+});
+
+for (const seviye of [1, 2, 3, 4]) {
+  test(`seviye ${seviye} sozlesmeye 200 tohumda uyar`, () => {
+    ureticiyiSina(uret, seviye, (soru) => {
+      assert.ok(soru.tip.length > 0);
+    });
+  });
+}
+
+test('seviye 1 ve 2 cokgen sorusu, seviye 3 ve 4 cember sorusu uretir', () => {
+  const cokgenTipleri = new Set();
+  const cemberTipleri = new Set();
+  for (let t = 1; t <= 200; t++) {
+    cokgenTipleri.add(uret(1, tohumluRng(t)).tip);
+    cokgenTipleri.add(uret(2, tohumluRng(t)).tip);
+    cemberTipleri.add(uret(3, tohumluRng(t)).tip);
+    cemberTipleri.add(uret(4, tohumluRng(t)).tip);
+  }
+  for (const tip of cokgenTipleri) assert.ok(tip.startsWith('cokgen-'), tip);
+  for (const tip of cemberTipleri) assert.ok(tip.startsWith('cember-'), tip);
+});
+
+test('cokgen olusum sorusunda dogru cevap dogru sayisidir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(1, tohumluRng(t));
+    if (soru.tip !== 'cokgen-olusum') continue;
+    const kenar = soru.gorsel.kenar;
+    const beklenen = COKGENLER.find((c) => c.kenar === kenar).ad;
+    assert.equal(soru.secenekler[soru.dogru], beklenen);
+  }
+});
+
+test('kenar-kose sorusunda kenar sayisi kose sayisina esittir', () => {
+  for (let t = 1; t <= 300; t++) {
+    const soru = uret(2, tohumluRng(t));
+    if (soru.tip !== 'cokgen-kenar-kose') continue;
+    assert.equal(Number(soru.secenekler[soru.dogru]), soru.gorsel.kenar);
+  }
+});
+
+test('cember ucgen sorusundaki ucgen gercekten var olur', () => {
+  let sayac = 0;
+  for (let t = 1; t <= 400; t++) {
+    for (const seviye of [3, 4]) {
+      const soru = uret(seviye, tohumluRng(t));
+      if (soru.tip !== 'cember-ucgen-tur') continue;
+      const { r1, r2, d } = soru.gorsel;
+      assert.ok(kesisirMi(r1, r2, d),
+        `tohum ${t}: cemberler kesismiyor (${r1}, ${r2}, ${d}) ama ucgen soruluyor`);
+      sayac++;
+    }
+  }
+  assert.ok(sayac > 0, 'hic cember-ucgen sorusu uretilmemis');
+});
+
+test('cember ucgen sorusunun cevabi kenarlardan bagimsiz hesapla dogrulanir', () => {
+  for (let t = 1; t <= 400; t++) {
+    for (const seviye of [3, 4]) {
+      const soru = uret(seviye, tohumluRng(t));
+      if (soru.tip !== 'cember-ucgen-tur') continue;
+      const { r1, r2, d } = soru.gorsel;
+      const beklenen = UCGEN_TURU_ADI[ucgenTuru(r1, r2, d)];
+      assert.equal(soru.secenekler[soru.dogru], beklenen,
+        `tohum ${t}: (${r1}, ${r2}, ${d}) icin yanlis tur`);
+    }
+  }
+});
+
+test('uc ucgen turu de zamanla uretilir', () => {
+  const turler = new Set();
+  for (let t = 1; t <= 600; t++) {
+    for (const seviye of [3, 4]) {
+      const soru = uret(seviye, tohumluRng(t));
+      if (soru.tip !== 'cember-ucgen-tur') continue;
+      const { r1, r2, d } = soru.gorsel;
+      turler.add(ucgenTuru(r1, r2, d));
+    }
+  }
+  assert.deepEqual([...turler].sort(), ['cesitkenar', 'eskenar', 'ikizkenar']);
+});
+
+test('ayni tohum ayni soruyu uretir', () => {
+  assert.deepEqual(uret(4, tohumluRng(21)), uret(4, tohumluRng(21)));
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/uretici-cokgenler-cember.test.js`
+Expected: FAIL, modul yok.
+
+- [ ] **Step 3: Ureticiyi yaz**
+
+```js
+/**
+ * Cokgenler ve cember soru ureticisi.
+ * Kazanimlar: MAT.5.3.5 (cokgen olusumu), MAT.5.3.6 (kenar ve aci
+ * ozellikleri), MAT.5.3.7 (kesisen cember ciftinden insa edilen
+ * ucgenler).
+ *
+ * Seviye 3 ve 4 gercek bir insa problemidir. Once iki yaricap ve
+ * merkezler arasi uzaklik secilir; olusan ucgenin kenarlari tam olarak
+ * bunlardir (iki yaricap + merkezler arasi uzaklik). Tur kenarlardan
+ * HESAPLANIR.
+ *
+ * Kritik kosul: cemberler gercekten IKI noktada kesismeli. Kesismezse
+ * ortada ucgen yoktur ve soru anlamsiz olur. kesisirMi bunu zorlar ve
+ * uretici gecerli bir uclu bulana kadar dener.
+ */
+
+import { secmeliKur, karistir, sec } from './ortak.js';
+
+export const COKGENLER = [
+  { kenar: 3, ad: 'Üçgen' },
+  { kenar: 4, ad: 'Dörtgen' },
+  { kenar: 5, ad: 'Beşgen' },
+  { kenar: 6, ad: 'Altıgen' },
+  { kenar: 7, ad: 'Yedigen' },
+  { kenar: 8, ad: 'Sekizgen' }
+];
+
+export const UCGEN_TURU_ADI = {
+  eskenar: 'Eşkenar üçgen',
+  ikizkenar: 'İkizkenar üçgen',
+  cesitkenar: 'Çeşitkenar üçgen'
+};
+
+export function ucgenTuru(a, b, c) {
+  if (a === b && b === c) return 'eskenar';
+  if (a === b || b === c || a === c) return 'ikizkenar';
+  return 'cesitkenar';
+}
+
+/**
+ * Iki cember IKI noktada kesisir mi?
+ *
+ * Kosul: |r1 - r2| < d < r1 + r2
+ * Esitlik halleri (teget cemberler) tek noktada kesisir; ucgen
+ * olusmaz, bu yuzden disaridadir.
+ */
+export function kesisirMi(r1, r2, d) {
+  return Math.abs(r1 - r2) < d && d < r1 + r2;
+}
+
+function olusumSorusu(rng) {
+  const c = sec(COKGENLER, rng);
+  const celdiriciler = COKGENLER.filter((x) => x.kenar !== c.kenar).map((x) => x.ad);
+
+  return secmeliKur({
+    tip: 'cokgen-olusum',
+    soru: `Düzlemde ${c.kenar} doğru, sonuncusu ilkiyle kesişecek biçimde ardışık kesişiyor. Oluşan kapalı şekil hangisidir?`,
+    dogruCevap: c.ad,
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Ardışık kesişen doğrular kapalı bir şekil oluşturur.',
+      `${c.kenar} doğru kesiştiğinde ${c.kenar} kenar oluşur.`,
+      `${c.kenar} kenarlı çokgenin adı ${c.ad.toLocaleLowerCase('tr')}dir.`
+    ],
+    gorsel: { widget: 'geometri-tuval', mod: 'cokgen', kenar: c.kenar }
+  }, rng);
+}
+
+function adSorusu(rng) {
+  const c = sec(COKGENLER, rng);
+  const celdiriciler = COKGENLER.filter((x) => x.kenar !== c.kenar).map((x) => String(x.kenar));
+
+  return secmeliKur({
+    tip: 'cokgen-ad',
+    soru: `${c.ad} kaç kenarlıdır?`,
+    dogruCevap: String(c.kenar),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      `${c.ad}, adından anlaşılacağı gibi ${c.kenar} kenarlıdır.`
+    ],
+    gorsel: { widget: 'geometri-tuval', mod: 'cokgen', kenar: c.kenar }
+  }, rng);
+}
+
+function kenarKoseSorusu(rng) {
+  const c = sec(COKGENLER, rng);
+  // Celdiriciler: "kose sayisi kenardan bir eksik/fazladir" yanilgisi.
+  const celdiriciler = [c.kenar - 1, c.kenar + 1, c.kenar * 2]
+    .filter((x) => x > 0 && x !== c.kenar)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'cokgen-kenar-kose',
+    soru: `Bir ${c.ad.toLocaleLowerCase('tr')}in ${c.kenar} kenarı var. Kaç köşesi vardır?`,
+    dogruCevap: String(c.kenar),
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Her çokgende iki komşu kenar bir köşede birleşir.',
+      'Bu yüzden köşe sayısı kenar sayısına eşittir.',
+      `${c.ad} için ${c.kenar} kenar, ${c.kenar} köşe.`
+    ],
+    gorsel: { widget: 'geometri-tuval', mod: 'cokgen', kenar: c.kenar }
+  }, rng);
+}
+
+/**
+ * Kesisen iki cember secer.
+ *
+ * Istenen ucgen turunu hedefleyerek secer ki uc tur de yeterince siksin;
+ * tamamen rastgele secseydik eskenar neredeyse hic cikmazdi.
+ * Secilen uclu yine de kesisirMi ile dogrulanir.
+ */
+function cemberCifti(rng) {
+  const hedef = sec(['eskenar', 'ikizkenar', 'cesitkenar'], rng);
+
+  for (let deneme = 0; deneme < 50; deneme++) {
+    let r1, r2, d;
+
+    if (hedef === 'eskenar') {
+      r1 = 3 + Math.floor(rng() * 8);
+      r2 = r1;
+      d = r1;
+    } else if (hedef === 'ikizkenar') {
+      r1 = 3 + Math.floor(rng() * 8);
+      r2 = r1;
+      d = 2 + Math.floor(rng() * (2 * r1 - 3));
+      if (d === r1) d += 1;
+    } else {
+      r1 = 3 + Math.floor(rng() * 8);
+      r2 = r1 + 1 + Math.floor(rng() * 4);
+      d = Math.abs(r1 - r2) + 1 + Math.floor(rng() * (2 * Math.min(r1, r2) - 1));
+      if (d === r1 || d === r2) d += 1;
+    }
+
+    if (kesisirMi(r1, r2, d) && ucgenTuru(r1, r2, d) === hedef) {
+      return { r1, r2, d };
+    }
+  }
+
+  // Her zaman gecerli olan geri dusus: eskenar ucgen.
+  return { r1: 5, r2: 5, d: 5 };
+}
+
+function ucgenTurSorusu(rng) {
+  const { r1, r2, d } = cemberCifti(rng);
+  const tur = ucgenTuru(r1, r2, d);
+  const celdiriciler = Object.keys(UCGEN_TURU_ADI)
+    .filter((k) => k !== tur)
+    .map((k) => UCGEN_TURU_ADI[k]);
+
+  return secmeliKur({
+    tip: 'cember-ucgen-tur',
+    soru: `Yarıçapları ${r1} cm ve ${r2} cm olan iki çemberin merkezleri arası ${d} cm. Çemberler iki noktada kesişiyor. Merkezleri ve kesişim noktalarından biriyle kurulan üçgen hangi türdendir?`,
+    dogruCevap: UCGEN_TURU_ADI[tur],
+    celdiriciler: karistir(celdiriciler, rng),
+    cozum: [
+      'Üçgenin kenarları: birinci yarıçap, ikinci yarıçap ve merkezler arası uzaklık.',
+      `Yani kenarlar ${r1} cm, ${r2} cm ve ${d} cm.`,
+      tur === 'eskenar'
+        ? 'Üç kenar da eşit, bu yüzden eşkenar üçgendir.'
+        : tur === 'ikizkenar'
+          ? 'İki kenar eşit, üçüncüsü farklı, bu yüzden ikizkenar üçgendir.'
+          : 'Üç kenar da farklı, bu yüzden çeşitkenar üçgendir.'
+    ],
+    gorsel: { widget: 'geometri-tuval', mod: 'cember-ucgen', r1, r2, d }
+  }, rng);
+}
+
+function yaricapSorusu(rng) {
+  const { r1, r2, d } = cemberCifti(rng);
+  const celdiriciler = [d, r1 + r2, Math.abs(r1 - r2)]
+    .filter((x) => x > 0 && x !== r1)
+    .map(String);
+
+  return secmeliKur({
+    tip: 'cember-yaricap',
+    soru: `Bir çemberin merkezi M, üzerindeki bir noktası K. Yarıçapı ${r1} cm ise [MK] uzunluğu kaç cm'dir?`,
+    dogruCevap: String(r1),
+    celdiriciler: karistir(celdiriciler.length >= 2 ? celdiriciler : [String(r1 + 1), String(r1 + 2), String(r1 * 2)], rng),
+    cozum: [
+      'Çemberin merkezi ile üzerindeki her noktanın arası eşittir.',
+      'Bu uzunluğa yarıçap denir.',
+      `Yarıçap ${r1} cm olduğuna göre [MK] de ${r1} cm.`
+    ],
+    gorsel: { widget: 'geometri-tuval', mod: 'cember', r: r1 }
+  }, rng);
+}
+
+export function uret(seviye, rng) {
+  if (seviye === 1) {
+    return rng() < 0.5 ? olusumSorusu(rng) : adSorusu(rng);
+  }
+  if (seviye === 2) {
+    return rng() < 0.5 ? kenarKoseSorusu(rng) : adSorusu(rng);
+  }
+  if (seviye === 3) {
+    return rng() < 0.5 ? yaricapSorusu(rng) : ucgenTurSorusu(rng);
+  }
+  return ucgenTurSorusu(rng);
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/uretici-cokgenler-cember.test.js`
+Expected: PASS.
+
+Test "seviye 1 ve 2 cokgen sorusu ... uretir" seviye 2'de `cokgen-ad`
+tipini de kabul eder cunku `adSorusu` iki seviyede birden kullaniliyor;
+ikisi de `cokgen-` ile basladigi icin test gecer.
+
+- [ ] **Step 5: Kayit defteri testini calistir**
+
+Run: `node --test tests/uretici-index.test.js`
+Expected: PASS. Uc uretici de yazildi, Task 8'den beri kirmizi duran bu
+test artik yesil.
+
+- [ ] **Step 6: Tum testleri calistir**
+
+Run: `npm test`
+Expected: PASS.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/engines/uretici/cokgenler-cember.js tests/uretici-cokgenler-cember.test.js
+git commit -m "feat(ders): cokgenler ve cember ureticisi
+
+MAT.5.3.5, MAT.5.3.6 ve MAT.5.3.7. Cember sorularinda once yaricaplar
+ve merkezler arasi uzaklik seciliyor, ucgenin kenarlari tam olarak
+bunlar oluyor, tur kenarlardan hesaplaniyor.
+
+kesisirMi ile cemberlerin gercekten iki noktada kesistigi zorlaniyor;
+kesismeselerdi ortada ucgen olmazdi ve var olmayan bir sekli sormus
+olurduk. Uretici hedef turu gozeterek seciyor, yoksa eskenar ucgen
+neredeyse hic cikmazdi."
+```
