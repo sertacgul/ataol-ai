@@ -372,3 +372,52 @@ export function etkilesimEkrani(kok, { gorev, mesaj, arac = null }, ceviri) {
 
   return canvas;
 }
+
+/**
+ * Quiz ve sinav sonuc ekrani.
+ *
+ * Not tek basina ise yaramaz; nereye gidilecegini soylemesi gerekir.
+ * Bu yuzden konu bazli kirilim ve zayif konunun yaninda dogrudan o
+ * konunun alistirmasina goturen bir dugme var.
+ */
+export function sonucEkrani(kok, model, ceviri) {
+  const kirilim = model.konular.map((k) =>
+    el('div', { className: 'sonuc__konu' }, [
+      el('p', { className: 'sonuc__konu-ad', text: `${k.ad}: ${k.dogru} / ${k.toplam}` }),
+      k.zayif
+        ? el('button', {
+            className: 'sonuc__calis',
+            text: ceviri('ders.stage.alistirma'),
+            attrs: { type: 'button' },
+            dataset: { dersSonuc: 'calis', dersKonu: k.id }
+          })
+        : null
+    ])
+  );
+
+  mount(kok, [
+    el('p', { className: 'sonuc__baslik', text: model.baslik }),
+    el('p', { className: 'sonuc__puan', text: ceviri('ders.quizResult', { n: model.dogru, t: model.toplam }) }),
+    el('p', {
+      className: model.gecti ? 'sonuc__durum sonuc__durum--gecti' : 'sonuc__durum',
+      text: model.gecti
+        ? ceviri('ders.quizPassed', { y: model.yildiz })
+        : ceviri('ders.quizFailed', { g: model.gecmeNotu })
+    }),
+    el('div', { className: 'sonuc__kirilim' }, kirilim),
+    el('div', { className: 'sonuc__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ders.retry'),
+        attrs: { type: 'button' },
+        dataset: { dersSonuc: 'tekrar' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ders.backToWeek'),
+        attrs: { type: 'button' },
+        dataset: { dersSonuc: 'kapat' }
+      })
+    ])
+  ]);
+}

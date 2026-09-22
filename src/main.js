@@ -47,9 +47,10 @@ import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
 import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sonucEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
-import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap } from './engines/ders.js';
+import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, QUIZ_GECME } from './engines/ders.js';
+import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
 
 let state;
@@ -83,6 +84,11 @@ let dersOrnekAdim = 0;
 // render'da yeni soru uretmek cocugun okudugu soruyu degistirirdi.
 let dersSoru = null;
 let dersSecildi = null;
+
+// Acik quiz ya da sinav. null ise yok. dersSinavSonuc dolu ise sonuc
+// ekrani gosteriliyordur.
+let dersSinav = null;
+let dersSinavSonuc = null;
 
 // Acik widget. Ekran degisirken yokEt cagrilmali, yoksa pointer
 // dinleyicileri birikir ve uygulama zamanla yavaslar.
@@ -788,6 +794,29 @@ function renderDers() {
     }
   }
 
+  if (dersEkran === 'quiz' || dersEkran === 'sinav') {
+    if (dersSinavSonuc) {
+      sonucEkrani(kok, dersSinavSonuc, ceviri);
+      return;
+    }
+    if (dersSinav) {
+      const i = dersSinav.cevaplar.findIndex((c) => c === null);
+      const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+      soruEkrani(kok, {
+        baslik: dersEkran === 'quiz' ? ceviri('ders.quiz') : ceviri('ders.unitExam'),
+        ustBilgi: ceviri('ders.quizOf', { n: index + 1, t: dersSinav.sorular.length }),
+        soru: dersSinav.sorular[index],
+        secildi: dersSinav.cevaplar[index],
+        dogruMu: dersSinav.cevaplar[index] === dersSinav.sorular[index].dogru,
+        cozumGoster: dersSinav.aninda,
+        devamEtiketi: ceviri('ders.nextQuestion'),
+        kapatVar: true
+      }, ceviri);
+      return;
+    }
+    dersEkran = 'hafta';
+  }
+
   haftaEkrani(kok, dersModeli(), ceviri);
 }
 
@@ -839,6 +868,37 @@ function dersYildizVer(miktar) {
   const anahtar = dayKey(now(), profile.settings?.dayResetHour ?? 4);
   const gun = state.loadDayProgress(anahtar);
   state.saveDayProgress(anahtar, { ...gun, stars: gun.stars + miktar });
+}
+
+// Quizi bitirir: puanlar, ilerlemeye yazar, yildiz kazanildiysa verir
+// ve sonuc ekranini modelini hazirlar. Yildiz quizBitir icinde bir kez
+// verilir; tekrar gecmek quiz.enIyi'yi guncelller ama odul odemez.
+function dersSinavBitir() {
+  const p = puanla(dersSinav);
+  const hafta = dersAktifHafta();
+  const sonuc = quizBitir(haftaKaydi(state.loadDersIlerleme(), hafta.hafta), p.yuzde);
+  dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+  }
+
+  dersSinavSonuc = {
+    baslik: ceviri('ders.quiz'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: dersSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: Object.entries(p.konuBazli).map(([id, k]) => ({
+      id,
+      ad: KONULAR[id]?.ad?.tr ?? id,
+      dogru: k.dogru,
+      toplam: k.toplam,
+      zayif: k.dogru / k.toplam < 0.7
+    }))
+  };
+  renderDers();
 }
 
 function render() {
@@ -3167,6 +3227,16 @@ document.getElementById('app').addEventListener('click', (e) => {
     ses.hazirla();
     dersEkran = asamaDugme.dataset.dersAsama;
     dersAdimIndex = 0;
+
+    if (dersEkran === 'quiz') {
+      const hafta = dersAktifHafta();
+      const kaynaklar = hafta.dersler
+        .filter((d) => KONULAR[d.konu])
+        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
+      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      dersSinavSonuc = null;
+    }
+
     renderDers();
     if (dersEkran === 'anlatim') dersAdimiSeslendir();
     return;
@@ -3209,6 +3279,65 @@ document.getElementById('app').addEventListener('click', (e) => {
     dersSoru = null;
     dersSecildi = null;
     renderDers();
+    return;
+  }
+
+  if (secenekDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
+    const i = dersSinav.cevaplar.findIndex((c) => c === null);
+    const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+    if (dersSinav.cevaplar[index] !== null) return;
+
+    dersSinav = sinavCevapla(dersSinav, index, Number(secenekDugme.dataset.dersSecenek));
+    if (dersSinav.aninda) {
+      ses.efekt(dersSinav.cevaplar[index] === dersSinav.sorular[index].dogru ? 'dogru' : 'yanlis');
+    }
+    renderDers();
+    return;
+  }
+
+  if (soruDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
+    if (soruDugme.dataset.dersSoru === 'kapat') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersEkran = 'hafta';
+      render();
+      return;
+    }
+    if (dersSinav.cevaplar.every((c) => c !== null)) {
+      dersSinavBitir();
+      return;
+    }
+    renderDers();
+    return;
+  }
+
+  const sonucDugme = e.target.closest('[data-ders-sonuc]');
+  if (sonucDugme) {
+    const eylem = sonucDugme.dataset.dersSonuc;
+    if (eylem === 'calis') {
+      dersSinav = null;
+      dersSinavSonuc = null;
+      dersSoru = null;
+      dersSecildi = null;
+      dersEkran = 'alistirma';
+      renderDers();
+      return;
+    }
+    if (eylem === 'tekrar') {
+      dersSinavSonuc = null;
+      dersEkran = 'quiz';
+      const hafta = dersAktifHafta();
+      const kaynaklar = hafta.dersler
+        .filter((d) => KONULAR[d.konu])
+        .map((d) => ({ ureticiId: d.konu, seviye: d.seviye, agirlik: 1 }));
+      dersSinav = sinavKur({ kaynaklar, soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      renderDers();
+      return;
+    }
+    dersSinav = null;
+    dersSinavSonuc = null;
+    dersEkran = 'hafta';
+    render();
     return;
   }
 
