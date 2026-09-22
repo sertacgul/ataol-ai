@@ -3699,3 +3699,914 @@ kesismeselerdi ortada ucgen olmazdi ve var olmayan bir sekli sormus
 olurduk. Uretici hedef turu gozeterek seciyor, yoksa eskenar ucgen
 neredeyse hic cikmazdi."
 ```
+
+---
+
+## Task 12: Geometrik Sekiller unitesinin ders icerigi
+
+Uc konu dosyasi, sekiz seviye. Bu gorevin ciktisi **yazilmis Turkce ders
+metnidir**; asagida bir seviye tam olarak yazilmistir, kalan yedisi ayni
+sekle ve ayni yazim kurallarina gore yazilacaktir. Kurallar somuttur ve
+test edilir.
+
+**Files:**
+- Create: `src/data/konular/temel-cizimler.js` (seviye 1-2)
+- Create: `src/data/konular/aci-olcme.js` (seviye 1-2)
+- Create: `src/data/konular/cokgenler-cember.js` (seviye 1-4)
+- Modify: `src/data/konular/index.js` (uc konuyu kaydet)
+- Test: `tests/konular.test.js`
+
+**Interfaces:**
+- Consumes: yok
+- Produces:
+  - Her konu dosyasi `export default { id, ad: { tr }, kazanimlar, seviyeler }`
+  - `seviyeler[n]` -> `{ seviye, baslik, anlatim, ornekler, etkilesim, uretici, quiz }`
+  - `anlatim[n]` -> `{ id, metin, gorsel? }` (`ses` alani YOK, turetilir)
+  - `ornekler[n]` -> `{ soru, adimlar, cevap }`
+  - `etkilesim` -> `{ widget, mod, gorev, veri? }`
+  - `KONULAR` -> `{ 'temel-cizimler': ..., 'aci-olcme': ..., 'cokgenler-cember': ... }`
+
+### Icerik yazim kurallari (test edilir)
+
+| Kural | Deger |
+|---|---|
+| Seviye basina anlatim adimi | 4 ile 6 arasi |
+| Adim metni uzunlugu | 120 ile 420 karakter arasi |
+| Adim kimligi | `a1`, `a2`, ... sirali ve bosluksuz |
+| Seviye basina ornek | en az 1, her orneğin en az 2 cozum adimi |
+| Her seviyede | `etkilesim`, `uretici`, `quiz` dolu |
+| `uretici` degeri | konunun kendi kimligi |
+| Kazanim kodlari | `mufredat.js` ile ayni haftalara denk gelmeli |
+
+### Yazim uslubu kurallari (insan denetimi)
+
+- Hitap ikinci tekil sahis: "çizersin", "bakalım". Emir kipi degil.
+- Cocuk adi GECMEZ. Metin herhangi bir cocuga okunabilir olmali.
+- Her adim TEK bir fikir anlatir. Iki fikir varsa iki adim olur.
+- Sayilar rakamla yazilir ("90 derece"), TTS dogru okusun diye.
+- Sembol yerine sozcuk: "doksan derecelik açı" degil "90 derecelik açı";
+  ama "∠" gibi isaretler HIC kullanilmaz, TTS onlari okuyamaz.
+- Gunluk hayattan bir bag her seviyede en az bir kez gecer (kapı, saat,
+  bisiklet tekerleği gibi).
+
+- [ ] **Step 1: Basarisiz icerik testlerini yaz**
+
+```js
+// tests/konular.test.js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { KONULAR } from '../src/data/konular/index.js';
+import { TAKVIM } from '../src/data/mufredat.js';
+import { ureticiVarMi } from '../src/engines/uretici/index.js';
+
+const FAZ1 = ['temel-cizimler', 'aci-olcme', 'cokgenler-cember'];
+
+test('Faz 1 konularinin hepsi kayitlidir', () => {
+  for (const id of FAZ1) {
+    assert.ok(KONULAR[id], `${id} kayitli degil`);
+    assert.equal(KONULAR[id].id, id, 'id kendi anahtariyla uyusmuyor');
+  }
+});
+
+test('her konunun Turkce adi ve kazanimlari vardir', () => {
+  for (const id of FAZ1) {
+    const k = KONULAR[id];
+    assert.ok(k.ad?.tr?.length > 3, `${id}: ad yok`);
+    assert.ok(Array.isArray(k.kazanimlar) && k.kazanimlar.length >= 1, `${id}: kazanim yok`);
+    for (const kz of k.kazanimlar) {
+      assert.match(kz.kod, /^MAT\.5\.\d\.\d$/, `${id}: gecersiz kazanim kodu ${kz.kod}`);
+      assert.ok(kz.metin.length > 20, `${id}: kazanim metni fazla kisa`);
+    }
+  }
+});
+
+test('takvimin istedigi her seviye yazilmistir', () => {
+  for (const hafta of TAKVIM) {
+    for (const ders of hafta.dersler) {
+      if (!FAZ1.includes(ders.konu)) continue;
+      const sev = KONULAR[ders.konu].seviyeler.find((s) => s.seviye === ders.seviye);
+      assert.ok(sev, `hafta ${hafta.hafta}: ${ders.konu} seviye ${ders.seviye} yazilmamis`);
+    }
+  }
+});
+
+test('seviye numaralari 1den bosluksuz artar', () => {
+  for (const id of FAZ1) {
+    KONULAR[id].seviyeler.forEach((s, i) => {
+      assert.equal(s.seviye, i + 1, `${id}: seviye sirasi bozuk`);
+    });
+  }
+});
+
+test('her seviyede 4 ile 6 arasi anlatim adimi vardir', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      assert.ok(s.anlatim.length >= 4 && s.anlatim.length <= 6,
+        `${id} seviye ${s.seviye}: ${s.anlatim.length} adim`);
+    }
+  }
+});
+
+test('adim kimlikleri a1den bosluksuz artar', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      s.anlatim.forEach((a, i) => {
+        assert.equal(a.id, `a${i + 1}`, `${id} seviye ${s.seviye}: adim kimligi ${a.id}`);
+      });
+    }
+  }
+});
+
+test('adim metinleri okunabilir uzunluktadir', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      for (const a of s.anlatim) {
+        const n = a.metin.trim().length;
+        assert.ok(n >= 120 && n <= 420,
+          `${id} seviye ${s.seviye} ${a.id}: ${n} karakter (120-420 bekleniyor)`);
+      }
+    }
+  }
+});
+
+test('anlatim adimlarinda ses alani YOKTUR, kimlikten turetilir', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      for (const a of s.anlatim) {
+        assert.equal(a.ses, undefined,
+          `${id} seviye ${s.seviye} ${a.id}: ses alani elle yazilmamali`);
+      }
+    }
+  }
+});
+
+test('metinlerde TTS nin okuyamayacagi sembol yoktur', () => {
+  const yasak = ['∠', '°', '≅', '⊥', '∥', '→', '|'];
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      for (const a of s.anlatim) {
+        for (const sembol of yasak) {
+          assert.ok(!a.metin.includes(sembol),
+            `${id} ${a.id}: "${sembol}" sembolu TTS tarafindan okunamaz`);
+        }
+      }
+    }
+  }
+});
+
+test('her seviyede en az bir ornek ve her ornekte en az iki adim vardir', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      assert.ok(s.ornekler.length >= 1, `${id} seviye ${s.seviye}: ornek yok`);
+      for (const o of s.ornekler) {
+        assert.ok(o.soru.length > 15, `${id} seviye ${s.seviye}: ornek sorusu kisa`);
+        assert.ok(o.adimlar.length >= 2, `${id} seviye ${s.seviye}: ornek cozumu tek adim`);
+        assert.ok(String(o.cevap).length > 0, `${id} seviye ${s.seviye}: ornek cevabi yok`);
+      }
+    }
+  }
+});
+
+test('her seviyede etkilesim, uretici ve quiz tanimlidir', () => {
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      assert.ok(s.etkilesim?.widget, `${id} seviye ${s.seviye}: widget yok`);
+      assert.ok(s.etkilesim?.gorev?.length > 10, `${id} seviye ${s.seviye}: gorev metni yok`);
+      assert.equal(s.uretici, id, `${id} seviye ${s.seviye}: uretici kimligi yanlis`);
+      assert.ok(ureticiVarMi(s.uretici), `${id}: uretici kayitli degil`);
+      assert.equal(s.quiz.soruSayisi, 10, `${id} seviye ${s.seviye}: quiz soru sayisi`);
+      assert.equal(s.quiz.gecmeNotu, 70, `${id} seviye ${s.seviye}: quiz gecme notu`);
+    }
+  }
+});
+
+test('seviye basliklari benzersizdir', () => {
+  for (const id of FAZ1) {
+    const basliklar = KONULAR[id].seviyeler.map((s) => s.baslik);
+    assert.equal(new Set(basliklar).size, basliklar.length, `${id}: tekrar eden baslik`);
+    for (const b of basliklar) assert.ok(b.length > 4, `${id}: baslik fazla kisa`);
+  }
+});
+
+test('kullanilan widget kimlikleri Faz 1 de var olanlardir', () => {
+  const mevcut = ['geometri-tuval', 'aciolcer'];
+  for (const id of FAZ1) {
+    for (const s of KONULAR[id].seviyeler) {
+      assert.ok(mevcut.includes(s.etkilesim.widget),
+        `${id} seviye ${s.seviye}: "${s.etkilesim.widget}" Faz 1 de yok`);
+    }
+  }
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/konular.test.js`
+Expected: FAIL, `KONULAR['temel-cizimler']` tanimsiz.
+
+- [ ] **Step 3: `temel-cizimler.js` yaz, seviye 1 asagidaki gibi tam**
+
+Bu seviye **tam olarak yazilmistir**. Diger yedi seviye ayni sekle,
+yukaridaki test kurallarina ve yazim uslubu kurallarina gore yazilir.
+
+```js
+/**
+ * Temel Geometrik Cizimler. Haftalar 1-2.
+ * Kazanimlar: MAT.5.3.1, MAT.5.3.2.
+ *
+ * Bu bir VERI dosyasidir. Ders metni Turkcedir ve cocuga dogrudan
+ * okunur; ses dosyasi adi konuId-seviye-adimId kalibindan TURETILIR,
+ * burada elle yazilmaz.
+ */
+
+export default {
+  id: 'temel-cizimler',
+  ad: { tr: 'Temel Geometrik Çizimler' },
+  kazanimlar: [
+    { kod: 'MAT.5.3.1', metin: 'Temel geometrik çizimler için matematiksel araç ve teknolojiden yararlanabilme' },
+    { kod: 'MAT.5.3.2', metin: 'Temel geometrik çizimlere dayalı deneyimlerini yansıtabilme' }
+  ],
+  seviyeler: [
+    {
+      seviye: 1,
+      baslik: 'Nokta, doğru ve araçlar',
+      anlatim: [
+        {
+          id: 'a1',
+          metin: 'Geometrinin en küçük parçası noktadır. Nokta bir yeri gösterir ama eni, boyu, kalınlığı yoktur. Kalemini kâğıda bir kez değdirdiğinde bıraktığın iz bir noktadır. Noktalara isim vermek için büyük harf kullanırız: A noktası, B noktası gibi.',
+          gorsel: 'nokta'
+        },
+        {
+          id: 'a2',
+          metin: 'İki noktayı birleştirip iki yönde de durmadan uzatırsan doğru elde edersin. Doğrunun başı da sonu da yoktur, sonsuza kadar gider. Defterinin çizgileri aslında birer doğru parçasıdır, çünkü sayfanın kenarında biterler.',
+          gorsel: 'dogru'
+        },
+        {
+          id: 'a3',
+          metin: 'Doğruyu bir yerinden kesersen ışın olur. Işının bir başlangıç noktası vardır, diğer yönde sonsuza gider. Güneşten çıkan ışık tam olarak böyledir: bir yerden başlar ve gittikçe uzaklaşır. Bu yüzden adı ışındır.',
+          gorsel: 'isin'
+        },
+        {
+          id: 'a4',
+          metin: 'İki ucu da belli olan parçaya doğru parçası denir. Uzunluğunu cetvelle ölçebilirsin, çünkü nerede başlayıp nerede bittiği bellidir. Bir kitabın kenarı, bir masanın kenarı birer doğru parçasıdır.',
+          gorsel: 'dogru-parcasi'
+        },
+        {
+          id: 'a5',
+          metin: 'Her şeklin kendi aracı vardır. Doğru ve doğru parçası için cetvel kullanırsın. Çember çizmek için pergel gerekir, çünkü pergel merkeze olan uzaklığı sabit tutar. Açı ölçmek için açıölçer, dik açı çizmek için gönye kullanılır.',
+          gorsel: 'araclar'
+        }
+      ],
+      ornekler: [
+        {
+          soru: 'Elinde cetvel, pergel, açıölçer ve gönye var. Bir çember çizmen isteniyor. Hangisini seçersin ve neden?',
+          adimlar: [
+            'Çemberin her noktası merkeze eşit uzaklıktadır.',
+            'Bu eşit uzaklığı sabit tutabilen tek araç pergeldir.',
+            'Pergelin açıklığını istediğin yarıçap kadar ayarlar, sivri ucunu merkeze basarsın.'
+          ],
+          cevap: 'Pergel'
+        }
+      ],
+      etkilesim: {
+        widget: 'geometri-tuval',
+        mod: 'serbest',
+        gorev: 'Tuvale bir nokta, bir doğru parçası ve bir ışın çiz. Her birini çizdiğinde uygulama ne çizdiğini sana söyleyecek.'
+      },
+      uretici: 'temel-cizimler',
+      quiz: { soruSayisi: 10, gecmeNotu: 70 }
+    },
+    {
+      seviye: 2,
+      baslik: 'Gösterimler ve dikme',
+      // Yazim kurallarina gore doldurulacak: 4-6 adim, her biri 120-420
+      // karakter, tek fikir. Kapsanacak icerik:
+      //   - [AB] gosterimi doğru parçası, [AB ışın, AB doğrusu
+      //   - Uc sayilari: doğru parçası 2, ışın 1, doğru sonsuz
+      //   - Dikme: bir doğruya 90 derecelik açıyla çizilen doğru
+      //   - Dik kesişen iki doğrunun oluşturduğu dört açı da 90 derece
+      //   - Gunluk hayat bagi: kapı çerçevesi, duvar ile zemin
+      anlatim: [],
+      ornekler: [],
+      etkilesim: {
+        widget: 'geometri-tuval',
+        mod: 'dikme',
+        gorev: 'Verilen doğruya, üzerindeki noktadan bir dikme çiz. Açının 90 derece olduğunu gönyeyle kontrol et.'
+      },
+      uretici: 'temel-cizimler',
+      quiz: { soruSayisi: 10, gecmeNotu: 70 }
+    }
+  ]
+};
+```
+
+- [ ] **Step 4: Seviye 2'yi doldur ve testi calistir**
+
+Yukaridaki `seviye: 2` blogundaki bos `anlatim` ve `ornekler` dizilerini
+yorumda listelenen icerige gore doldur.
+
+Run: `node --test tests/konular.test.js`
+Expected: `temel-cizimler` ile ilgili testler gecer, diger iki konu icin
+hala FAIL.
+
+- [ ] **Step 5: `aci-olcme.js` yaz (seviye 1-2)**
+
+Ayni sekil. Kapsanacak icerik:
+
+**Seviye 1, baslik "Açı nedir, nasıl ölçülür"** (kazanim MAT.5.3.3)
+- Açının tanımı: başlangıç noktaları aynı iki ışın, köşe ve kollar
+- Açıölçerin tanıtımı: merkez, sıfır çizgisi, iç ve dış skala
+- Ölçme adımları: merkezi köşeye, sıfır çizgisini bir kola koy, diğer
+  kolun geçtiği sayıyı oku
+- Hangi skalayı okuyacağını sıfırın başladığı yerden bulma (en sık hata)
+- Günlük hayat bağı: saatin akrep ve yelkovanı arasındaki açı
+- Etkilesim: `{ widget: 'aciolcer', mod: 'olc', gorev: 'Ekrandaki açıyı açıölçeri sürükleyerek ölç ve kaç derece olduğunu yaz.' }`
+
+**Seviye 2, baslik "Kesişen doğruların açıları"** (kazanim MAT.5.3.4)
+- Açı türleri: dar, dik, geniş, doğru açı ve dereceleri
+- Bir doğru üzerindeki komşu açılar bütünlerdir, toplamı 180 derece
+- İki doğru kesiştiğinde ters açılar eşittir
+- Üç doğru kesiştiğinde kaç açı oluşur, hangileri eşittir
+- Günlük hayat bağı: yol kavşağı, makasın açılması
+- Etkilesim: `{ widget: 'aciolcer', mod: 'kesisim', gorev: 'İki doğruyu kesiştir. Bir açıyı değiştirdiğinde diğerlerine ne oluyor, gözle ve kuralı bul.' }`
+
+Kazanimlar:
+```js
+kazanimlar: [
+  { kod: 'MAT.5.3.3', metin: 'Açıları ölçmek için matematiksel araç ve teknolojiden yararlanabilme' },
+  { kod: 'MAT.5.3.4', metin: 'Düzlemde iki veya üç doğrunun birbirine göre durumuna bağlı olarak oluşabilecek açılara dair çıkarım yapabilme' }
+]
+```
+
+- [ ] **Step 6: `cokgenler-cember.js` yaz (seviye 1-4)**
+
+**Seviye 1, "Çokgen nasıl oluşur"** (MAT.5.3.5)
+- En az üç doğru, sonuncusu ilkiyle kesişecek biçimde ardışık kesişirse
+  kapalı bir şekil oluşur
+- Kaç doğru varsa o kadar kenar oluşur
+- Çokgen adları: üçgen, dörtgen, beşgen, altıgen
+- Kapalı olmayan şekil çokgen değildir
+- Günlük hayat bağı: trafik levhaları, arı peteği
+- Etkilesim: `{ widget: 'geometri-tuval', mod: 'cokgen', gorev: 'Dört doğru çiz, sonuncusu ilkiyle kesişsin. Oluşan çokgenin kaç kenarı ve kaç köşesi olduğunu say.' }`
+
+**Seviye 2, "Kenar, köşe ve açı"** (MAT.5.3.6)
+- Kenar sayısı köşe sayısına eşittir, neden
+- Her köşede bir iç açı oluşur, yani açı sayısı da kenar sayısına eşit
+- Kenar uzunlukları eşit olan çokgenlere düzgün çokgen denir
+- Kare bir dörtgendir ama her dörtgen kare değildir
+- Günlük hayat bağı: fayans döşemesi
+- Etkilesim: `{ widget: 'geometri-tuval', mod: 'cokgen', gorev: 'Farklı kenar sayılarında çokgenler kur ve kenar ile köşe sayısının her zaman eşit olduğunu kendin gör.' }`
+
+**Seviye 3, "Çember ve yarıçap"** (MAT.5.3.7)
+- Çemberin merkezi, yarıçapı, çapı
+- Merkeze eşit uzaklıktaki noktaların hepsi çember üzerindedir
+- Pergelle çember çizme adımları
+- Çap yarıçapın iki katıdır
+- Günlük hayat bağı: bisiklet tekerleği, saat kadranı
+- Etkilesim: `{ widget: 'geometri-tuval', mod: 'cember', gorev: 'Pergel aracıyla farklı yarıçaplarda çemberler çiz. Yarıçapı iki katına çıkardığında çembere ne oluyor?' }`
+
+**Seviye 4, "Kesişen çemberlerden üçgen"** (MAT.5.3.7)
+- İki çember ne zaman iki noktada kesişir
+- Merkezler ve bir kesişim noktası bir üçgen oluşturur
+- Bu üçgenin kenarları: iki yarıçap ve merkezler arası uzaklık
+- Üç kenar eşitse eşkenar, ikisi eşitse ikizkenar, hepsi farklıysa
+  çeşitkenar
+- Yarıçapları eşit seçersen ne olur, kendin dene
+- Etkilesim: `{ widget: 'geometri-tuval', mod: 'cember-ucgen', gorev: 'İki çemberin yarıçaplarını ve merkezler arası uzaklığı değiştir. Oluşan üçgenin türünü tahmin et, sonra kontrol et.' }`
+
+Kazanimlar:
+```js
+kazanimlar: [
+  { kod: 'MAT.5.3.5', metin: 'Çokgenleri düzlemde ardışık olarak kesişen doğruların oluşturduğu kapalı şekiller olarak yorumlayabilme' },
+  { kod: 'MAT.5.3.6', metin: 'Çokgenlerin özellikleri ile ilgili edindiği deneyimleri yansıtabilme' },
+  { kod: 'MAT.5.3.7', metin: 'Matematiksel araç ve teknoloji yardımıyla düzlemde iki noktada kesişen çember çiftinin merkezleri ve kesişim noktalarından biri ile inşa edilen üçgenlerin kenar özelliklerine yönelik çıkarım yapabilme' }
+]
+```
+
+- [ ] **Step 7: Kayit defterini doldur**
+
+```js
+// src/data/konular/index.js
+/**
+ * Konu kayit defteri. Icerik dosyalari yazildikca buraya eklenir.
+ *
+ * Faz 1: Geometrik Sekiller unitesi (1-8. haftalar).
+ * Faz 2-5'te kalan 12 konu eklenecek.
+ */
+
+import temelCizimler from './temel-cizimler.js';
+import aciOlcme from './aci-olcme.js';
+import cokgenlerCember from './cokgenler-cember.js';
+
+export const KONULAR = {
+  'temel-cizimler': temelCizimler,
+  'aci-olcme': aciOlcme,
+  'cokgenler-cember': cokgenlerCember
+};
+```
+
+- [ ] **Step 8: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/konular.test.js`
+Expected: PASS, 13 test gecer.
+
+- [ ] **Step 9: Tum testleri calistir ve tarayicida bak**
+
+Run: `npm test`
+Expected: PASS.
+
+Tarayicida `v2.html` ac, Ders sekmesine git. Ebeveyn panelinden henuz
+sabit hafta ayarlanamiyor (Task 18'de gelecek), bu yuzden gecici olarak
+tarayici konsolunda su komutu calistirip 1. haftaya git:
+
+```js
+localStorage.setItem('ataol:ders', JSON.stringify({ ayar: { sabitHafta: 1 } }));
+location.reload();
+```
+
+Dogrula: hafta karti artik "hazırlanıyor" demiyor, konu adi ve seviye
+basligi gorunuyor, "Derse başla" dugmesi aktif.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add src/data/konular/ tests/konular.test.js
+git commit -m "feat(ders): Geometrik Sekiller unitesi ders icerigi
+
+Uc konu, sekiz seviye, 1-8. haftalar. Anlatim adimlari 4-6 arasi ve
+her biri 120-420 karakter; test bunu zorluyor cunku cok kisa adim
+ogretmiyor, cok uzun adim 10 yasindaki bir cocugun dikkatini asiyor.
+
+Adimlarda ses alani YOK: dosya adi konu-seviye-adim kalibindan
+turetiliyor, iki yerde yazilan ayni bilgi yazim hatasi kaynagi olurdu.
+
+TTS nin okuyamayacagi semboller (derece isareti, dik isareti) test ile
+yasaklandi; metinler '90 derece' gibi sozcukle yaziliyor."
+```
+
+---
+
+## Task 13: Anlatim ekrani ve ses baglantisi
+
+Adim adim ilerleyen anlatim. Her adimda ses otomatik calar, "tekrar
+dinle" var, son adimda anlatim yildizi verilir.
+
+**Files:**
+- Modify: `src/views/ders.js` (`anlatimModeli`)
+- Modify: `src/ui/ders-dom.js` (`anlatimEkrani`)
+- Modify: `src/main.js` (ekran durumu, olaylar, yildiz yazimi)
+- Modify: `src/core/i18n.js` (yeni anahtarlar)
+- Test: `tests/ders-view.test.js` (yeni testler eklenir)
+
+**Interfaces:**
+- Consumes: `KONULAR` (Task 12), `adimKimligi`, `haftaKarti` (Task 7),
+  `adimTamamla`, `haftaKaydi` (Task 6), `ses.oku`, `ses.efekt` (Task 5)
+- Produces:
+  - `anlatimModeli(hafta, konular, ilerleme, index)` -> `{ adimlar, index, aktif, toplam, sonMu, tamamlanan }`
+  - `adimlar[n]` -> `{ kimlik, metin, gorsel, konuId, konuAd, seviye }`
+  - `anlatimEkrani(kok, model, ceviri)` -> void
+  - `data-ders-adim="ileri" | "geri" | "dinle" | "kapat" | "bitir"`
+
+- [ ] **Step 1: Basarisiz testleri yaz**
+
+`tests/ders-view.test.js` dosyasinin SONUNA ekle:
+
+```js
+import { anlatimModeli } from '../src/views/ders.js';
+
+const IKI_KONU = {
+  ...SAHTE_KONULAR,
+  'dikdortgen': {
+    id: 'dikdortgen',
+    ad: { tr: 'Dikdörtgen' },
+    seviyeler: [{ seviye: 1, baslik: 'Çevre', anlatim: [{ id: 'a1', metin: 'Çevre...' }] }]
+  }
+};
+
+test('anlatimModeli adimlari sirayla duzlestirir', () => {
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 0);
+  assert.equal(m.toplam, 2);
+  assert.equal(m.adimlar[0].kimlik, 'temel-cizimler-1-a1');
+  assert.equal(m.adimlar[1].kimlik, 'temel-cizimler-1-a2');
+  assert.equal(m.aktif.kimlik, 'temel-cizimler-1-a1');
+  assert.equal(m.sonMu, false);
+});
+
+test('anlatimModeli iki konulu haftada iki konunun adimlarini birlestirir', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 14);
+  const m = anlatimModeli(hafta, IKI_KONU, { haftalar: {} }, 0);
+  // hafta 14: dort-islem-problem (yazilmamis) + dikdortgen seviye 1
+  assert.equal(m.toplam, 1);
+  assert.equal(m.adimlar[0].kimlik, 'dikdortgen-1-a1');
+  assert.equal(m.adimlar[0].konuAd, 'Dikdörtgen');
+});
+
+test('anlatimModeli son adimi isaretler', () => {
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 1);
+  assert.equal(m.sonMu, true);
+});
+
+test('anlatimModeli index sinirlari disina tasmaz', () => {
+  const ust = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, 99);
+  assert.equal(ust.index, 1, 'son adimda kirpilmali');
+  const alt = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, { haftalar: {} }, -5);
+  assert.equal(alt.index, 0, 'ilk adimda kirpilmali');
+});
+
+test('anlatimModeli tamamlanan adimlari isaretler', () => {
+  const ilerleme = { haftalar: { 1: { anlatim: ['temel-cizimler-1-a1'] } } };
+  const m = anlatimModeli(TAKVIM[0], SAHTE_KONULAR, ilerleme, 0);
+  assert.deepEqual(m.tamamlanan, ['temel-cizimler-1-a1']);
+});
+
+test('anlatimModeli icerigi olmayan haftada bos doner', () => {
+  const hafta = TAKVIM.find((h) => h.hafta === 20);
+  const m = anlatimModeli(hafta, SAHTE_KONULAR, { haftalar: {} }, 0);
+  assert.equal(m.toplam, 0);
+  assert.equal(m.aktif, null);
+});
+```
+
+- [ ] **Step 2: Testi calistir, kirmizi oldugunu gor**
+
+Run: `node --test tests/ders-view.test.js`
+Expected: FAIL, `anlatimModeli is not a function`.
+
+- [ ] **Step 3: `views/ders.js` icine `anlatimModeli` ekle**
+
+Dosyanin sonuna:
+
+```js
+/**
+ * Anlatim ekraninin modeli.
+ *
+ * Bir hafta iki konuya baglanabildigi icin adimlar duzlestirilerek tek
+ * bir sira haline getirilir. Cocuk icin bu tek bir anlatimdir; iki
+ * konudan geldigini bilmesine gerek yok, ama her adim kendi konu adini
+ * tasir ki basliktan nerede oldugunu anlasin.
+ */
+export function anlatimModeli(hafta, konular, ilerleme, index) {
+  const adimlar = hafta.dersler.flatMap((d) => {
+    const konu = konular[d.konu] ?? null;
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev) return [];
+    return sev.anlatim.map((a) => ({
+      kimlik: adimKimligi(d.konu, d.seviye, a.id),
+      metin: a.metin,
+      gorsel: a.gorsel ?? null,
+      konuId: d.konu,
+      konuAd: konu.ad.tr,
+      seviye: d.seviye
+    }));
+  });
+
+  const toplam = adimlar.length;
+  const guvenli = toplam === 0 ? 0 : Math.max(0, Math.min(index, toplam - 1));
+  const kayit = haftaKaydi(ilerleme, hafta.hafta);
+
+  return {
+    adimlar,
+    index: guvenli,
+    aktif: toplam === 0 ? null : adimlar[guvenli],
+    toplam,
+    sonMu: toplam > 0 && guvenli === toplam - 1,
+    tamamlanan: kayit.anlatim
+  };
+}
+```
+
+- [ ] **Step 4: Testi calistir, yesil oldugunu gor**
+
+Run: `node --test tests/ders-view.test.js`
+Expected: PASS, 17 test gecer.
+
+- [ ] **Step 5: i18n anahtarlarini ekle**
+
+TR blogunda `'ders.trOnly'` satirindan sonra:
+
+```js
+    'ders.stepOf': '{n} / {t}',
+    'ders.listen': 'Tekrar dinle',
+    'ders.back': 'Geri',
+    'ders.forward': 'İleri',
+    'ders.close': 'Kapat',
+    'ders.finishLesson': 'Anlatımı bitir',
+    'ders.starsEarned': '{n} yıldız kazandın!',
+    'ders.explainAgain': 'Anlamadım, başka türlü anlat',
+```
+
+EN blogunda ayni yerde:
+
+```js
+    'ders.stepOf': '{n} / {t}',
+    'ders.listen': 'Listen again',
+    'ders.back': 'Back',
+    'ders.forward': 'Next',
+    'ders.close': 'Close',
+    'ders.finishLesson': 'Finish the lesson',
+    'ders.starsEarned': 'You earned {n} stars!',
+    'ders.explainAgain': "I didn't get it, explain differently",
+```
+
+- [ ] **Step 6: `ui/ders-dom.js` icine `anlatimEkrani` ekle**
+
+Dosyanin sonuna:
+
+```js
+/**
+ * Anlatim ekrani.
+ *
+ * Metin buyuk ve seyrek yazilir; cocuk hem okuyup hem dinleyebilsin
+ * diye. Adim sayaci ustte durur ki nerede oldugunu bilsin, bitmeyen
+ * bir sey hissi vermesin.
+ */
+export function anlatimEkrani(kok, model, ceviri) {
+  if (!model.aktif) {
+    mount(kok, [el('p', { className: 'ders-kart__not', text: ceviri('ders.notReady') })]);
+    return;
+  }
+
+  const adim = model.aktif;
+
+  const ust = el('div', { className: 'anlatim__ust' }, [
+    el('button', {
+      className: 'anlatim__kapat',
+      text: ceviri('ders.close'),
+      attrs: { type: 'button' },
+      dataset: { dersAdim: 'kapat' }
+    }),
+    el('p', { className: 'anlatim__sayac', text: ceviri('ders.stepOf', { n: model.index + 1, t: model.toplam }) })
+  ]);
+
+  const govde = el('div', { className: 'anlatim__govde' }, [
+    el('p', { className: 'anlatim__konu', text: adim.konuAd }),
+    el('p', { className: 'anlatim__metin', text: adim.metin })
+  ]);
+
+  const dinle = el('button', {
+    className: 'anlatim__dinle',
+    attrs: { type: 'button' },
+    dataset: { dersAdim: 'dinle' }
+  }, [
+    el('span', { className: 'material-symbols-rounded', text: 'volume_up' }),
+    el('span', { text: ceviri('ders.listen') })
+  ]);
+
+  const alt = el('div', { className: 'anlatim__alt' }, [
+    el('button', {
+      className: 'anlatim__gez',
+      text: ceviri('ders.back'),
+      attrs: { type: 'button', disabled: model.index === 0 ? 'true' : undefined },
+      dataset: { dersAdim: 'geri' }
+    }),
+    el('button', {
+      className: 'anlatim__gez anlatim__gez--vurgu',
+      text: model.sonMu ? ceviri('ders.finishLesson') : ceviri('ders.forward'),
+      attrs: { type: 'button' },
+      dataset: { dersAdim: model.sonMu ? 'bitir' : 'ileri' }
+    })
+  ]);
+
+  mount(kok, [ust, govde, dinle, alt]);
+}
+```
+
+Not: `el` yalnizca beyaz listedeki oznitelikleri kabul eder ve `disabled`
+listede vardir. Degeri `undefined` oldugunda `Object.entries` onu yine de
+dondurur, bu yuzden kosulu disarida cozmek gerekir:
+
+```js
+    el('button', {
+      className: 'anlatim__gez',
+      text: ceviri('ders.back'),
+      attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+      dataset: { dersAdim: 'geri' }
+    }),
+```
+
+Yukaridaki kod blogunda "geri" dugmesini bu haliyle yaz.
+
+- [ ] **Step 7: `main.js` icine ekran durumunu ve olaylari bagla**
+
+Import satirina ekle:
+
+```js
+import { anlatimModeli } from './views/ders.js';
+import { anlatimEkrani } from './ui/ders-dom.js';
+import { haftaKaydi, adimTamamla } from './engines/ders.js';
+```
+
+`let dersGorulenHafta = null;` yanina:
+
+```js
+// Ders sekmesinde acik olan ic ekran. Sekmenin kendisi tek bir
+// gorunumdur; icindeki ekranlar bu degiskene gore degisir.
+let dersEkran = 'hafta';
+let dersAdimIndex = 0;
+```
+
+`renderDers` fonksiyonunu degistir:
+
+```js
+function dersAktifHafta() {
+  const model = dersModeli();
+  return model.tip === 'ders' ? haftaNo(TAKVIM, model.kart.no) : null;
+}
+
+function renderDers() {
+  const kok = document.getElementById('view-ders');
+
+  if (dersEkran === 'anlatim') {
+    const hafta = dersAktifHafta();
+    if (!hafta) { dersEkran = 'hafta'; }
+    else {
+      anlatimEkrani(kok, anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex), ceviri);
+      return;
+    }
+  }
+
+  haftaEkrani(kok, dersModeli(), ceviri);
+}
+```
+
+Adim sesini calan yardimci, `renderDers`'in ardina:
+
+```js
+// Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
+// cihaz TTS'i okur; ses.oku bu secimi kendisi yapar.
+function dersAdimiSeslendir() {
+  const ilerleme = state.loadDersIlerleme();
+  if (!ilerleme.ayar.sesAcik) return;
+
+  const hafta = dersAktifHafta();
+  if (!hafta) return;
+
+  const model = anlatimModeli(hafta, KONULAR, ilerleme, dersAdimIndex);
+  if (!model.aktif) return;
+
+  ses.dur();
+  ses.oku({ metin: model.aktif.metin, ses: model.aktif.kimlik });
+}
+```
+
+Genel tiklama dinleyicisinde `data-ders-gezin` blogundan SONRA:
+
+```js
+  const dersAdimDugme = e.target.closest('[data-ders-adim]');
+  if (dersAdimDugme) {
+    const eylem = dersAdimDugme.dataset.dersAdim;
+    const hafta = dersAktifHafta();
+    if (!hafta) return;
+
+    const ilerleme = state.loadDersIlerleme();
+    const model = anlatimModeli(hafta, KONULAR, ilerleme, dersAdimIndex);
+
+    if (eylem === 'kapat') {
+      ses.dur();
+      dersEkran = 'hafta';
+      renderDers();
+      return;
+    }
+
+    if (eylem === 'dinle') {
+      dersAdimiSeslendir();
+      return;
+    }
+
+    if (eylem === 'geri') {
+      dersAdimIndex = Math.max(0, dersAdimIndex - 1);
+      renderDers();
+      dersAdimiSeslendir();
+      return;
+    }
+
+    // 'ileri' ve 'bitir': once icinde bulunulan adim tamamlanmis
+    // isaretlenir. Cocuk adimi OKUDUKTAN sonra ilerledigi icin
+    // isaretleme ileri giderken yapilir, ekrana gelirken degil.
+    const sonuc = adimTamamla(
+      haftaKaydi(ilerleme, hafta.hafta),
+      model.aktif.kimlik,
+      model.adimlar.map((a) => a.kimlik)
+    );
+    dersIlerlemeYaz(hafta.hafta, sonuc.kayit);
+    if (sonuc.kazanilanYildiz > 0) {
+      dersYildizVer(sonuc.kazanilanYildiz);
+      ses.efekt('kutlama');
+    }
+
+    if (eylem === 'bitir') {
+      ses.dur();
+      dersEkran = 'hafta';
+      dersAdimIndex = 0;
+      render();
+      return;
+    }
+
+    dersAdimIndex += 1;
+    renderDers();
+    dersAdimiSeslendir();
+    return;
+  }
+```
+
+Yazma yardimcilari, `dersAdimiSeslendir`'in ardina:
+
+```js
+function dersIlerlemeYaz(haftaNumarasi, kayit) {
+  const ilerleme = state.loadDersIlerleme();
+  state.saveDersIlerleme({
+    ...ilerleme,
+    haftalar: { ...ilerleme.haftalar, [String(haftaNumarasi)]: kayit }
+  });
+}
+
+/**
+ * Ders yildizi gunun ilerlemesine dogrudan yazilir, rutin karti
+ * uzerinden degil.
+ *
+ * Rutin kartlari blok sirasina gore kilitleniyor (cardStates icindeki
+ * previousClosed mantigi). Ders sekmesi serbest erisimli oldugu icin
+ * ikisini baglasaydik "sabah dersi yaptim ama ogle blogu acilmadi,
+ * yildizim gelmedi" hatasi cikardi.
+ */
+function dersYildizVer(miktar) {
+  const anahtar = dayKey(now(), profile.settings?.dayResetHour ?? 4);
+  const gun = state.loadDayProgress(anahtar);
+  state.saveDayProgress(anahtar, { ...gun, stars: gun.stars + miktar });
+}
+```
+
+`data-ders-basla` blogunu degistir:
+
+```js
+  const dersBasla = e.target.closest('[data-ders-basla]');
+  if (dersBasla) {
+    // iOS'ta ses ancak kullanici dokunusunun icinde baslatilabilir.
+    ses.hazirla();
+    dersEkran = 'anlatim';
+    dersAdimIndex = 0;
+    renderDers();
+    dersAdimiSeslendir();
+    return;
+  }
+```
+
+`data-ders-gezin` blogunda hafta degisince ekrani sifirla:
+
+```js
+    if (hedef) {
+      dersGorulenHafta = hedef.hafta;
+      dersEkran = 'hafta';
+      dersAdimIndex = 0;
+      renderDers();
+    }
+```
+
+- [ ] **Step 8: `sw.js` dosya listesini guncelle**
+
+`CACHE_NAME` degerini `'ataol-ai-v39'` yap ve ASSETS'e ekle:
+
+```js
+  './src/data/konular/temel-cizimler.js',
+  './src/data/konular/aci-olcme.js',
+  './src/data/konular/cokgenler-cember.js',
+  './src/engines/uretici/ortak.js',
+  './src/engines/uretici/index.js',
+  './src/engines/uretici/temel-cizimler.js',
+  './src/engines/uretici/aci-olcme.js',
+  './src/engines/uretici/cokgenler-cember.js',
+  './src/engines/widgets/aci.js',
+```
+
+- [ ] **Step 9: Tum testleri calistir**
+
+Run: `npm test`
+Expected: PASS.
+
+- [ ] **Step 10: Tarayicida elle dogrula**
+
+1. Ders sekmesi, "Derse başla" dugmesi anlatimi aciyor
+2. Ilk adim ekranda, cihaz sesi metni Turkce okuyor
+3. "İleri" sonraki adima geciyor ve yeni metin okunuyor
+4. "Tekrar dinle" ayni adimi bastan okuyor
+5. Son adimda dugme "Anlatımı bitir" yaziyor
+6. Bitirince hafta ekranina donuyor, "Anlatım" rozeti yesil
+7. Rutin sekmesinde yildiz toplami 4 artmis
+8. Anlatimi ikinci kez bitirince yildiz TEKRAR artmiyor
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add src/views/ders.js src/ui/ders-dom.js src/main.js src/core/i18n.js sw.js tests/ders-view.test.js
+git commit -m "feat(ders): anlatim ekrani ve sesli okuma
+
+Adimlar iki konudan geliyorsa duzlestirilip tek sira yapiliyor; cocuk
+icin bu tek bir anlatim. Her adim kendi konu adini tasiyor.
+
+Adim 'ileri'ye basilinca tamamlanmis sayiliyor, ekrana gelince degil:
+okumadan gecilen adim ogrenilmis sayilmamali. Anlatim yildizi son
+adimda ve yalniz bir kez veriliyor.
+
+Yildiz rutin karti uzerinden degil dogrudan gune yaziliyor; rutin
+kartlari blok sirasina kilitli ve ders sekmesi serbest erisimli."
+```
