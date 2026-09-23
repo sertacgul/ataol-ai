@@ -29,6 +29,10 @@ export function aciolcer(canvas, { mod = 'goster', veri = {}, ses = null } = {})
   let kesisimAcisi = Number(veri.derece) || 50;
   let suruyor = false;
 
+  // kesisim modunda cocugun gercekten denedigi farkli acilar. Gorev
+  // "degistir" dedigi icin bu kume onun kaniti.
+  const gorulenAcilar = new Set();
+
   const merkez = () => ({ x: canvas.width / 2, y: canvas.height * 0.72 });
   const yaricap = () => Math.min(canvas.width, canvas.height) * 0.42;
 
@@ -143,6 +147,7 @@ export function aciolcer(canvas, { mod = 'goster', veri = {}, ses = null } = {})
       if (okunan === hedef && ses) ses.efekt('dogru');
     } else if (mod === 'kesisim') {
       kesisimAcisi = Math.max(10, Math.min(170, d));
+      gorulenAcilar.add(kesisimAcisi);
     }
     ciz();
   }
@@ -163,9 +168,26 @@ export function aciolcer(canvas, { mod = 'goster', veri = {}, ses = null } = {})
       return { tamam: true, mesaj: 'Doğru okudun!' };
     }
     if (mod === 'kesisim') {
-      return { tamam: true, mesaj: 'Komşu açıların toplamının hep 180 ettiğini gördün.' };
+      // Gorev "aciyi degistir ve komsusunun nasil degistigini gor" diyor.
+      // Eskiden kosulsuz tamam donuyordu: tek tiklama 3 yildiz ediyordu.
+      return gorulenAcilar.size >= 3
+        ? { tamam: true, mesaj: 'Açıyı değiştirdin ve komşusunun toplamının hep 180 ettiğini gördün.' }
+        : { tamam: false, mesaj: 'Doğruyu sürükleyip açıyı birkaç kez değiştir, komşusuna dikkat et.' };
     }
-    return { tamam: true, mesaj: 'Açıyı ve türünü gördün.' };
+    // Bilinmeyen mod GECMEZ. Eskiden burasi kosulsuz tamam: true idi.
+    return { tamam: false, mesaj: 'Bu etkinlik henüz hazır değil.' };
+  }
+
+  /**
+   * Sozlesmenin temizle uyesi. Eskiden aciolcer bunu HIC vermiyordu ve
+   * main.js `dersWidget?.temizle?.()` diye cagirdigi icin 3. ve 4.
+   * haftada "Temizle" dugmesi sessizce olu kaliyordu.
+   */
+  function temizle() {
+    okunan = null;
+    kesisimAcisi = Number(veri.derece) || 50;
+    gorulenAcilar.clear();
+    ciz();
   }
 
   function yokEt() {
@@ -175,5 +197,5 @@ export function aciolcer(canvas, { mod = 'goster', veri = {}, ses = null } = {})
     canvas.removeEventListener('pointercancel', bitir);
   }
 
-  return { ciz, dogrula, yokEt };
+  return { ciz, dogrula, yokEt, temizle };
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aciTuru, ACI_TURU_ADI, butunler, tumler, tersAci, komsuAci } from '../src/engines/widgets/aci.js';
+import { aciTuru, ACI_TURU_ADI, butunler, tumler, tersAci, komsuAci, dogrultularArasiAci, dikMi } from '../src/engines/widgets/aci.js';
 
 test('aci turleri sinirlariyla birlikte dogru siniflanir', () => {
   assert.equal(aciTuru(1), 'dar');
@@ -36,4 +36,24 @@ test('ters aci kendisine esittir', () => {
 
 test('komsu aci butunleridir', () => {
   for (let a = 1; a <= 179; a++) assert.equal(komsuAci(a), butunler(a));
+});
+
+test('dogrultularArasiAci yonden bagimsizdir', () => {
+  // Yukari cizilen dikme ile asagi cizilen dikme ayni sayiyi vermeli.
+  assert.equal(dogrultularArasiAci(1, 0, 0, 1), 90);
+  assert.equal(dogrultularArasiAci(1, 0, 0, -1), 90);
+  assert.equal(dogrultularArasiAci(1, 0, 1, 0), 0);
+});
+
+test('dogrultularArasiAci sifir uzunlukta null doner, NaN degil', () => {
+  assert.equal(dogrultularArasiAci(0, 0, 1, 1), null);
+  assert.equal(dogrultularArasiAci(1, 1, 0, 0), null);
+});
+
+test('dikMi toleransi parmakla cizime izin verir ama sinirsiz degil', () => {
+  const yon = (derece) => [Math.sin((derece * Math.PI) / 180), Math.cos((derece * Math.PI) / 180)];
+  assert.equal(dikMi(1, 0, ...yon(0)), true, 'tam dik kabul edilmeli');
+  assert.equal(dikMi(1, 0, ...yon(8)), true, 'tolerans sinirinda kabul edilmeli');
+  assert.equal(dikMi(1, 0, ...yon(12)), false, '12 derece sapma dik sayilmamali');
+  assert.equal(dikMi(1, 0, 1, 0), false, 'paralel cizgi dik degildir');
 });

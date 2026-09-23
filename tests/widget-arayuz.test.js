@@ -129,3 +129,141 @@ test('geometri-tuval cokgen modunda uc nokta kenar sayilmaz', () => {
   assert.equal(sonuc.tamam, false, 'uc nokta bir cokgen olusturmamali');
   w.yokEt();
 });
+
+// --- Gercekten gonderilen modlarin testleri ---------------------------
+//
+// Yukaridaki sozlesme testleri iki widget'i da mod: 'serbest' ile
+// kuruyor, ama aciolcer'de 'serbest' diye bir mod YOK: hepsi onun
+// varsayilan dalini yokluyordu. Asagidakiler veride gercekten gecen
+// modlari yokluyor.
+
+function suruklemeYap(dinleyiciler, noktalar) {
+  const bul = (ad) => dinleyiciler.find(([a]) => a === ad)?.[1];
+  const basla = bul('pointerdown');
+  const hareket = bul('pointermove');
+  const bitir = bul('pointerup');
+  basla(noktalar[0]);
+  for (const p of noktalar.slice(1)) if (hareket) hareket(p);
+  bitir(noktalar[noktalar.length - 1]);
+}
+
+test('bilinmeyen mod GECMEZ (iki widget da)', () => {
+  for (const ad of ADLAR) {
+    const { canvas } = sahteKok();
+    const w = WIDGETLER[ad](canvas, { mod: 'boyle-bir-mod-yok', veri: {} });
+    assert.equal(w.dogrula().tamam, false,
+      `${ad}: kapsanmayan mod sessizce gecti; her yeni mod ayni hatayla dogar`);
+    w.yokEt();
+  }
+});
+
+test('aciolcer kesisim modunda tek dokunusla gecmez', () => {
+  const { canvas } = sahteKok();
+  const w = WIDGETLER.aciolcer(canvas, { mod: 'kesisim', veri: { derece: 50 } });
+  assert.equal(w.dogrula().tamam, false, 'hic degistirmeden tamam olmamali');
+  w.yokEt();
+});
+
+test('aciolcer kesisim modunda birkac aci denenince gecer', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER.aciolcer(canvas, { mod: 'kesisim', veri: { derece: 50 } });
+  // Merkez (160, 172.8) civari; farkli yonlere surukleyip uc ayri aci uret.
+  suruklemeYap(dinleyiciler, [
+    { clientX: 260, clientY: 172 },
+    { clientX: 240, clientY: 100 },
+    { clientX: 160, clientY: 40 },
+    { clientX: 80, clientY: 100 }
+  ]);
+  assert.equal(w.dogrula().tamam, true, 'uc farkli aci denendikten sonra gecmeli');
+  w.yokEt();
+});
+
+test('aciolcer temizle uyesini saglar ve durumu sifirlar', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER.aciolcer(canvas, { mod: 'kesisim', veri: { derece: 50 } });
+  assert.equal(typeof w.temizle, 'function',
+    'temizle yok; main.js ?.() ile cagirdigi icin dugme sessizce olu kalir');
+  suruklemeYap(dinleyiciler, [
+    { clientX: 260, clientY: 172 }, { clientX: 240, clientY: 100 },
+    { clientX: 160, clientY: 40 }, { clientX: 80, clientY: 100 }
+  ]);
+  w.temizle();
+  assert.equal(w.dogrula().tamam, false, 'temizle sonrasi bastan baslamali');
+  w.yokEt();
+});
+
+test('dikme modu dik olmayan cizgiyi kabul etmez', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'dikme', veri: {} });
+  // Referans dogru yatay; yatayimsi bir cizgi dikme degildir.
+  suruklemeYap(dinleyiciler, [{ clientX: 100, clientY: 140 }, { clientX: 180, clientY: 150 }]);
+  const s = w.dogrula();
+  assert.equal(s.tamam, false, 'yatay cizgi dikme sayilmamali');
+  assert.match(s.mesaj, /dik değil/, 'mesaj neyin yanlis oldugunu soylemeli');
+  w.yokEt();
+});
+
+test('dikme modu isaretli noktadan gecen dik cizgiyi kabul eder', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'dikme', veri: {} });
+  // Referans dogru y=144, isaret (160,144). Dikey cizgi oradan gecsin.
+  suruklemeYap(dinleyiciler, [{ clientX: 160, clientY: 140 }, { clientX: 160, clientY: 60 }]);
+  assert.equal(w.dogrula().tamam, true, 'noktadan gecen dikey cizgi dikmedir');
+  w.yokEt();
+});
+
+test('dikme modu dik ama uzaktan gecen cizgiyi kabul etmez', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'dikme', veri: {} });
+  suruklemeYap(dinleyiciler, [{ clientX: 40, clientY: 140 }, { clientX: 40, clientY: 60 }]);
+  const s = w.dogrula();
+  assert.equal(s.tamam, false, 'isaretli noktadan gecmeyen dikey cizgi gorev degil');
+  assert.match(s.mesaj, /noktadan geçmiyor/, 'mesaj aciyi degil konumu suclamali');
+  w.yokEt();
+});
+
+test('cokgen etiketi ile dogrulama ayni sayiyi verir', () => {
+  const { canvas, dinleyiciler, baglam } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'cokgen', veri: {} });
+  const basla = dinleyiciler.find(([a]) => a === 'pointerdown')[1];
+  const bitir = dinleyiciler.find(([a]) => a === 'pointerup')[1];
+
+  // Uc kenar ve bir KAZA DOKUNUSU (nokta). Etiket ile mesaj ayrilmamali.
+  for (const [ax, ay, bx, by] of [[20, 20, 200, 20], [200, 20, 120, 180], [120, 180, 20, 20]]) {
+    basla({ clientX: ax, clientY: ay });
+    bitir({ clientX: bx, clientY: by });
+  }
+  basla({ clientX: 60, clientY: 60 });
+  bitir({ clientX: 60, clientY: 60 });
+
+  baglam.cagrilar.length = 0;
+  w.ciz();
+  const etiket = baglam.cagrilar.filter(([c]) => c === 'fillText').map(([, m]) => m)
+    .find((m) => /kenar/.test(m));
+  assert.equal(etiket, '3 kenar, 3 köşe',
+    'tuvaldeki etiket kaza dokunusunu kenar saymamali');
+  assert.match(w.dogrula().mesaj, /^3 kenarlı/, 'mesaj da ayni sayiyi vermeli');
+  w.yokEt();
+});
+
+test('cember-ucgen tek tiklamayla gecmez', () => {
+  const { canvas } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'cember-ucgen', veri: {} });
+  w.ciz();
+  assert.equal(w.dogrula().tamam, false, 'hicbir sey degistirmeden tamam olmamali');
+  w.yokEt();
+});
+
+test('cember-ucgen olculer degisince ikinci ucgen turunu gorur', () => {
+  const { canvas, dinleyiciler } = sahteKok();
+  const w = WIDGETLER['geometri-tuval'](canvas, { mod: 'cember-ucgen', veri: {} });
+  w.ciz();  // baslangic: 5-5-5 eskenar
+  // m1 merkezini tutup disari surukle: merkezler arasi uzaklik buyur,
+  // 5-5-9 ikizkenar olur.
+  suruklemeYap(dinleyiciler, [
+    { clientX: 137, clientY: 144 },
+    { clientX: 200, clientY: 144 }
+  ]);
+  assert.equal(w.dogrula().tamam, true, 'iki farkli ucgen turu gorulmus olmali');
+  w.yokEt();
+});
