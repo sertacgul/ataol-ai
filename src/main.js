@@ -49,6 +49,8 @@ import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, 
 import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani } from './ui/ders-dom.js';
 import { widgetKur } from './ui/widget/index.js';
+import { gorselKur } from './ui/gorsel/index.js';
+import { dokunmaNoktasi } from './ui/gorsel/cizim.js';
 import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME } from './engines/ders.js';
 import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
@@ -116,6 +118,11 @@ let dersEtkilesimArac = null;
 // sey gercekten degisti mi" sorusunu cevaplamak icin tutulur; widget
 // kapatilinca dersWidgetKapat() bunu da sifirlar.
 let dersWidgetAnahtar = null;
+
+// Anlatim adiminin gorseli. Etkilesim widget'indan bagimsizdir: farkli
+// tuval dugumune baglanir ve ikisi hicbir zaman ayni anda gorunmez.
+let dersAnlatimGorsel = null;
+let dersAnlatimGorselAnahtar = null;
 
 // Soru ekranlarinin (alistirma/quiz/sinav) gorsel widget'i. soru.gorsel
 // tasiyan bir soru gosterildiginde kurulur; dersWidget/dersWidgetAnahtar
@@ -816,6 +823,7 @@ function renderDers() {
     else {
       const m = anlatimModeli(hafta, KONULAR, state.loadDersIlerleme(), dersAdimIndex);
       anlatimEkrani(kok, { ...m, aiVar: dersAiVar(), aiMetin: dersAiMetin }, ceviri);
+      dersAnlatimGorseliKur(m.aktif);
       return;
     }
   }
@@ -940,6 +948,56 @@ function renderDers() {
   }
 
   haftaEkrani(kok, dersModeli(), ceviri);
+}
+
+/**
+ * Anlatim adiminin gorselini kurar.
+ *
+ * Yeniden kurma noktasi TEK burasi (bkz. R26): renderIfStale 30
+ * saniyede bir, sekme gorunurlugu ve pageshow ekrani yeniden ciziyor.
+ * Ayni adim tekrar geldiginde gorsele DOKUNULMAZ, yoksa cocugun
+ * koydugu noktalar her yarim dakikada silinirdi.
+ */
+function dersAnlatimGorseliKur(adim) {
+  const canvas = document.getElementById('ders-anlatim-tuval');
+  if (!adim || !canvas) {
+    dersAnlatimGorseliKapat();
+    return;
+  }
+
+  if (dersAnlatimGorsel && dersAnlatimGorselAnahtar === adim.kimlik) return;
+  dersAnlatimGorseliKapat();
+
+  const g = gorselKur(adim.gorsel, canvas, { ses });
+  if (!g) return;
+
+  const oran = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * oran;
+  canvas.height = Math.round(canvas.clientWidth * 0.62) * oran;
+
+  dersAnlatimGorsel = g;
+  dersAnlatimGorselAnahtar = adim.kimlik;
+
+  const ipucu = document.getElementById('ders-anlatim-ipucu');
+  if (ipucu) ipucu.textContent = g.ipucu ?? '';
+
+  // Dokunma dinleyicisi tuvalin KENDISINE baglanir, delege click'e
+  // degil: tuval her adimda yeniden yaratiliyor ve yokEt ile birlikte
+  // dinleyicisi de gidiyor, boylece birikmiyorlar.
+  if (g.dokun) {
+    canvas.addEventListener('pointerdown', (olay) => {
+      olay.preventDefault();
+      g.dokun(dokunmaNoktasi(canvas, olay));
+    });
+  }
+
+  g.ciz();
+}
+
+function dersAnlatimGorseliKapat() {
+  if (dersAnlatimGorsel?.yokEt) dersAnlatimGorsel.yokEt();
+  dersAnlatimGorsel = null;
+  dersAnlatimGorselAnahtar = null;
 }
 
 function dersWidgetKapat() {

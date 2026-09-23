@@ -7,6 +7,7 @@
  */
 
 import { el, mount } from './dom.js';
+import { gorselVarMi } from './gorsel/index.js';
 
 function asamaRozeti(ad, tamam, etiket) {
   return el('button', {
@@ -170,8 +171,17 @@ export function anlatimEkrani(kok, model, ceviri) {
     el('p', { className: 'anlatim__sayac', text: ceviri('ders.stepOf', { n: model.index + 1, t: model.toplam }) })
   ]);
 
+  // Gorsel tuvali metnin USTUNDE durur: cocuk once sekli gorur, sonra
+  // anlatimi okur. Tuval yalniz cizilebilen bir gorsel varsa kurulur;
+  // yoksa ekran eskisi gibi yalniz metinle calisir.
+  const tuval = gorselVarMi(adim.gorsel)
+    ? el('canvas', { className: 'anlatim__tuval', attrs: { id: 'ders-anlatim-tuval' } })
+    : null;
+
   const govde = el('div', { className: 'anlatim__govde' }, [
     el('p', { className: 'anlatim__konu', text: adim.konuAd }),
+    tuval,
+    tuval ? el('p', { className: 'anlatim__ipucu', attrs: { id: 'ders-anlatim-ipucu' } }) : null,
     el('p', { className: 'anlatim__metin', text: adim.metin })
   ]);
 

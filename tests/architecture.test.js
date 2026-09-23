@@ -83,3 +83,40 @@ test('DOM sadece main.js ve ui altinda kullanilir', () => {
     );
   }
 });
+
+/**
+ * Bagimlilik yonu. Hicbir test bunu olcmuyordu; yalnizca DOM kullanimi
+ * ve motor safligi olculuyordu. Bu yuzden views/ders.js'in ui/ altindan
+ * ithal etmesi sessizce gecti.
+ *
+ * Kural "views -> engines -> core" diye ozetlenir ama gercek degismez
+ * bu degil: core/state.js dort ayri motordan ithal ediyor ve etmeli de,
+ * cunku varsayilan durum sekillerini motor fabrikalarindan kuruyor.
+ * Motorlar saf oldugu icin bu bagimlilik hicbir seyi kirmiyor.
+ *
+ * Asil onemli olan TERS yon: hicbir katman kendinden DISARIDAKI
+ * (DOM'lu) katmandan ithal etmemeli. Test edilebilirligi koruyan sey bu.
+ */
+test('hicbir saf katman ui veya views icinden ithal etmez', () => {
+  const YASAK = {
+    core: ['views/', 'ui/'],
+    engines: ['views/', 'ui/'],
+    views: ['ui/']
+  };
+
+  for (const { yol, src } of TUM) {
+    const katman = yol.split('/')[0];
+    const yasaklar = YASAK[katman];
+    if (!yasaklar) continue;
+
+    for (const m of src.matchAll(/from\s+'([^']+)'/g)) {
+      const hedef = m[1];
+      for (const y of yasaklar) {
+        assert.ok(
+          !hedef.includes(`/${y}`) && !hedef.startsWith(y),
+          `${yol} -> ${hedef}: ${katman}/ katmani ${y} icinden ithal edemez`
+        );
+      }
+    }
+  }
+});
