@@ -11,9 +11,9 @@ test('Turkce diakritikler duz harfe iner', () => {
   assert.equal(normalize('ğ'), 'g');
 });
 
-test('dort I formu aynı aranabilir anahtara iner', () => {
-  // 'I', 'İ', 'ı', 'i' — dört fark form, biri aranabilir anahtar.
-  // DUZ tablosu crítico: 'ı': 'i' haritası olmayinca bu test KIRMIZI olur.
+test('dort I formu ayni aranabilir anahtara iner', () => {
+  // 'I', 'İ', 'ı', 'i' — dört farkli form, hepsi ayni aranabilir anahtar.
+  // DUZ tablosu kritik: 'ı': 'i' haritasi olmayinca bu test KIRMIZI olur.
   // toLocaleLowerCase('tr') savunma: tablo degisirse tuzak ortaya cikacak.
   const hedef = normalize('i');  // lowercase i: 'i'
   assert.equal(normalize('I'), hedef);   // LATIN CAPITAL LETTER I
@@ -23,6 +23,17 @@ test('dort I formu aynı aranabilir anahtara iner', () => {
   assert.equal(normalize('IŞIK'), normalize('ışık'));
   assert.equal(normalize('İSTANBUL'), normalize('istanbul'));
   assert.equal(normalize('Iyi'), normalize('ıyi'));
+});
+
+test('aksentli Latin harfleri harita yapilir', () => {
+  // DUZ_DESEN tablodan otomatik olusturulur. Tabloya harf eklemek yeterli,
+  // hardcoded regex ile sapmamali.
+  assert.equal(normalize('cafe'), 'cafe');
+  assert.equal(normalize('café'), 'cafe');
+  assert.equal(normalize('role'), 'role');
+  assert.equal(normalize('rôle'), 'role');
+  assert.equal(normalize('pinata'), 'pinata');
+  assert.equal(normalize('piñata'), 'pinata');
 });
 
 test('bastaki ve sondaki bosluk atilir, ic bosluk korunur', () => {

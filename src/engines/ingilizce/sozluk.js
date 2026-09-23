@@ -3,7 +3,7 @@
  */
 
 // Turkce harfleri ve yaygın aksentli Latin harflerini duz karsiliklarina cevirme.
-// İngilizce sözlükte (örn. café, naïve, résumé) karsilasilan aksentli harflerin
+// Ingilizce sozlükte (örn. café, naïve, résumé) karsilasilan aksentli harflerin
 // de harita yapilmasi, sessiz veri kaybi yerine açik biçim tercihidir.
 const DUZ = {
   // Turkish
@@ -16,6 +16,10 @@ const DUZ = {
   'ú': 'u', 'ù': 'u', 'û': 'u',
   'ñ': 'n', 'ý': 'y', 'ÿ': 'y'
 };
+
+// Ses harita tablosunun anahtarlarinden regex olustur. Tablo ile regex
+// asla ayrilmamali: tabloya harf eklemek yeterli olsun.
+const DUZ_DESEN = new RegExp(`[${Object.keys(DUZ).join('')}]`, 'g');
 
 /**
  * Aramada karsilastirilacak bicime indirger.
@@ -32,7 +36,7 @@ export function normalize(metin) {
   if (metin === null || metin === undefined) return '';
   return String(metin)
     .toLocaleLowerCase('tr')
-    .replace(/[çğıiöşüâîû]/g, (h) => DUZ[h] ?? h)
+    .replace(DUZ_DESEN, (h) => DUZ[h] ?? h)
     // Noktalama ve apostroflar atilir: cocuk "what's" yazinca "whats" bulsun
     // ve kelimeKimligi temiz dosya adi uretsin (sesler/en/id.mp3).
     .replace(/[^\w\s]/g, '')
