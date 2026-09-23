@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ara } from '../src/engines/ingilizce/sozluk.js';
+import { SOZLUK as GERCEK_SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
 
 const SOZLUK = [
   { id: 'bag', en: 'bag', tr: 'çanta', tema: 1 },
@@ -41,6 +42,20 @@ test('siralama: tam eslesme bastan eslesmeden once', () => {
   assert.equal(s[0].kelime.id, 'school', 'tam eslesme "school" ilk olmali');
   const bag = s.findIndex((x) => x.kelime.id === 'school-bag');
   assert.ok(bag > 0, '"school bag" sonra gelmeli');
+});
+
+test('siralama: alfabetik sira tam eslesmeyi kurtaramaz', () => {
+  // Yukaridaki fixture'in acigi: 'school' id'si alfabetik olarak zaten
+  // 'school-bag'den once gelir, yani puanla() icindeki tam eslesme katmani
+  // silinse bile beraberlik bozucu id sirasi testi yanlislikla yesile
+  // tasir. Gercek SOZLUK'te 'sınıf' sorgusu ayni tuzagi TERSTEN kurar:
+  // tam eslesen 'classroom' alfabetik olarak 'classmate'den SONRA gelir,
+  // yani beraberlik bozucu onu kurtaramaz - tam eslesme katmani gercekten
+  // calismiyorsa bu test kirmizi olur.
+  const s = ara(GERCEK_SOZLUK, 'sınıf');
+  assert.equal(s[0].kelime.id, 'classroom', '"sınıf" tam eslesmesi "classroom" ilk olmali');
+  const classmate = s.findIndex((x) => x.kelime.id === 'classmate');
+  assert.ok(classmate > 0, '"classmate" (bastan eslesme) sonra gelmeli');
 });
 
 test('kelime sinirinda eslesme icinde gecmeden once', () => {
