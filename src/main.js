@@ -3507,6 +3507,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (dersSecDugme) {
     dersSecim = dersSecDugme.dataset.dersSec;
     // Ekran degisiyor: matematigin acik widget'i ve AI metni birakilmali.
+    ses.dur();
     dersWidgetKapat();
     dersAnlatimGorseliKapat();
     dersEkran = 'hafta';
@@ -3519,7 +3520,10 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (sozlukDinleDugme) {
     const id = sozlukDinleDugme.dataset.sozlukDinle;
     const kelime = SOZLUK.find((k) => k.id === id);
-    if (kelime) ses.oku({ metin: kelime.en, ses: `en/${id}`, dil: 'en' });
+    if (kelime) {
+      ses.dur();
+      ses.oku({ metin: kelime.en, ses: `en/${id}`, dil: 'en' });
+    }
     return;
   }
 
