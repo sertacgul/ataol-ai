@@ -34,6 +34,30 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
   const ttsVar = () => Boolean(speechSynthesis && typeof speechSynthesis.speak === 'function' && typeof SpeechSynthesisUtterance === 'function');
 
   /**
+   * Cihazdaki Turkce sesi bulur, yoksa null doner.
+   *
+   * u.lang = 'tr-TR' TEK BASINA YETMIYOR: tarayicida Turkce ses yuklu
+   * degilse bu sessizce yok sayilir ve varsayilan sesle okunur. Bu
+   * makinede olculdu: 22 ses var, hicbiri Turkce, varsayilan
+   * "Microsoft David - English (United States)". Yani Turkce metni
+   * Ingiliz aksaniyla okuyordu. Cocuga yanlis telaffuz ogretmek hic
+   * okumamaktan kotudur.
+   *
+   * getVoices() ilk cagrida bos donebilir, liste asenkron yuklenir;
+   * bu yuzden her seferinde yeniden sorulur, onbellege alinmaz.
+   */
+  function turkceSes() {
+    if (!speechSynthesis || typeof speechSynthesis.getVoices !== 'function') return null;
+    const sesler = speechSynthesis.getVoices() ?? [];
+    return sesler.find((s) => typeof s.lang === 'string' && s.lang.toLowerCase().startsWith('tr')) ?? null;
+  }
+
+  /** Cihaz TTS'i Turkce okuyabiliyor mu. Ebeveyn paneli de bunu sorar. */
+  function turkceOkuyabilir() {
+    return ttsVar() && turkceSes() !== null;
+  }
+
+  /**
    * iOS'ta ses ancak bir kullanici dokunusunun icinde baslatilabilir.
    * "Derse basla" butonu bu dokunustur ve burayi cagirir.
    */
@@ -60,8 +84,15 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
   function ttsOku(metin) {
     return new Promise((coz) => {
       if (!ttsVar()) return coz('kapali');
+
+      // Turkce ses yoksa HIC OKUMA. Ingiliz sesiyle Turkce okumak
+      // cocuga yanlis telaffuz ogretir; sessizlik daha az zarar verir.
+      const secilen = turkceSes();
+      if (!secilen) return coz('turkce-ses-yok');
+
       const u = new SpeechSynthesisUtterance(metin);
-      u.lang = 'tr-TR';
+      u.voice = secilen;
+      u.lang = secilen.lang;
       u.rate = 0.95;
       // Hem bitis hem hata 'tts' ile settle eder. Sessiz dusme kurali
       // geregi cocuga hata gosterilmez; onemli olan sozun asili
@@ -132,6 +163,7 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
     dur,
     efekt,
     ayarla,
+    turkceOkuyabilir,
     // Test ve teshis icin; uygulama mantigi bunlara dayanmaz.
     ctxDurumu: () => ctx?.state ?? null,
     sonEfekt: () => sonEfekt

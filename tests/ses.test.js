@@ -8,13 +8,20 @@ class SahteUtterance {
   }
 }
 
-function sahteTts() {
+// Gercek tarayicida getVoices() cihazdaki sesleri verir. Sahte de
+// vermeli: yoksa createSes Turkce ses bulamaz ve HIC okumaz - ki bu
+// dogru davranis, ama testin olcmek istedigi sey degil.
+const TR_SES = { name: 'Yelda', lang: 'tr-TR' };
+const EN_SES = { name: 'Microsoft David', lang: 'en-US', default: true };
+
+function sahteTts({ sesler = [EN_SES, TR_SES] } = {}) {
   const olusturulanlar = [];
   let iptalSayisi = 0;
   return {
     olusturulanlar,
     iptalSayisi: () => iptalSayisi,
     speaking: false,
+    getVoices: () => sesler,
     speak(u) {
       olusturulanlar.push(u);
       assert.ok(u instanceof SahteUtterance, 'utterance must be instanceof SahteUtterance');
@@ -215,4 +222,42 @@ test('TTS hatasi da tts ile settle eder, ekran donmaz', async () => {
   const sonuc = await ses.oku({ metin: 'Kontrol', ses: 'yok' });
 
   assert.equal(sonuc, 'tts');
+});
+
+test('Turkce ses varsa utterance ONA baglanir, yalniz lang ayarlanmaz', async () => {
+  const tts = sahteTts();
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    Audio: sahteAudioSinifi(false).sinif
+  });
+  await ses.oku({ metin: 'Nokta bir yeri gösterir.' });
+
+  const u = tts.olusturulanlar[0];
+  assert.equal(u.voice, TR_SES,
+    'voice atanmali; lang tek basina yetmez, tarayici Turkce ses yoksa onu sessizce yok sayar');
+  assert.match(u.lang, /^tr/i);
+});
+
+test('Turkce ses YOKSA hic okunmaz, Ingiliz sesiyle Turkce okunmaz', async () => {
+  const tts = sahteTts({ sesler: [EN_SES] });
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    Audio: sahteAudioSinifi(false).sinif
+  });
+  const sonuc = await ses.oku({ metin: 'Nokta bir yeri gösterir.' });
+
+  assert.equal(sonuc, 'turkce-ses-yok');
+  assert.equal(tts.olusturulanlar.length, 0,
+    'hicbir sey soylenmemeli: yanlis telaffuz ogretmek sessizlikten kotudur');
+});
+
+test('turkceOkuyabilir cihazin durumunu dogru bildirir', () => {
+  const varken = createSes({
+    speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance
+  });
+  const yokken = createSes({
+    speechSynthesis: sahteTts({ sesler: [EN_SES] }), SpeechSynthesisUtterance: SahteUtterance
+  });
+  assert.equal(varken.turkceOkuyabilir(), true);
+  assert.equal(yokken.turkceOkuyabilir(), false);
 });
