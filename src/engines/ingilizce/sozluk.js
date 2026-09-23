@@ -19,7 +19,11 @@ const DUZ = {
 
 // Ses harita tablosunun anahtarlarinden regex olustur. Tablo ile regex
 // asla ayrilmamali: tabloya harf eklemek yeterli olsun.
-const DUZ_DESEN = new RegExp(`[${Object.keys(DUZ).join('')}]`, 'g');
+//
+// Karakter sinifi icinde -, ], ^ ve \ ozel anlam tasir; tabloya boyle bir
+// harf eklenirse desen bozulmasin diye kacirilir.
+const kacir = (harf) => harf.replace(/[-\]\\^]/g, '\\$&');
+const DUZ_DESEN = new RegExp(`[${Object.keys(DUZ).map(kacir).join('')}]`, 'g');
 
 /**
  * Aramada karsilastirilacak bicime indirger.

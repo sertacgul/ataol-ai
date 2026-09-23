@@ -287,9 +287,10 @@ export function createAppState(storage) {
     /**
      * Ingilizce ilerlemesi AYRI depoda durur.
      *
-     * Matematik deposu (ataol2:ders) canlida ve cocugun gercek
-     * yildizlarini tutuyor; sekline dokunmak onu riske atar. Ayri depo
-     * katkisaldir ve var olani bozamaz.
+     * Matematik deposu (ataol2:ders) canlida ve odul defterini (hangi
+     * quiz/sinav icin yildiz verildi bilgisini) tutuyor; cocugun gercek
+     * yildizlari ataol2:days icinde durur. Sekline dokunmak odul
+     * defterini riske atar. Ayri depo katkisaldir ve var olani bozamaz.
      *
      * Alan adlari matematikle ayni (haftalar, sinavlar) cunku quizBitir,
      * sinavBitir, tamPuanIsaretle ve yildizVer aynen tekrar kullaniliyor.

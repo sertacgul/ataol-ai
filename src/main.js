@@ -1412,6 +1412,10 @@ function renderIfStale() {
   if (document.getElementById('kodlama').hidden === false) return;
   if (document.getElementById('rozet-modal').hidden === false) return;
   if (document.getElementById('deney-modal').hidden === false) return;
+  // Sozluk arama kutusu bir modal degil ama ayni tehlikeyi tasir: cocuk
+  // yariminda kelime yazarken gun siniri/visibilitychange render'i girdiyi
+  // yeniden kurar ve klavye odagini kaybeder.
+  if (dersSecim === 'sozluk' && document.activeElement?.id === 'sozluk-kutu') return;
   if (renderSignature(profile, now()) !== lastSignature) render();
 }
 

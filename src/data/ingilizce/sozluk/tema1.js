@@ -13,8 +13,8 @@
 // principal, caretaker, classroom, corridor, eraser, rule, be on time,
 // raise your hand, club, ceremony, flag (kirmizi bayrak = uyari emojisi
 // ile karisir), gym (agirlik kaldirma emojisi orneği "oyun oynariz" ile
-// celisir), friend (coklu-kisi ZWJ dizisi eski cihazlarda guvenilir
-// gorunmuyor).
+// celisir), friend (👫 ciftle iliskilendiriliyor, "en iyi arkadas"
+// ornek cumlesiyle karisir).
 
 export default [
   // --- Okuldaki kisiler ---

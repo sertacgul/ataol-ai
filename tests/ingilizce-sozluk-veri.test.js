@@ -30,7 +30,17 @@ test('her kelimenin tr, tema, tur, gorsel ve ornegi var', () => {
     assert.ok(TURLER.includes(k.tur), `${k.id} gecersiz tur: ${k.tur}`);
     assert.ok(k.gorsel && ['emoji', 'cizim'].includes(k.gorsel.tip),
       `${k.id} gorsel tipi gecersiz`);
-    assert.ok(k.gorsel.deger || k.gorsel.ad, `${k.id} gorsel degeri bos`);
+    // Alan tipe bagli: 'emoji' deger tasir, 'cizim' ad tasir. { tip:
+    // 'cizim', deger: '...' } gibi yanlis eslesmis bir kayit eskiden bu
+    // testi gecerdi (deger || ad ikisinden birini kontrol ediyordu) ve
+    // sessizce yer tutucu gorsel render ederdi.
+    if (k.gorsel.tip === 'emoji') {
+      assert.ok(k.gorsel.deger, `${k.id}: tip 'emoji' ama deger bos`);
+      assert.ok(!k.gorsel.ad, `${k.id}: tip 'emoji' ama ad da dolu`);
+    } else {
+      assert.ok(k.gorsel.ad, `${k.id}: tip 'cizim' ama ad bos`);
+      assert.ok(!k.gorsel.deger, `${k.id}: tip 'cizim' ama deger de dolu`);
+    }
     assert.ok(k.ornek.en.trim().length > 0, `${k.id} ornek.en bos`);
     assert.ok(k.ornek.tr.trim().length > 0, `${k.id} ornek.tr bos`);
   }
