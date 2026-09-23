@@ -93,12 +93,17 @@ GOOGLE_TTS_KEY=xxx node tools/ses-uret.js temel-cizimler   # tek konu
 ```
 
 Google Cloud Text-to-Speech Chirp 3 HD kullanilir (tr-TR). Aylik ilk 1M
-karakter ucretsizdir; bu projenin tamami yaklasik 150k karakterdir.
+karakter ucretsizdir, yani bu proje ucretsiz kotanin cok altinda kalir.
 
-**Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'te commit edilmeli**,
-cunku bu uygulama GitHub Pages'tan dogru daldan sunuluyor; taahhutlu
-olmayan dosya cihaza ulasmaz. Uretim yaklasik 150k karakter narasyonla
-sonunda on bir kacindan megabayt dosya olusturur.
+Olculen degerler (uc konu, sekiz seviye, 46 anlatim adimi):
+**11.335 karakter, 46 dosya, toplam 3,4 MB.** Mufredatin tamami on bes
+konuya cikinca bu kabaca bes katina, yani 60k karakter civarina cikar;
+yine de aylik ucretsiz kotanin onda birinden azdir.
+
+**Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'e commit edilmeli**.
+Uygulama GitHub Pages'tan dogrudan daldan sunuluyor; commit edilmeyen
+dosya cocugun telefonunda yoktur. Ses uretilir, yerelde calar, yayinda
+sessiz kalir ve bunun nedeni aylar sonra anlasilir.
 
 Var olan dosyanin ustune yazilmaz. Bir anlatim metnini degistirdiysen o
 dosyayi silip scripti tekrar calistir.
