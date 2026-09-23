@@ -136,7 +136,7 @@ export function geometriTuval(canvas, { mod = 'serbest', veri = {}, ses = null }
 
     yaziCiz(`Kenarlar: ${r1} cm, ${r2} cm, ${d} cm`, 24);
     yaziCiz(UCGEN_TURU_ADI[tur], 44);
-    yaziCiz('Merkezleri veya cember kenarlarini surukle', canvas.height - 12);
+    yaziCiz('Merkezleri veya çember kenarlarını sürükle', canvas.height - 12);
   }
 
   function cerceveCiz() {
