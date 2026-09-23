@@ -54,33 +54,74 @@ test('ornek cumle kelimeyi GERCEKTEN iceriyor', () => {
   }
 });
 
-test('Turkce alanlar diakritiklerini korumus', () => {
-  // Ingilizce karsiliklari diakritik gerektiren kelimeler duz yazilmis
-  // olmamali; cocuk yanlis yazimi ogrenir. Hem sozluk kaydinin tr alani
-  // hem de ornek.tr kontrol edilir - eski surum yalnizca tr'ye bakiyordu
-  // ve ornek cumle icindeki bir yazim hatasini asla yakalayamazdi.
+test('Turkce alanlar altin degerlerle birebir eslesiyor', () => {
+  // Eskiden bu test bir "supheli duz yazim" deny-list'i ile calisiyordu:
+  // yalnizca listedeki duz yazimlardan birini yakalayabiliyordu. Ilk tema
+  // dosyasinda deny-list'in kacirdigi 20 diakritikli deger vardi (ornegin
+  // 'Türkiye', 'İtalya', 'oyun alanı', "İngiltere'dedir" gibi ornek
+  // cumleler) - bunlardan biri duzlestirilse test yesil kalirdi.
   //
-  // Liste yalnizca GERCEKTEN diakritik gerektiren kelimelerin duz
-  // (ASCII) karsiliklarini icerir: "bayram", "cetvel", "sessiz", "tatil"
-  // gibi kelimeler zaten diakritiksiz doğru Turkce, bu yuzden listeye
-  // eklenmedi - eklenseydi, dogru yazilmis kendi verimizde bile yanlis
-  // pozitif uretirdi (ör. tr: 'cetvel' kendi kendini tetikler).
-  const SUPHELI = [
-    'ogretmen', 'ogretmenini', 'ogrenci', 'canta', 'kutuphane', 'kutuphanede',
-    'mudur', 'kulup', 'kulubu', 'sinif', 'sinifta', 'toren', 'sirasinda',
-    'ulke', 'zamaninda', 'arkadas', 'kirmizi', 'kisa', 'kaldir', 'yazarim',
-    'olcerim', 'onemli', 'kurali', 'yavas', 'konus', 'kosma', 'muzik',
-    'satranc', 'guzel', 'yasiyorum', 'buyuk', 'bugun', 'once', 'konusmadan',
-    'kutlariz', 'bayramimizi', 'oynariz', 'yapariz', 'cocuklar', 'alaninda',
-    'ogle', 'yemegi', 'odunc', 'cizgiyi', 'lutfen', 'bircok', 'baslar'
-  ];
+  // Bunun yerine her kaydin tr ve ornek.tr degeri, asagidaki altin tabloda
+  // yazili TAM degerle karsilastirilir (degisiklik algilayici). Icerik
+  // degistiginde tablo da elle guncellenmeli; bu kasitlidir, cunku
+  // degisikligin gozden gecirilmesini zorunlu kilar.
+  const ALTIN = {
+    teacher: { tr: 'öğretmen', ornekTr: 'Öğretmenim çok nazik.' },
+    student: { tr: 'öğrenci', ornekTr: 'Öğrenci bir kitap okuyor.' },
+    principal: { tr: 'okul müdürü', ornekTr: 'Müdür ofiste.' },
+    classmate: { tr: 'sınıf arkadaşı', ornekTr: 'O benim sınıf arkadaşım.' },
+    friend: { tr: 'arkadaş', ornekTr: 'O benim en iyi arkadaşım.' },
+    caretaker: { tr: 'okul hizmetlisi', ornekTr: 'Hizmetli okulu temizler.' },
+    school: { tr: 'okul', ornekTr: 'Her gün okula giderim.' },
+    classroom: { tr: 'sınıf', ornekTr: 'Sınıfımız büyük ve aydınlık.' },
+    library: { tr: 'kütüphane', ornekTr: 'Kütüphanede kitap okuruz.' },
+    canteen: { tr: 'kantin', ornekTr: 'Kantinde öğle yemeği yeriz.' },
+    playground: { tr: 'oyun alanı', ornekTr: 'Çocuklar oyun alanında oynuyor.' },
+    gym: { tr: 'spor salonu', ornekTr: 'Spor salonunda oyunlar oynarız.' },
+    laboratory: { tr: 'laboratuvar', ornekTr: 'Laboratuvarda deneyler yaparız.' },
+    corridor: { tr: 'koridor', ornekTr: 'Lütfen koridorda koşma.' },
+    'school-bag': { tr: 'okul çantası', ornekTr: 'Okul çantam kırmızı.' },
+    book: { tr: 'kitap', ornekTr: 'Bir kitap okuyorum.' },
+    notebook: { tr: 'defter', ornekTr: 'Defterime yazarım.' },
+    pencil: { tr: 'kurşun kalem', ornekTr: 'Kurşun kalemim kısa.' },
+    pen: { tr: 'tükenmez kalem', ornekTr: 'Tükenmez kalemle yazarım.' },
+    eraser: { tr: 'silgi', ornekTr: 'Silgini ödünç alabilir miyim?' },
+    ruler: { tr: 'cetvel', ornekTr: 'Çizgiyi bir cetvelle ölçerim.' },
+    rule: { tr: 'kural', ornekTr: 'Bu önemli bir okul kuralı.' },
+    listen: { tr: 'dinlemek', ornekTr: 'Lütfen öğretmenini dinle.' },
+    speak: { tr: 'konuşmak', ornekTr: 'Lütfen yavaş konuş.' },
+    run: { tr: 'koşmak', ornekTr: 'Sınıfta koşma.' },
+    'be-quiet': { tr: 'sessiz ol', ornekTr: 'Kütüphanede sessiz ol.' },
+    'be-on-time': { tr: 'zamanında gel', ornekTr: 'Okula zamanında gel.' },
+    'raise-your-hand': { tr: 'elini kaldır', ornekTr: 'Konuşmadan önce elini kaldır.' },
+    club: { tr: 'kulüp', ornekTr: 'Okulumuzun birçok kulübü var.' },
+    'music-club': { tr: 'müzik kulübü', ornekTr: 'Müzik kulübündeyim.' },
+    'chess-club': { tr: 'satranç kulübü', ornekTr: 'Satranç kulübünde satranç oynarız.' },
+    'drama-club': { tr: 'drama kulübü', ornekTr: 'O drama kulübünde oyunculuk yapar.' },
+    'sports-club': { tr: 'spor kulübü', ornekTr: 'O spor kulübünde futbol oynar.' },
+    'art-club': { tr: 'resim kulübü', ornekTr: 'Resim kulübünde resim yaparız.' },
+    country: { tr: 'ülke', ornekTr: 'Türkiye güzel bir ülke.' },
+    turkiye: { tr: 'Türkiye', ornekTr: "Türkiye'de yaşıyorum." },
+    england: { tr: 'İngiltere', ornekTr: "Londra İngiltere'dedir." },
+    germany: { tr: 'Almanya', ornekTr: "Berlin Almanya'dadır." },
+    france: { tr: 'Fransa', ornekTr: "Paris Fransa'dadır." },
+    italy: { tr: 'İtalya', ornekTr: "Roma İtalya'dadır." },
+    spain: { tr: 'İspanya', ornekTr: "Madrid İspanya'dadır." },
+    'national-day': { tr: 'milli bayram', ornekTr: "Milli bayramımızı Nisan'da kutlarız." },
+    flag: { tr: 'bayrak', ornekTr: 'Bayrak kırmızı ve beyaz.' },
+    celebration: { tr: 'kutlama', ornekTr: 'Bugün okulda büyük bir kutlama var.' },
+    ceremony: { tr: 'tören', ornekTr: 'Tören sırasında hiç kıpırdamadan dururuz.' },
+    holiday: { tr: 'tatil', ornekTr: "Yaz tatili Haziran'da başlar." }
+  };
+
+  assert.equal(SOZLUK.length, Object.keys(ALTIN).length,
+    `altin tablo ${Object.keys(ALTIN).length} kayit iceriyor ama SOZLUK'te ${SOZLUK.length} kelime var`);
   for (const k of SOZLUK) {
-    for (const s of SUPHELI) {
-      assert.ok(!k.tr.toLowerCase().includes(s),
-        `${k.id}: tr alani diakritiksiz "${s}" iceriyor -> "${k.tr}"`);
-      assert.ok(!k.ornek.tr.toLowerCase().includes(s),
-        `${k.id}: ornek.tr alani diakritiksiz "${s}" iceriyor -> "${k.ornek.tr}"`);
-    }
+    const beklenen = ALTIN[k.id];
+    assert.ok(beklenen, `${k.id} icin altin tabloda kayit yok`);
+    assert.equal(k.tr, beklenen.tr, `${k.id}: tr "${k.tr}" bekleniyordu "${beklenen.tr}"`);
+    assert.equal(k.ornek.tr, beklenen.ornekTr,
+      `${k.id}: ornek.tr "${k.ornek.tr}" bekleniyordu "${beklenen.ornekTr}"`);
   }
 });
 
