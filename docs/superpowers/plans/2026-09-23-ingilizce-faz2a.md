@@ -939,7 +939,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: Task 1-4'un tamami
-- Produces: Calisan hafta karti, kelime karti, dinle-sec, quiz ve tema sinavi ekranlari
+- Produces (saf sunum modelleri, `src/views/ingilizce.js` icine EKLENIR):
+  - `ingHaftaKarti(hafta, sozluk, ilerleme)` -> `{ no, baslik, kelimeSayisi, durum }`
+  - `kartModeli(hafta, sozluk, index)` -> `{ kelime, index, toplam, sonMu }`
+  - `dinleSecModeli(hafta, sozluk, rng, kelimeId)` -> `{ bicim, secenekler, dogru }`
+    - `bicim`: `'gorsel'` (isimler) veya `'metin'` (fiil ve ifadeler)
+    - `secenekler`: dort eleman, her biri `{ id, gorsel? , metin? }`
+    - `dogru`: dogru secenegin indeksi
+- Produces (ekranlar, `src/ui/ingilizce-dom.js`): `ingHaftaEkrani`,
+  `kartEkrani`, `dinleSecEkrani`, `ingSonucEkrani` - hepsi
+  `(kok, model, ceviri)` imzasiyla, matematikteki `ders-dom.js` gibi
 
 **DINLE-SEC TASARIMI - olculen tur dagilimina gore:**
 
@@ -997,7 +1006,6 @@ import assert from 'node:assert/strict';
 import { ingHaftaKarti, kartModeli, dinleSecModeli } from '../src/views/ingilizce.js';
 import { ING_HAFTALAR } from '../src/data/ingilizce/haftalar.js';
 import { SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
-import { bosIngHafta } from '../src/engines/ingilizce/ders.js';
 import { tohumluRng } from './yardim/soru-sozlesmesi.js';
 
 const H4 = ING_HAFTALAR[0];
@@ -1035,13 +1043,35 @@ test('dinle-sec gorselli kelimede GORSEL secenek verir', () => {
 });
 
 test('dinle-sec fiil ve ifadede METIN secenek verir', () => {
-  // 46 kelimenin 40'i isim, 6'si fiil/ifade. Fiil icin dort resim
-  // gostermek zayif bir soru olurdu.
-  const fiil = SOZLUK.find((k) => k.tema === 1 && k.tur !== 'isim');
-  if (!H4.kelimeler.includes(fiil.id)) return; // bu hafta fiil yoksa atla
-  const m = dinleSecModeli(H4, SOZLUK, tohumluRng(1), fiil.id);
-  assert.equal(m.bicim, 'metin');
+  // 46 kelimenin 40'i isim, 6'si fiil/ifade. Fiil icin dort RESIM
+  // gostermek zayif bir soru olurdu; bicim ture gore degisiyor.
+  //
+  // Fiiller 6. haftada. Bu testi 4. haftayla yazip "fiil yoksa atla"
+  // demek, testin hicbir zaman calismamasi demekti - planin olcume
+  // dayanan tek kararini korumasiz birakirdi.
+  const fiilHaftasi = ING_HAFTALAR.find((h) =>
+    h.kelimeler.some((id) => SOZLUK.find((k) => k.id === id).tur !== 'isim'));
+  assert.ok(fiilHaftasi,
+    'hicbir haftada fiil/ifade yok; bicim ayrimi test edilemez hale gelmis');
+
+  const fiilId = fiilHaftasi.kelimeler.find((id) =>
+    SOZLUK.find((k) => k.id === id).tur !== 'isim');
+  const m = dinleSecModeli(fiilHaftasi, SOZLUK, tohumluRng(1), fiilId);
+
+  assert.equal(m.bicim, 'metin', `${fiilId} icin metin secenek beklenirdi`);
   for (const s of m.secenekler) assert.ok(s.metin, 'metin secenek metin tasimali');
+});
+
+test('dinle-sec bicimi TUM kelimelerde ture uyuyor', () => {
+  // Tek bir kelimeyi degil, kurali pinler.
+  for (const h of ING_HAFTALAR) {
+    for (const id of h.kelimeler) {
+      const kelime = SOZLUK.find((k) => k.id === id);
+      const m = dinleSecModeli(h, SOZLUK, tohumluRng(3), id);
+      const beklenen = kelime.tur === 'isim' ? 'gorsel' : 'metin';
+      assert.equal(m.bicim, beklenen, `${id} (${kelime.tur}) -> ${m.bicim}`);
+    }
+  }
 });
 
 test('dinle-sec dogru secenek GERCEKTEN dogru', () => {
