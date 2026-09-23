@@ -37,24 +37,49 @@ test('her kelimenin tr, tema, tur, gorsel ve ornegi var', () => {
 });
 
 test('ornek cumle kelimeyi GERCEKTEN iceriyor', () => {
+  // Tek kelimeyi degil, en alanindaki HER anlamli tokeni kontrol eder.
+  // Eski surum sadece ilk tokeni bakiyordu: "be quiet" ve "be on time"
+  // icin bu "be" oluyordu, ki neredeyse her cumlede gecer (before,
+  // because, between...) ve testi anlamsizlastiriyordu. 2 karakter ve
+  // altindaki fonksiyon kelimeleri (be, on, to, my...) bilgi tasimadigi
+  // icin atlanir; cekim/cogul icin substring eslesmesi yeterli sayilir
+  // ("bag" -> "bags").
   for (const k of SOZLUK) {
     const c = k.ornek.en.toLowerCase();
-    const kel = k.en.toLowerCase();
-    // Cogul ve cekim icin ilk kelimeyi arar; "bag" -> "bags" de gecerli.
-    const kok = kel.split(' ')[0];
-    assert.ok(c.includes(kok),
-      `${k.id}: ornek cumle "${k.ornek.en}" kelimeyi ("${k.en}") icermiyor`);
+    const tokenler = k.en.toLowerCase().split(' ').filter((t) => t.length > 2);
+    for (const kok of tokenler) {
+      assert.ok(c.includes(kok),
+        `${k.id}: ornek cumle "${k.ornek.en}" "${kok}" kelimesini icermiyor`);
+    }
   }
 });
 
 test('Turkce alanlar diakritiklerini korumus', () => {
   // Ingilizce karsiliklari diakritik gerektiren kelimeler duz yazilmis
-  // olmamali; cocuk yanlis yazimi ogrenir.
-  const SUPHELI = ['ogretmen', 'ogrenci', 'canta', 'kutuphane', 'mudur', 'kulup'];
+  // olmamali; cocuk yanlis yazimi ogrenir. Hem sozluk kaydinin tr alani
+  // hem de ornek.tr kontrol edilir - eski surum yalnizca tr'ye bakiyordu
+  // ve ornek cumle icindeki bir yazim hatasini asla yakalayamazdi.
+  //
+  // Liste yalnizca GERCEKTEN diakritik gerektiren kelimelerin duz
+  // (ASCII) karsiliklarini icerir: "bayram", "cetvel", "sessiz", "tatil"
+  // gibi kelimeler zaten diakritiksiz doğru Turkce, bu yuzden listeye
+  // eklenmedi - eklenseydi, dogru yazilmis kendi verimizde bile yanlis
+  // pozitif uretirdi (ör. tr: 'cetvel' kendi kendini tetikler).
+  const SUPHELI = [
+    'ogretmen', 'ogretmenini', 'ogrenci', 'canta', 'kutuphane', 'kutuphanede',
+    'mudur', 'kulup', 'kulubu', 'sinif', 'sinifta', 'toren', 'sirasinda',
+    'ulke', 'zamaninda', 'arkadas', 'kirmizi', 'kisa', 'kaldir', 'yazarim',
+    'olcerim', 'onemli', 'kurali', 'yavas', 'konus', 'kosma', 'muzik',
+    'satranc', 'guzel', 'yasiyorum', 'buyuk', 'bugun', 'once', 'konusmadan',
+    'kutlariz', 'bayramimizi', 'oynariz', 'yapariz', 'cocuklar', 'alaninda',
+    'ogle', 'yemegi', 'odunc', 'cizgiyi', 'lutfen', 'bircok', 'baslar'
+  ];
   for (const k of SOZLUK) {
     for (const s of SUPHELI) {
       assert.ok(!k.tr.toLowerCase().includes(s),
         `${k.id}: tr alani diakritiksiz "${s}" iceriyor -> "${k.tr}"`);
+      assert.ok(!k.ornek.tr.toLowerCase().includes(s),
+        `${k.id}: ornek.tr alani diakritiksiz "${s}" iceriyor -> "${k.ornek.tr}"`);
     }
   }
 });

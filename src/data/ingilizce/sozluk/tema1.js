@@ -11,7 +11,10 @@
 // src/ui/gorsel/ingilizce.js icindeki kayit defterine bakar (sonraki fazda
 // eklenecek). Kotu/muglak bir emoji zorlamak yerine cizim tercih edildi:
 // principal, caretaker, classroom, corridor, eraser, rule, be on time,
-// raise your hand, club, ceremony.
+// raise your hand, club, ceremony, flag (kirmizi bayrak = uyari emojisi
+// ile karisir), gym (agirlik kaldirma emojisi orneği "oyun oynariz" ile
+// celisir), friend (coklu-kisi ZWJ dizisi eski cihazlarda guvenilir
+// gorunmuyor).
 
 export default [
   // --- Okuldaki kisiler ---
@@ -37,7 +40,7 @@ export default [
   },
   {
     id: 'friend', en: 'friend', tr: 'arkadaş', tema: 1, tur: 'isim',
-    gorsel: { tip: 'emoji', deger: '👫' },
+    gorsel: { tip: 'cizim', ad: 'arkadas' },
     ornek: { en: 'He is my best friend.', tr: 'O benim en iyi arkadaşım.' }
   },
   {
@@ -74,7 +77,7 @@ export default [
   },
   {
     id: 'gym', en: 'gym', tr: 'spor salonu', tema: 1, tur: 'isim',
-    gorsel: { tip: 'emoji', deger: '🏋️' },
+    gorsel: { tip: 'cizim', ad: 'spor-salonu' },
     ornek: { en: 'We play games in the gym.', tr: 'Spor salonunda oyunlar oynarız.' }
   },
   {
@@ -152,9 +155,9 @@ export default [
     ornek: { en: 'Be quiet in the library.', tr: 'Kütüphanede sessiz ol.' }
   },
   {
-    id: 'be-on-time', en: 'be on time', tr: 'zamanında ol', tema: 1, tur: 'ifade',
+    id: 'be-on-time', en: 'be on time', tr: 'zamanında gel', tema: 1, tur: 'ifade',
     gorsel: { tip: 'cizim', ad: 'zamaninda-ol' },
-    ornek: { en: 'Be on time for school.', tr: 'Okula zamanında ol.' }
+    ornek: { en: 'Be on time for school.', tr: 'Okula zamanında gel.' }
   },
   {
     id: 'raise-your-hand', en: 'raise your hand', tr: 'elini kaldır', tema: 1, tur: 'ifade',
@@ -239,7 +242,7 @@ export default [
   },
   {
     id: 'flag', en: 'flag', tr: 'bayrak', tema: 1, tur: 'isim',
-    gorsel: { tip: 'emoji', deger: '🚩' },
+    gorsel: { tip: 'cizim', ad: 'bayrak' },
     ornek: { en: 'The flag is red and white.', tr: 'Bayrak kırmızı ve beyaz.' }
   },
   {
