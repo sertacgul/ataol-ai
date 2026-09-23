@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GORSELLER, gorselKur, gorselVarMi } from '../src/ui/gorsel/index.js';
 import { KONULAR } from '../src/data/konular/index.js';
+import { SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
 
 /** Veride gecen tum gorsel adlari. */
 function veridekiAdlar() {
@@ -16,10 +17,24 @@ function veridekiAdlar() {
   return adlar;
 }
 
+/**
+ * Ingilizce sozlugundeki cizim adlari, ikinci bir veri kaynagi.
+ *
+ * Bu dosya yazildiginda GORSELLER yalniz KONULAR'daki (matematik) anlatim
+ * adimlarindan besleniyordu. Ingilizce kelime karti ayni kayit defterini
+ * KULLANIR ama SOZLUK'ten beslenir ve ders etkinligi degildir - dokun ve
+ * ipucu ZORUNLU DEGIL (bkz. gorsel-ingilizce.test.js). Asagidaki iki test
+ * bu ikinci aileyi "olu kod" ya da "sozlesmeyi saglamiyor" diye
+ * etiketlemesin diye bu adlari ayri tutuyoruz.
+ */
+const INGILIZCE_ADLARI = new Set(
+  SOZLUK.filter((k) => k.gorsel.tip === 'cizim').map((k) => k.gorsel.ad)
+);
+
 test('kayit defterinde veride olmayan gorsel yok', () => {
   const veride = veridekiAdlar();
   for (const ad of Object.keys(GORSELLER)) {
-    assert.ok(veride.has(ad),
+    assert.ok(veride.has(ad) || INGILIZCE_ADLARI.has(ad),
       `"${ad}" kayitli ama hicbir anlatim adimi onu istemiyor; olu kod`);
   }
 });
@@ -76,8 +91,10 @@ test('her kayitli gorsel sozlesmeyi saglar', () => {
     const g = gorselKur(ad, sahteKanvas(), {});
     assert.ok(g, `${ad}: gorselKur null dondu`);
     assert.equal(typeof g.ciz, 'function', `${ad}.ciz yok`);
-    assert.equal(typeof g.ipucu, 'string', `${ad}.ipucu yok`);
-    assert.ok(g.ipucu.length > 0, `${ad}.ipucu bos`);
+    if (!INGILIZCE_ADLARI.has(ad)) {
+      assert.equal(typeof g.ipucu, 'string', `${ad}.ipucu yok`);
+      assert.ok(g.ipucu.length > 0, `${ad}.ipucu bos`);
+    }
     g.ciz();
     if (g.dokun) g.dokun({ x: 0.5, y: 0.5 });
   }
@@ -92,11 +109,15 @@ test('her kayitli gorsel sozlesmeyi saglar', () => {
  * belirsizligi kalici olarak ortadan kaldirmak: tepkisiz bir gorsel
  * cocuk icin bozuk bir ekrandir ve elle denemeyle guvenilir sekilde
  * yakalanamaz.
+ *
+ * Ingilizce kelime karti gorselleri bu kurala tabi degil: ders
+ * etkinligi degiller, kelime kartinin resmi - dokunmasi gerekmiyor.
  */
 test('her gorsel bir yerde dokunmaya tepki verir', () => {
   const tepkisiz = [];
 
   for (const [ad, kur] of Object.entries(GORSELLER)) {
+    if (INGILIZCE_ADLARI.has(ad)) continue;
     const kayit = [];
     const g = kur(izleyenKanvas(kayit), {});
     if (!g.dokun) { tepkisiz.push(`${ad}: dokun yok`); continue; }

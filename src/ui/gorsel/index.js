@@ -30,6 +30,11 @@ import {
   gorselPergel, gorselIkiCember, gorselCemberUcgen, gorselUcgenKenarlari,
   gorselUcgenNeden, gorselEsitYaricap, gorselKesisimKosulu, gorselUcgenTurleri
 } from './cokgen.js';
+import {
+  gorselOkulMuduru, gorselArkadas, gorselOkulHizmetlisi, gorselSinif,
+  gorselSporSalonu, gorselKoridor, gorselSilgi, gorselKural, gorselZamaninda,
+  gorselElKaldir, gorselKulup, gorselBayrak, gorselToren
+} from './ingilizce.js';
 
 export const GORSELLER = {
   // temel-cizimler
@@ -81,7 +86,22 @@ export const GORSELLER = {
   'ucgen-neden': gorselUcgenNeden,
   'esit-yaricap': gorselEsitYaricap,
   'kesisim-kosulu': gorselKesisimKosulu,
-  'ucgen-turleri': gorselUcgenTurleri
+  'ucgen-turleri': gorselUcgenTurleri,
+
+  // ingilizce
+  'okul-muduru': gorselOkulMuduru,
+  'arkadas': gorselArkadas,
+  'okul-hizmetlisi': gorselOkulHizmetlisi,
+  'sinif': gorselSinif,
+  'spor-salonu': gorselSporSalonu,
+  'koridor': gorselKoridor,
+  'silgi': gorselSilgi,
+  'kural': gorselKural,
+  'zamaninda-ol': gorselZamaninda,
+  'el-kaldir': gorselElKaldir,
+  'kulup': gorselKulup,
+  'bayrak': gorselBayrak,
+  'toren': gorselToren
 };
 
 export function gorselKur(ad, canvas, secenekler = {}) {
