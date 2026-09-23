@@ -334,6 +334,7 @@ export function kartGoruldu(kayit, kelimeId, kelimeIdleri = []) {
     ? yildizVer(yeni, 'kelime', ING_YILDIZ.kelime)
     : { kayit: yeni, kazanilanYildiz: 0 };
 }
+```
 
 - [ ] **Step 4: `yildizVer`i disa aktar**
 
