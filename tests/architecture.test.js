@@ -120,3 +120,46 @@ test('hicbir saf katman ui veya views icinden ithal etmez', () => {
     }
   }
 });
+
+/**
+ * Tuvale yazilan Turkce metin diakritiklerini korur.
+ *
+ * ASCII kurali yorumlar ve tanimlayicilar icin; cocugun GORDUGU metin
+ * tam Turkce yazilir. Bu ayrimi bu dalda uc kez karistirdim ve ucunde de
+ * ancak ekran goruntusune bakinca fark ettim: tuvale "cember kenarlarini
+ * surukle" yazmisim. Hicbir test gormuyordu cunku dizgi teknik olarak
+ * gecerli.
+ *
+ * Kontrol kelime bazli ve kasten dar: listedeki her kelimenin Turkcesi
+ * diakritiksiz YAZILAMAZ, yani eslesme kesin hatadir. "Kenarlar: 5 cm"
+ * gibi zaten diakritiksiz mesru metinler etkilenmez.
+ */
+test('tuval metinleri diakritiksiz Turkce icermez', () => {
+  const HATALI = [
+    'cember', 'cizgi', 'cizim', 'kose', 'olcu', 'olcer', 'aciolcer',
+    'yaricap', 'ucgen', 'cokgen', 'buyuk', 'kucuk', 'baslangic',
+    'surukle', 'sec ', 'gor ', 'gorursun', 'dogru parcasi', 'isin ',
+    'uzunlugu', 'degistir', 'icin '
+  ];
+
+  for (const { yol, src } of TUM) {
+    if (!yol.startsWith('ui/')) continue;
+
+    // Yalniz kullaniciya gorunen metin: tuvale yazilanlar ve ipucu.
+    const metinler = [
+      ...src.matchAll(/(?:altYazi|etiket|yaziCiz)\([^)]*?'([^']+)'/g),
+      ...src.matchAll(/ipucu:\s*'([^']+)'/g),
+      ...src.matchAll(/mesaj:\s*'([^']+)'/g)
+    ].map((m) => m[1]);
+
+    for (const metin of metinler) {
+      const kucuk = metin.toLowerCase();
+      for (const kelime of HATALI) {
+        assert.ok(
+          !kucuk.includes(kelime),
+          `${yol}: cocugun gordugu metinde diakritiksiz "${kelime.trim()}" var -> "${metin}"`
+        );
+      }
+    }
+  }
+});
