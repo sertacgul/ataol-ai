@@ -11,10 +11,15 @@ test('Turkce diakritikler duz harfe iner', () => {
   assert.equal(normalize('ğ'), 'g');
 });
 
-test('buyuk I ve noktali I Turkce kurala gore iner', () => {
-  // toLowerCase() 'I' -> 'i' yapar; Turkce'de 'I'nin kucugu 'ı'dir.
-  // toLocaleLowerCase('tr') kullanilmazsa 'IŞIK' -> 'isik' yerine
-  // 'ışık' -> normalize 'isik' ile eslesmez.
+test('dort I formu aynı aranabilir anahtara iner', () => {
+  // 'I', 'İ', 'ı', 'i' — dört fark form, biri aranabilir anahtar.
+  // DUZ tablosu crítico: 'ı': 'i' haritası olmayinca bu test KIRMIZI olur.
+  // toLocaleLowerCase('tr') savunma: tablo degisirse tuzak ortaya cikacak.
+  const hedef = normalize('i');  // lowercase i: 'i'
+  assert.equal(normalize('I'), hedef);   // LATIN CAPITAL LETTER I
+  assert.equal(normalize('İ'), hedef);   // LATIN CAPITAL LETTER I WITH DOT ABOVE
+  assert.equal(normalize('ı'), hedef);   // LATIN SMALL LETTER DOTLESS I
+  // Existing tests validate behaviour, but this pins the DUZ dependency.
   assert.equal(normalize('IŞIK'), normalize('ışık'));
   assert.equal(normalize('İSTANBUL'), normalize('istanbul'));
   assert.equal(normalize('Iyi'), normalize('ıyi'));
