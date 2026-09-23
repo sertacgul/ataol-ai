@@ -52,3 +52,50 @@ export function kelimeKimligi(en) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
+
+const SKOR = { tam: 4, bastan: 3, sinir: 2, icinde: 1 };
+
+/**
+ * Bir alanin sorguyla ne kadar iyi eslestigini puanlar. 0 = eslesmiyor.
+ *
+ * "Kelime siniri" ile "icinde gecen" AYRI puanlanir: 'school' sorgusu
+ * icin 'school bag' (kelime basi) 'preschool'dan (ortasinda) daha
+ * alakalidir ve once gelmelidir.
+ */
+function puanla(alan, sorgu) {
+  const a = normalize(alan);
+  if (!a) return 0;
+  if (a === sorgu) return SKOR.tam;
+  if (a.startsWith(sorgu)) return SKOR.bastan;
+  if (a.includes(` ${sorgu}`)) return SKOR.sinir;
+  if (a.includes(sorgu)) return SKOR.icinde;
+  return 0;
+}
+
+/**
+ * Sozlukte iki yonlu arama.
+ *
+ * Her kelime EN FAZLA BIR KEZ doner: iki taraf da eslesirse yuksek
+ * puanli yon secilir. Ayni kelimeyi iki satirda gostermek cocuga iki
+ * ayri kelime var gibi gelir.
+ */
+export function ara(sozluk, sorgu, { limit = 20 } = {}) {
+  const s = normalize(sorgu);
+  if (!s || !Array.isArray(sozluk)) return [];
+
+  const sonuc = [];
+  for (const kelime of sozluk) {
+    const enSkor = puanla(kelime.en, s);
+    const trSkor = puanla(kelime.tr, s);
+    if (enSkor === 0 && trSkor === 0) continue;
+
+    sonuc.push(enSkor >= trSkor
+      ? { kelime, yon: 'en-tr', skor: enSkor }
+      : { kelime, yon: 'tr-en', skor: trSkor });
+  }
+
+  // Esit puanda alfabetik: sonuc siralamasi girdi sirasina gore
+  // degismesin, yoksa veri dosyasinda satir tasimak sonucu degistirir.
+  sonuc.sort((a, b) => b.skor - a.skor || a.kelime.id.localeCompare(b.kelime.id));
+  return sonuc.slice(0, limit);
+}
