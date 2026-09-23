@@ -218,3 +218,40 @@ export function yanitAyikla(apiYaniti) {
   const temiz = duzMetin(parts.map((p) => p?.text ?? '').join(''));
   return temiz || null;
 }
+
+/**
+ * Ders modulunun "Anlamadim, baska turlu anlat" istemi.
+ *
+ * Iki siki yasak istemin icinde yazilidir ve bunlar tasarim karari:
+ *   1. Yeni soru uretmez. Sorular offline ve dogrulanmis kalmali;
+ *      modelin urettigi soru yanlis kurulabilir ve cocuk yanlis ogrenir.
+ *   2. Quiz veya sinav cevabi vermez. Aksi halde cocuk anlamak yerine
+ *      cevabi sormayi ogrenir.
+ *
+ * Cocugun adi ISTEME GIRMEZ: bu modul engines/ altindadir ve mimari
+ * testi burada kisi adi bulunmasini yasaklar. Ad gerekirse cagiran
+ * taraf ekler.
+ */
+export function dersIstemi({ konuAd, kazanim, adimMetni, yas } = {}) {
+  const konu = konuAd ?? 'matematik konusu';
+  const hedef = kazanim ?? 'bu konunun temel fikri';
+  const adim = adimMetni ?? 'konunun tamamı';
+  const yasMetni = Number.isFinite(yas) ? String(yas) : '10';
+
+  return `Sen bir ilkokul matematik öğretmenisin. ${yasMetni} yaşında bir çocuğa anlatıyorsun.
+
+KONU: ${konu}
+KAZANIM: ${hedef}
+ÇOCUĞUN TAKILDIĞI YER: "${adim}"
+
+GÖREVİN: Bu fikri, yukarıdakinden FARKLI bir yoldan anlat. Günlük hayattan
+somut bir örnek ver. En fazla 4 kısa cümle kur. Basit kelimeler kullan.
+
+KESİN YASAKLAR:
+- Yeni soru sorma. Çocuğa soru yöneltme, alıştırma verme.
+- Quiz veya sınav sorusuna cevap verme. Hangi şıkkın doğru olduğunu söyleme.
+- Sembol kullanma (derece işareti, dik işareti gibi). "90 derece" diye yaz.
+- Uzun anlatma. Dört cümleyi aşma.
+
+Sadece anlat. Başka hiçbir şey yapma.`;
+}

@@ -222,18 +222,66 @@ export function createAppState(storage) {
      */
     loadIstatistik() {
       const kayit = storage.get('istatistik', null);
-      const bos = { okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0 };
+      const bos = {
+        okunanKahramanlar: [], matematikDogru: 0, kurulanMakineler: [], satrancGalibiyet: 0,
+        dersHaftalari: 0, gecilenSinavlar: 0, tamPuanQuiz: 0
+      };
       if (!kayit || typeof kayit !== 'object') return bos;
       return {
         okunanKahramanlar: Array.isArray(kayit.okunanKahramanlar) ? kayit.okunanKahramanlar : [],
         matematikDogru: Number.isFinite(kayit.matematikDogru) ? kayit.matematikDogru : 0,
         kurulanMakineler: Array.isArray(kayit.kurulanMakineler) ? kayit.kurulanMakineler : [],
-        satrancGalibiyet: Number.isFinite(kayit.satrancGalibiyet) ? kayit.satrancGalibiyet : 0
+        satrancGalibiyet: Number.isFinite(kayit.satrancGalibiyet) ? kayit.satrancGalibiyet : 0,
+        dersHaftalari: Number.isFinite(kayit.dersHaftalari) ? kayit.dersHaftalari : 0,
+        gecilenSinavlar: Number.isFinite(kayit.gecilenSinavlar) ? kayit.gecilenSinavlar : 0,
+        tamPuanQuiz: Number.isFinite(kayit.tamPuanQuiz) ? kayit.tamPuanQuiz : 0
       };
     },
 
     saveIstatistik(ist) {
       storage.set('istatistik', ist);
+    },
+
+    /**
+     * Matematik ders modulunun ilerlemesi.
+     *
+     * haftalar: hafta numarasi -> { anlatim: string[], etkilesimBitti,
+     *   alistirma: leitner kutulari, quiz: { enIyi, denemeler,
+     *   yildizAlindi } }
+     * sinavlar: sinav kimligi -> { puan, gecti, tarih, yildizAlindi }
+     * ayar: ses ve hafta tercihleri
+     *
+     * Savunmaci yuklenir: bozuk ya da eksik kayit uygulamayi cokertmez,
+     * varsayilana duser. Cocugun elindeki tek cihazda kayit bozulursa
+     * ders ekrani acilmaya devam etmeli.
+     */
+    loadDersIlerleme() {
+      const bos = {
+        haftalar: {},
+        sinavlar: {},
+        ayar: { sesAcik: true, otomatikOynat: true, sabitHafta: null, sesliCevap: false }
+      };
+      const kayit = storage.get('ders', null);
+      if (!kayit || typeof kayit !== 'object' || Array.isArray(kayit)) return bos;
+
+      const nesne = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+      const bayrak = (x, varsayilan) => (typeof x === 'boolean' ? x : varsayilan);
+      const ayar = nesne(kayit.ayar);
+
+      return {
+        haftalar: nesne(kayit.haftalar),
+        sinavlar: nesne(kayit.sinavlar),
+        ayar: {
+          sesAcik: bayrak(ayar.sesAcik, true),
+          otomatikOynat: bayrak(ayar.otomatikOynat, true),
+          sabitHafta: Number.isInteger(ayar.sabitHafta) ? ayar.sabitHafta : null,
+          sesliCevap: bayrak(ayar.sesliCevap, false)
+        }
+      };
+    },
+
+    saveDersIlerleme(ilerleme) {
+      storage.set('ders', ilerleme);
     }
   };
 }

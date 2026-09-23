@@ -81,6 +81,33 @@ node --test "tests/**/*.test.js"
 4. **Ebeveyn günlüğü cihazı terk etmez.** `engines/diary.js` içinde ağ çağrısı bulunamaz.
 5. **HTML doğrudan basılmaz.** Görünüm modülleri düz veri döndürür; DOM'u yalnızca `src/main.js` ve `src/ui/dom.js` kurar. `el()` yardımcısı metni `textContent` ile yazar ve öznitelikleri beyaz listeden geçirir. Bu kuralların tamamı `tests/architecture.test.js` içindeki tek bir dizin taramasıyla `src/` ağacının tümü üzerinde denetlenir.
 
+### Anlatim seslerini uretme
+
+Ders anlatimlari onceden seslendirilip `sesler/` altina konur. Ses dosyasi
+yoksa uygulama cihazin kendi TTS'ine duser, yani ses uretimi zorunlu
+degildir.
+
+```bash
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js                  # hepsi
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js temel-cizimler   # tek konu
+```
+
+Google Cloud Text-to-Speech Chirp 3 HD kullanilir (tr-TR). Aylik ilk 1M
+karakter ucretsizdir, yani bu proje ucretsiz kotanin cok altinda kalir.
+
+Olculen degerler (uc konu, sekiz seviye, 46 anlatim adimi):
+**11.335 karakter, 46 dosya, toplam 3,4 MB.** Mufredatin tamami on bes
+konuya cikinca bu kabaca bes katina, yani 60k karakter civarina cikar;
+yine de aylik ucretsiz kotanin onda birinden azdir.
+
+**Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'e commit edilmeli**.
+Uygulama GitHub Pages'tan dogrudan daldan sunuluyor; commit edilmeyen
+dosya cocugun telefonunda yoktur. Ses uretilir, yerelde calar, yayinda
+sessiz kalir ve bunun nedeni aylar sonra anlasilir.
+
+Var olan dosyanin ustune yazilmaz. Bir anlatim metnini degistirdiysen o
+dosyayi silip scripti tekrar calistir.
+
 ### Sürümler
 
 `index.html` v1'dir ve çalışır durumdadır. v2 `v2.html` olarak yanına kurulmuştur; devir teslim Faz 1D'de yapılacaktır.

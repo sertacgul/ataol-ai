@@ -1,0 +1,352 @@
+/**
+ * Ders ekraninin saf model katmani. DOM yok; yalnizca ekranda
+ * gosterilecek veriyi hazirlar.
+ *
+ * Adim kimligi konu ve seviyeyle nitelenir ('temel-cizimler-1-a1')
+ * cunku bir hafta iki konuya birden baglanabiliyor ve iki konuda da
+ * 'a1' adinda adim var. Ayni kimlik hem ilerleme kaydinda hem ses
+ * dosyasi adinda kullanilir; boylece tek kaynak olur.
+ */
+
+import { haftaKaydi, haftaDurumu, QUIZ_GECME } from '../engines/ders.js';
+import { haftaBul, aktifHafta, haftaGezin } from '../engines/mufredat.js';
+import { MONTHS } from '../engines/calendar.js';
+import { soruUret } from '../engines/uretici/index.js';
+import { selectWeighted } from '../engines/leitner.js';
+
+export const adimKimligi = (konuId, seviye, adimId) => `${konuId}-${seviye}-${adimId}`;
+
+function seviyeBul(konu, no) {
+  return konu?.seviyeler?.find((s) => s.seviye === no) ?? null;
+}
+
+/**
+ * Hafta kartinin modeli.
+ *
+ * hazir: o haftanin TUM dersleri icin icerik yazilmis mi. Faz 1'de
+ * yalnizca 1-8. haftalar hazirdir; digerleri kartta "icerik
+ * hazirlaniyor" gosterir. Yari hazir hafta hazir sayilmaz, yoksa cocuk
+ * ikinci derse tiklayip bos ekrana duser.
+ */
+export function haftaKarti(hafta, konular, uniteAd, ilerleme) {
+  const dersler = hafta.dersler.map((d) => {
+    const konu = konular[d.konu] ?? null;
+    const sev = seviyeBul(konu, d.seviye);
+    return {
+      konuId: d.konu,
+      konuAd: konu?.ad?.tr ?? d.konu,
+      seviye: d.seviye,
+      baslik: sev?.baslik ?? '',
+      hazir: Boolean(sev)
+    };
+  });
+
+  const adimIdleri = hafta.dersler.flatMap((d) => {
+    const sev = seviyeBul(konular[d.konu], d.seviye);
+    if (!sev) return [];
+    return sev.anlatim.map((a) => adimKimligi(d.konu, d.seviye, a.id));
+  });
+
+  const kayit = haftaKaydi(ilerleme, hafta.hafta);
+
+  return {
+    no: hafta.hafta,
+    bas: hafta.bas,
+    bit: hafta.bit,
+    tarihMetni: tarihAraligi(hafta.bas, hafta.bit, MONTHS),
+    uniteAd,
+    dersler,
+    adimIdleri,
+    durum: haftaDurumu(adimIdleri, kayit),
+    hazir: dersler.length > 0 && dersler.every((d) => d.hazir)
+  };
+}
+
+// Tatilden once biten son hafta. takvim tarih sirasina gore dizili,
+// bu yuzden eslesenlerin sonuncusu en yakinidir.
+function haftaOncesi(takvim, tarih) {
+  const adaylar = takvim.filter((h) => h.bit < tarih);
+  return adaylar.length > 0 ? adaylar[adaylar.length - 1] : null;
+}
+
+// Tatilden sonra baslayan ilk hafta.
+function haftaSonrasi(takvim, tarih) {
+  return takvim.find((h) => h.bas > tarih) ?? null;
+}
+
+/**
+ * Ekranin hangi halde acilacagi. Tatilde ders gosterilmez ama ebeveynin
+ * sabitledigi hafta varsa tatil kurali gecersizdir: cocuk tatilde de
+ * calisabilmeli.
+ *
+ * Tatil halinde oncekiHafta/sonrakiHafta da donuyor: gezinme dugmelerinin
+ * tatilde nereye gidecegini bulmasi icin. Sabit bir "son hafta" (37)
+ * kullanilirsa yilin ilk tatilinde (16-20 Kasim) "sonraki hafta" dugmesi
+ * olmayan bir haftaya (37) gitmeye calisir ve sessizce hicbir sey yapmaz.
+ */
+export function ekranDurumu(takvim, tatiller, tarih, sabitHafta) {
+  const sabit = aktifHafta(takvim, tatiller, tarih, sabitHafta);
+  if (sabit && Number.isInteger(sabitHafta)) return { tip: 'ders', hafta: sabit };
+
+  const sonuc = haftaBul(takvim, tatiller, tarih);
+  if (sonuc.tip === 'tatil') {
+    const oncekiHafta = haftaOncesi(takvim, sonuc.bas);
+    const sonrakiHafta = haftaSonrasi(takvim, sonuc.bit);
+    return {
+      tip: 'tatil',
+      ad: sonuc.ad,
+      bas: sonuc.bas,
+      bit: sonuc.bit,
+      oncekiHafta: oncekiHafta ? oncekiHafta.hafta : null,
+      sonrakiHafta: sonrakiHafta ? sonrakiHafta.hafta : null
+    };
+  }
+  if (sonuc.tip === 'disinda') return { tip: sonuc.once ? 'once' : 'sonra' };
+  if (sonuc.hafta.dersler.length === 0) return { tip: 'sonra' };
+  return { tip: 'ders', hafta: sonuc.hafta };
+}
+
+// 'sonra' halinde gezinilecek "geri" hedefi: ders iceren son hafta.
+// Hafta 37 sosyal etkinlik haftasi oldugu icin (dersler: []) bu her
+// zaman 36'ya denk gelir, ama sabit yazilmiyor: takvim degisirse burasi
+// da kendiliginden dogru kalsin diye.
+function sonDersHaftasi(takvim) {
+  const dersli = takvim.filter((h) => h.dersler.length > 0);
+  return dersli.length > 0 ? dersli[dersli.length - 1].hafta : null;
+}
+
+/**
+ * Gezinme dugmelerinin her ekran halinde gidecegi hafta numaralari.
+ *
+ * Hedefi olmayan yon null doner (orn. 1. haftada "onceki", son ders
+ * haftasinda "sonraki"); ui bu durumda o dugmeyi hic cizmez, cunku
+ * hicbir seye gitmeyen bir dugme cocuk icin bos bir tiklamadir.
+ */
+export function gezinmeHedefleri(takvim, durum) {
+  if (durum.tip === 'ders') {
+    return {
+      geri: haftaGezin(takvim, durum.hafta.hafta, -1)?.hafta ?? null,
+      ileri: haftaGezin(takvim, durum.hafta.hafta, 1)?.hafta ?? null
+    };
+  }
+  if (durum.tip === 'tatil') {
+    return { geri: durum.oncekiHafta, ileri: durum.sonrakiHafta };
+  }
+  if (durum.tip === 'sonra') {
+    return { geri: sonDersHaftasi(takvim), ileri: null };
+  }
+  // tip === 'once': yil henuz baslamadi, gidilecek bir hafta yok.
+  return { geri: null, ileri: null };
+}
+
+/**
+ * Anlatim ekraninin modeli.
+ *
+ * Bir hafta iki konuya baglanabildigi icin adimlar duzlestirilerek tek
+ * bir sira haline getirilir. Cocuk icin bu tek bir anlatimdir; iki
+ * konudan geldigini bilmesine gerek yok, ama her adim kendi konu adini
+ * tasir ki basliktan nerede oldugunu anlasin.
+ */
+export function anlatimModeli(hafta, konular, ilerleme, index) {
+  const adimlar = hafta.dersler.flatMap((d) => {
+    const konu = konular[d.konu] ?? null;
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev) return [];
+    return sev.anlatim.map((a) => ({
+      kimlik: adimKimligi(d.konu, d.seviye, a.id),
+      metin: a.metin,
+      gorsel: a.gorsel ?? null,
+      konuId: d.konu,
+      konuAd: konu.ad.tr,
+      seviye: d.seviye
+    }));
+  });
+
+  const toplam = adimlar.length;
+  const guvenli = toplam === 0 ? 0 : Math.max(0, Math.min(index, toplam - 1));
+  const kayit = haftaKaydi(ilerleme, hafta.hafta);
+
+  return {
+    adimlar,
+    index: guvenli,
+    aktif: toplam === 0 ? null : adimlar[guvenli],
+    toplam,
+    sonMu: toplam > 0 && guvenli === toplam - 1,
+    tamamlanan: kayit.anlatim
+  };
+}
+
+/**
+ * Ornek cozum ekraninin modeli.
+ *
+ * Cozum adimlari tek tek acilir. Tamami bir anda ekranda olursa cocuk
+ * okumaz, dogrudan cevaba bakar; adim adim acilinca her adimda durup
+ * dusunme sansi olur.
+ *
+ * Hafta iki konuya bagliysa ilk hazir konunun ilk ornegi gosterilir.
+ * Iki ornegi birden gostermek bu ekrani uzatirdi; asil is zaten
+ * alistirmada.
+ */
+export function ornekModeli(hafta, konular, acikAdim) {
+  for (const d of hafta.dersler) {
+    const konu = konular[d.konu];
+    const sev = seviyeBul(konu, d.seviye);
+    if (!sev || sev.ornekler.length === 0) continue;
+
+    const ornek = sev.ornekler[0];
+    const toplam = ornek.adimlar.length;
+    const n = Math.max(0, Math.min(acikAdim, toplam));
+
+    return {
+      ornek,
+      konuAd: konu.ad.tr,
+      acik: ornek.adimlar.slice(0, n),
+      toplam,
+      bitti: n === toplam
+    };
+  }
+
+  return { ornek: null, konuAd: '', acik: [], toplam: 0, bitti: false };
+}
+
+/**
+ * Bir alistirma sorusu secer.
+ *
+ * Once hangi konudan soru gelecegi belirlenir (hafta iki konuya
+ * bagliysa rastgele biri), sonra uretici calistirilir.
+ *
+ * Leitner agirligi soru URETILDIKTEN sonra uygulanir: uretici rastgele
+ * bir tip seciyor, biz de zayif kutudaki tip cikana kadar birkac kez
+ * deniyoruz. Ureticiyi tip zorlamak icin degistirmek her ureticiye
+ * ayni karmasikligi tasirdi; burada tek yerde duruyor.
+ */
+export function alistirmaSorusu(hafta, konular, kayit, rng) {
+  const hazirDersler = hafta.dersler.filter((d) => {
+    const sev = seviyeBul(konular[d.konu], d.seviye);
+    return Boolean(sev);
+  });
+  if (hazirDersler.length === 0) return null;
+
+  const ders = hazirDersler[Math.floor(rng() * hazirDersler.length)];
+
+  const zayifTip = Object.keys(kayit.alistirma).length > 0
+    ? selectWeighted(kayit.alistirma, rng)
+    : null;
+
+  let soru = soruUret(ders.konu, ders.seviye, rng);
+  if (zayifTip) {
+    // En fazla 12 deneme: zayif tip bulunamazsa elde olanla devam
+    // edilir, cocugu bekletmenin anlami yok.
+    for (let i = 0; i < 12 && soru.tip !== zayifTip; i++) {
+      soru = soruUret(ders.konu, ders.seviye, rng);
+    }
+  }
+
+  return { soru, ureticiId: ders.konu, seviye: ders.seviye };
+}
+
+/**
+ * Unite sinavinin acik olup olmadigi.
+ *
+ * Kosul: unitedeki TUM haftalarin quizi gecilmis olmali. Sinav bir
+ * ozettir; konuyu hic calismadan sinava girmek cocugu bosuna
+ * basarisizliga ugratir ve sinavdan sogutur.
+ *
+ * Icerigi henuz yazilmamis unitede (Faz 2-5) sinav hic acilmaz.
+ */
+export function uniteSinaviDurumu(takvim, uniteler, uniteId, ilerleme, konular) {
+  const unite = uniteler.find((u) => u.id === uniteId);
+  if (!unite) return { acik: false, sebep: 'Ünite bulunamadı.', sinavId: null, puan: null, gecti: false };
+
+  const haftalar = takvim.filter((h) => h.unite === uniteId && h.dersler.length > 0);
+
+  const icerikHazir = haftalar.every((h) =>
+    h.dersler.every((d) => konular[d.konu]?.seviyeler.some((s) => s.seviye === d.seviye))
+  );
+  if (!icerikHazir) {
+    return { acik: false, sebep: 'Bu ünitenin içeriği henüz hazırlanıyor.', sinavId: null, puan: null, gecti: false };
+  }
+
+  const eksik = haftalar.filter((h) => {
+    const kayit = ilerleme.haftalar?.[String(h.hafta)];
+    return !(kayit?.quiz?.enIyi >= QUIZ_GECME);
+  });
+
+  const sinavId = `unite-${uniteId}`;
+  const gecmis = ilerleme.sinavlar?.[sinavId] ?? null;
+
+  if (eksik.length > 0) {
+    return {
+      acik: false,
+      sebep: `Sınav için ${eksik.length} haftanın quizini daha geçmen gerekiyor.`,
+      sinavId,
+      puan: gecmis?.puan ?? null,
+      gecti: gecmis?.gecti ?? false
+    };
+  }
+
+  return { acik: true, sebep: '', sinavId, puan: gecmis?.puan ?? null, gecti: gecmis?.gecti ?? false };
+}
+
+/**
+ * Ebeveyn raporu icin kazanim bazli tablo.
+ *
+ * Cocuk MAT.5.3.1 gibi kodlari HIC gormez; bu tablo yalniz ebeveyn
+ * panelinde cikar. Kazanim kodunu veriye gomme karari tam da bunun
+ * icindi: MEB raporuna uyan bir ozet cikarabilmek.
+ */
+export function kazanimDurumu(takvim, konular, ilerleme) {
+  const satirlar = new Map();
+
+  for (const hafta of takvim) {
+    for (const ders of hafta.dersler) {
+      const konu = konular[ders.konu];
+      if (!konu) continue;
+
+      const kayit = ilerleme.haftalar?.[String(hafta.hafta)];
+      const bitti = kayit?.quiz?.enIyi >= QUIZ_GECME;
+
+      for (const kz of konu.kazanimlar) {
+        if (!satirlar.has(kz.kod)) {
+          satirlar.set(kz.kod, { kod: kz.kod, konuAd: konu.ad.tr, haftalar: [], tamamlanan: 0 });
+        }
+        const satir = satirlar.get(kz.kod);
+        if (!satir.haftalar.includes(hafta.hafta)) {
+          satir.haftalar.push(hafta.hafta);
+          if (bitti) satir.tamamlanan += 1;
+        }
+      }
+    }
+  }
+
+  return [...satirlar.values()].map((s) => ({
+    ...s,
+    tamam: s.tamamlanan === s.haftalar.length
+  }));
+}
+
+/**
+ * Hafta tarih araligini cocugun okuyabilecegi bicime cevirir.
+ *
+ * Veri 'YYYY-MM-DD' dizgisi tutuyor ve ekran bunu HAM basiyordu:
+ * "2026-09-14 - 2026-09-18". On yasindaki bir cocuk icin bu bir sey
+ * ifade etmiyor. Ayni ay icindeyse ay bir kez yazilir.
+ *
+ * Dizgiden parcalanir, Date kurulmaz: yerel saat dilimi bir gun kaydirabilir
+ * ve hafta yanlis gorunur.
+ */
+export function tarihAraligi(bas, bit, aylar) {
+  const parcala = (d) => {
+    const p = String(d ?? '').split('-');
+    return p.length === 3 ? { ay: Number(p[1]), gun: Number(p[2]) } : null;
+  };
+
+  const a = parcala(bas);
+  const b = parcala(bit);
+  if (!a || !b) return `${bas} - ${bit}`;
+
+  const adi = (ay) => aylar[ay - 1] ?? String(ay);
+  return a.ay === b.ay
+    ? `${a.gun} - ${b.gun} ${adi(a.ay)}`
+    : `${a.gun} ${adi(a.ay)} - ${b.gun} ${adi(b.ay)}`;
+}

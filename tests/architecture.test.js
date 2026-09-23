@@ -75,6 +75,91 @@ test('gunluk modulu ag cagrisi icermez', () => {
 });
 
 test('DOM sadece main.js ve ui altinda kullanilir', () => {
-  const domlu = TUM.filter(({ src }) => src.includes('document')).map(({ yol }) => yol).sort();
-  assert.deepEqual(domlu, ['main.js', 'ui/dom.js']);
+  for (const { yol, src } of TUM) {
+    if (!src.includes('document')) continue;
+    assert.ok(
+      yol === 'main.js' || yol.startsWith('ui/'),
+      `${yol} DOM kullanamaz; DOM yalniz main.js ve ui/ altinda yasar`
+    );
+  }
+});
+
+/**
+ * Bagimlilik yonu. Hicbir test bunu olcmuyordu; yalnizca DOM kullanimi
+ * ve motor safligi olculuyordu. Bu yuzden views/ders.js'in ui/ altindan
+ * ithal etmesi sessizce gecti.
+ *
+ * Kural "views -> engines -> core" diye ozetlenir ama gercek degismez
+ * bu degil: core/state.js dort ayri motordan ithal ediyor ve etmeli de,
+ * cunku varsayilan durum sekillerini motor fabrikalarindan kuruyor.
+ * Motorlar saf oldugu icin bu bagimlilik hicbir seyi kirmiyor.
+ *
+ * Asil onemli olan TERS yon: hicbir katman kendinden DISARIDAKI
+ * (DOM'lu) katmandan ithal etmemeli. Test edilebilirligi koruyan sey bu.
+ */
+test('hicbir saf katman ui veya views icinden ithal etmez', () => {
+  const YASAK = {
+    core: ['views/', 'ui/'],
+    engines: ['views/', 'ui/'],
+    views: ['ui/']
+  };
+
+  for (const { yol, src } of TUM) {
+    const katman = yol.split('/')[0];
+    const yasaklar = YASAK[katman];
+    if (!yasaklar) continue;
+
+    for (const m of src.matchAll(/from\s+'([^']+)'/g)) {
+      const hedef = m[1];
+      for (const y of yasaklar) {
+        assert.ok(
+          !hedef.includes(`/${y}`) && !hedef.startsWith(y),
+          `${yol} -> ${hedef}: ${katman}/ katmani ${y} icinden ithal edemez`
+        );
+      }
+    }
+  }
+});
+
+/**
+ * Tuvale yazilan Turkce metin diakritiklerini korur.
+ *
+ * ASCII kurali yorumlar ve tanimlayicilar icin; cocugun GORDUGU metin
+ * tam Turkce yazilir. Bu ayrimi bu dalda uc kez karistirdim ve ucunde de
+ * ancak ekran goruntusune bakinca fark ettim: tuvale "cember kenarlarini
+ * surukle" yazmisim. Hicbir test gormuyordu cunku dizgi teknik olarak
+ * gecerli.
+ *
+ * Kontrol kelime bazli ve kasten dar: listedeki her kelimenin Turkcesi
+ * diakritiksiz YAZILAMAZ, yani eslesme kesin hatadir. "Kenarlar: 5 cm"
+ * gibi zaten diakritiksiz mesru metinler etkilenmez.
+ */
+test('tuval metinleri diakritiksiz Turkce icermez', () => {
+  const HATALI = [
+    'cember', 'cizgi', 'cizim', 'kose', 'olcu', 'olcer', 'aciolcer',
+    'yaricap', 'ucgen', 'cokgen', 'buyuk', 'kucuk', 'baslangic',
+    'surukle', 'sec ', 'gor ', 'gorursun', 'dogru parcasi', 'isin ',
+    'uzunlugu', 'degistir', 'icin '
+  ];
+
+  for (const { yol, src } of TUM) {
+    if (!yol.startsWith('ui/')) continue;
+
+    // Yalniz kullaniciya gorunen metin: tuvale yazilanlar ve ipucu.
+    const metinler = [
+      ...src.matchAll(/(?:altYazi|etiket|yaziCiz)\([^)]*?'([^']+)'/g),
+      ...src.matchAll(/ipucu:\s*'([^']+)'/g),
+      ...src.matchAll(/mesaj:\s*'([^']+)'/g)
+    ].map((m) => m[1]);
+
+    for (const metin of metinler) {
+      const kucuk = metin.toLowerCase();
+      for (const kelime of HATALI) {
+        assert.ok(
+          !kucuk.includes(kelime),
+          `${yol}: cocugun gordugu metinde diakritiksiz "${kelime.trim()}" var -> "${metin}"`
+        );
+      }
+    }
+  }
 });
