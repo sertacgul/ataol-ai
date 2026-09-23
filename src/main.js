@@ -47,7 +47,10 @@ import { TAKVIM, TATILLER, UNITELER } from './data/mufredat.js';
 import { KONULAR } from './data/konular/index.js';
 import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, alistirmaSorusu, uniteSinaviDurumu, kazanimDurumu } from './views/ders.js';
 import { haftaNo } from './engines/mufredat.js';
-import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani } from './ui/ders-dom.js';
+import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani, dersSecici } from './ui/ders-dom.js';
+import { sozlukEkrani } from './ui/sozluk-dom.js';
+import { sozlukModeli } from './views/ingilizce.js';
+import { SOZLUK } from './data/ingilizce/sozluk/index.js';
 import { widgetKur } from './ui/widget/index.js';
 import { gorselKur } from './ui/gorsel/index.js';
 import { dokunmaNoktasi } from './ui/gorsel/cizim.js';
@@ -119,6 +122,12 @@ let dersEtkilesimArac = null;
 // sey gercekten degisti mi" sorusunu cevaplamak icin tutulur; widget
 // kapatilinca dersWidgetKapat() bunu da sifirlar.
 let dersWidgetAnahtar = null;
+
+// Hangi ders gosteriliyor: 'matematik' | 'ingilizce' | 'sozluk'.
+// Depoya YAZILMAZ: her acilista matematikten baslar. Kalici olsaydi
+// cocuk sozlukte birakip ertesi gun dersi bulamazdi.
+let dersSecim = 'matematik';
+let sozlukSorgu = '';
 
 // Anlatim adiminin gorseli. Etkilesim widget'indan bagimsizdir: farkli
 // tuval dugumune baglanir ve ikisi hicbir zaman ayni anda gorunmez.
@@ -831,6 +840,29 @@ function dersHaftaYakala() {
 function renderDers() {
   const kok = document.getElementById('view-ders');
 
+  if (dersSecim === 'sozluk') {
+    mount(kok, [dersSecici(dersSecim, ceviri)]);
+    const kutu = el('input', {
+      className: 'sozluk__kutu',
+      attrs: { type: 'text', id: 'sozluk-kutu', placeholder: ceviri('sozluk.ara'), value: sozlukSorgu }
+    });
+    kok.appendChild(kutu);
+    const liste = el('div', { className: 'sozluk__alan' });
+    kok.appendChild(liste);
+    sozlukEkrani(liste, sozlukModeli(SOZLUK, sozlukSorgu), ceviri);
+    return;
+  }
+
+  if (dersSecim === 'ingilizce') {
+    mount(kok, [
+      dersSecici(dersSecim, ceviri),
+      el('div', { className: 'ders-kart ders-kart--bilgi' }, [
+        el('p', { className: 'ders-kart__not', text: ceviri('ders.ingilizceHazirlaniyor') })
+      ])
+    ]);
+    return;
+  }
+
   if (dersEkran === 'anlatim') {
     const hafta = dersAktifHafta();
     if (!hafta) { dersEkran = 'hafta'; dersAiMetin = ''; }
@@ -962,6 +994,7 @@ function renderDers() {
   }
 
   haftaEkrani(kok, dersModeli(), ceviri);
+  kok.insertBefore(dersSecici(dersSecim, ceviri), kok.firstChild);
 }
 
 /**
@@ -3470,6 +3503,26 @@ document.getElementById('app').addEventListener('click', (e) => {
     return;
   }
 
+  const dersSecDugme = e.target.closest('[data-ders-sec]');
+  if (dersSecDugme) {
+    dersSecim = dersSecDugme.dataset.dersSec;
+    // Ekran degisiyor: matematigin acik widget'i ve AI metni birakilmali.
+    dersWidgetKapat();
+    dersAnlatimGorseliKapat();
+    dersEkran = 'hafta';
+    dersAiMetin = '';
+    renderDers();
+    return;
+  }
+
+  const sozlukDinleDugme = e.target.closest('[data-sozluk-dinle]');
+  if (sozlukDinleDugme) {
+    const id = sozlukDinleDugme.dataset.sozlukDinle;
+    const kelime = SOZLUK.find((k) => k.id === id);
+    if (kelime) ses.oku({ metin: kelime.en, ses: `en/${id}` });
+    return;
+  }
+
   const dersBasla = e.target.closest('[data-ders-basla]');
   if (dersBasla) {
     // iOS'ta ses ancak kullanici dokunusunun icinde baslatilabilir.
@@ -3844,6 +3897,17 @@ document.getElementById('app').addEventListener('click', (e) => {
     document.getElementById(`view-${nav.dataset.nav}`).classList.add('active');
     nav.classList.add('active');
   }
+});
+
+// Sozluk arama kutusu: delege click ile yakalanamaz (input olayidir).
+// Yalniz sonuc listesi yeniden ciziliyor, tum ekran DEGIL. renderDers()
+// cagirsaydik girdi kutusu her harfte yeniden yaratilir ve klavye odagi
+// kaybolurdu; cocuk tek harf yazip duraklardi.
+document.getElementById('view-ders').addEventListener('input', (e) => {
+  if (e.target.id !== 'sozluk-kutu') return;
+  sozlukSorgu = e.target.value;
+  const liste = document.querySelector('.sozluk__alan');
+  if (liste) sozlukEkrani(liste, sozlukModeli(SOZLUK, sozlukSorgu), ceviri);
 });
 
 document.getElementById('pin-submit').addEventListener('click', submitPin);

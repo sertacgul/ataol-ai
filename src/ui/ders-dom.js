@@ -90,6 +90,25 @@ function gezinme(hedefler, ceviri) {
   return el('div', { className: 'ders-gezinme' }, [geri, ileri]);
 }
 
+/**
+ * Ders secici. Alt menuye alti sekme koymak yerine burada seciliyor:
+ * iPhone 12'de alti sekme her birini ~65px'e dusurur ve yazilar kirpilir.
+ */
+export function dersSecici(secili, ceviri) {
+  const dugme = (id, anahtar) => el('button', {
+    className: secili === id ? 'ders-secici__dugme ders-secici__dugme--secili' : 'ders-secici__dugme',
+    text: ceviri(anahtar),
+    attrs: { type: 'button' },
+    dataset: { dersSec: id }
+  });
+
+  return el('div', { className: 'ders-secici' }, [
+    dugme('matematik', 'ders.dersMatematik'),
+    dugme('ingilizce', 'ders.dersIngilizce'),
+    dugme('sozluk', 'ders.dersSozluk')
+  ]);
+}
+
 function bilgiKarti(baslik, metin) {
   return el('div', { className: 'ders-kart ders-kart--bilgi' }, [
     el('h2', { className: 'ders-kart__hafta', text: baslik }),

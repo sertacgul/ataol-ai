@@ -85,6 +85,10 @@ const STRINGS = {
     'ders.finishExam': 'Sınavı bitir',
     'ders.unanswered': '{n} soru boş. Yine de bitirmek istiyor musun?',
     'ders.examNote': 'Bu sınavda cevaplar sonunda gösterilir. İstediğin soruya geri dönebilirsin.',
+    'ders.dersMatematik': 'Matematik',
+    'ders.dersIngilizce': 'İngilizce',
+    'ders.dersSozluk': 'Sözlük',
+    'ders.ingilizceHazirlaniyor': 'İngilizce dersleri hazırlanıyor. Şimdilik sözlüğü kullanabilirsin.',
 
     'sozluk.baslik': 'Sözlük',
     'sozluk.ara': 'Kelime ara',
@@ -439,6 +443,10 @@ const STRINGS = {
     'ders.finishExam': 'Finish the exam',
     'ders.unanswered': '{n} questions are blank. Finish anyway?',
     'ders.examNote': 'Answers are shown at the end. You can go back to any question.',
+    'ders.dersMatematik': 'Maths',
+    'ders.dersIngilizce': 'English',
+    'ders.dersSozluk': 'Dictionary',
+    'ders.ingilizceHazirlaniyor': 'English lessons are being prepared. You can use the dictionary for now.',
 
     'sozluk.baslik': 'Dictionary',
     'sozluk.ara': 'Search a word',
