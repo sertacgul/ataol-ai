@@ -416,7 +416,8 @@ const SOZLUK = [
   { id: 'school-bag', en: 'school bag', tr: 'okul çantası', tema: 1 },
   { id: 'school', en: 'school', tr: 'okul', tema: 1 },
   { id: 'teacher', en: 'teacher', tr: 'öğretmen', tema: 1 },
-  { id: 'book', en: 'book', tr: 'kitap', tema: 2 }
+  { id: 'book', en: 'book', tr: 'kitap', tema: 2 },
+  { id: 'handbag', en: 'handbag', tr: 'el çantası', tema: 3 }
 ];
 
 test('Ingilizce sorgu Ingilizce tarafindan bulur', () => {
@@ -452,11 +453,15 @@ test('siralama: tam eslesme bastan eslesmeden once', () => {
 });
 
 test('kelime sinirinda eslesme icinde gecmeden once', () => {
-  const ek = [...SOZLUK, { id: 'preschool', en: 'preschool', tr: 'anaokulu', tema: 1 }];
-  const s = ara(ek, 'school');
+  // 'bag' sorgusu: 'school bag' kelime SINIRINDA eslesir (2), 'handbag'
+  // ise kelime ICINDE (1). Sorgu 'school' olsaydi 'school bag' zaten
+  // startsWith ile 3 alirdi ve bu testin olcmek istedigi sinir dali hic
+  // calismazdi - test adinin soyledigi seyi olcmezdi.
+  const s = ara(SOZLUK, 'bag');
   const sinir = s.findIndex((x) => x.kelime.id === 'school-bag');
-  const icinde = s.findIndex((x) => x.kelime.id === 'preschool');
-  assert.ok(sinir < icinde, '"school bag" (kelime siniri) "preschool"dan (icinde) once gelmeli');
+  const icinde = s.findIndex((x) => x.kelime.id === 'handbag');
+  assert.ok(sinir >= 0 && icinde >= 0, 'iki kelime de sonuclarda olmali');
+  assert.ok(sinir < icinde, '"school bag" (kelime siniri) "handbag"den (icinde) once gelmeli');
 });
 
 test('bos sorgu bos sonuc verir, tum sozlugu dokmez', () => {
@@ -550,7 +555,10 @@ Expected: PASS, 11 test
 
 - [ ] **Step 5: Mutasyonla kaniti al, UC kez**
 
-1. `puanla` icinde `a.includes(\` ${sorgu}\`)` satirini sil -> "kelime sinirinda eslesme" testi KIRMIZI.
+1. `puanla` icindeki `SKOR.sinir` donduren satiri sil -> "kelime sinirinda
+   eslesme" KIRMIZI olmali. Silince `school bag` ve `handbag` ikisi de
+   `icinde`=1 alir, esit puanda alfabetik siralamaya duser ve `handbag`
+   one gecer. Geri al, YESIL gor.
 2. `enSkor >= trSkor` yerine iki ayri kayit push et -> "ayni kelime BIR KEZ doner" KIRMIZI.
 3. `normalize(sorgu)` yerine ham `sorgu` kullan -> "diakritiksiz de bulur" KIRMIZI.
 
@@ -819,54 +827,49 @@ iki kez kapatmak zorunda olmamali; sabit hafta tek takvim icin tek olmali.
 // tests/ingilizce-state.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createState } from '../src/core/state.js';
+import { createStorage, memoryBackend } from '../src/core/storage.js';
+import { createAppState } from '../src/core/state.js';
 
-function sahteDepo(baslangic = {}) {
-  const veri = { ...baslangic };
-  return {
-    get: (k, v) => (k in veri ? veri[k] : v),
-    set: (k, v) => { veri[k] = v; },
-    _veri: veri
-  };
+// tests/state.test.js ile AYNI kalip: elle sahte depo degil, projenin
+// kendi bellek arka ucu. Tek bir kurulum yolu olsun diye.
+function kur(baslangic = {}) {
+  const storage = createStorage(memoryBackend(), 'ataol2');
+  for (const [k, v] of Object.entries(baslangic)) storage.set(k, v);
+  return createAppState(storage);
 }
 
 test('bos depoda varsayilan sekil doner', () => {
-  const s = createState(sahteDepo());
-  assert.deepEqual(s.loadIngilizce(), { haftalar: {}, sinavlar: {} });
+  assert.deepEqual(kur().loadIngilizce(), { haftalar: {}, sinavlar: {} });
 });
 
 test('kaydedilen ilerleme geri okunur', () => {
-  const depo = sahteDepo();
-  const s = createState(depo);
+  const s = kur();
   s.saveIngilizce({ haftalar: { '4': { quiz: { enIyi: 80, denemeler: 1 } } }, sinavlar: {} });
   assert.equal(s.loadIngilizce().haftalar['4'].quiz.enIyi, 80);
 });
 
 test('bozuk kayit varsayilana duser, atmaz', () => {
   for (const bozuk of [null, 'metin', 42, [], true]) {
-    const s = createState(sahteDepo({ ingilizce: bozuk }));
+    const s = kur({ ingilizce: bozuk });
     assert.deepEqual(s.loadIngilizce(), { haftalar: {}, sinavlar: {} },
       `${JSON.stringify(bozuk)} varsayilana dusmedi`);
   }
 });
 
 test('eksik alanlar tamamlanir', () => {
-  const s = createState(sahteDepo({ ingilizce: { haftalar: { '4': {} } } }));
-  const i = s.loadIngilizce();
+  const i = kur({ ingilizce: { haftalar: { '4': {} } } }).loadIngilizce();
   assert.deepEqual(i.sinavlar, {}, 'eksik sinavlar bos nesne olmali');
   assert.ok(i.haftalar['4']);
 });
 
 test('haftalar ve sinavlar dizi ise nesneye cevrilir', () => {
-  const s = createState(sahteDepo({ ingilizce: { haftalar: [], sinavlar: [] } }));
-  const i = s.loadIngilizce();
+  const i = kur({ ingilizce: { haftalar: [], sinavlar: [] } }).loadIngilizce();
   assert.ok(!Array.isArray(i.haftalar), 'dizi haftalar nesneye cevrilmeli');
   assert.ok(!Array.isArray(i.sinavlar), 'dizi sinavlar nesneye cevrilmeli');
 });
 
 test('Ingilizce deposu matematik deposunu BOZMAZ', () => {
-  const depo = sahteDepo({ ders: { haftalar: { '1': { quiz: { enIyi: 100 } } }, sinavlar: {}, ayar: {} } });
-  const s = createState(depo);
+  const s = kur({ ders: { haftalar: { '1': { quiz: { enIyi: 100, denemeler: 1 } } }, sinavlar: {}, ayar: {} } });
   s.saveIngilizce({ haftalar: { '4': {} }, sinavlar: {} });
   assert.equal(s.loadDersIlerleme().haftalar['1'].quiz.enIyi, 100,
     'matematik ilerlemesi Ingilizce yazildiktan sonra da durmali');
@@ -1142,28 +1145,39 @@ sessizce kazanir.
 // tests/sozluk-dom.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sozlukEkrani } from '../src/ui/sozluk-dom.js';
 
-function sahteDugum(etiket = 'div') {
+// src/ui/dom.js:16 icindeki el() document.createElement cagiriyor ve
+// Node'da document yok. tests/dom.test.js bu sorunu zaten cozmus: once
+// global document kurulur, SONRA modul DINAMIK ithal edilir. Ikinci bir
+// cozum icat etmek yerine ayni kalip kullaniliyor.
+function sahteDocument() {
   return {
-    etiket, cocuklar: [], metin: '', sinif: '', nitelik: {}, veri: {},
-    appendChild(c) { this.cocuklar.push(c); return c; },
-    set textContent(v) { this.metin = v; },
-    get textContent() { return this.metin; },
-    set className(v) { this.sinif = v; },
-    get className() { return this.sinif; },
-    setAttribute(a, v) { this.nitelik[a] = v; },
-    addEventListener() {},
-    removeChild(c) { this.cocuklar = this.cocuklar.filter((x) => x !== c); },
-    get firstChild() { return this.cocuklar[0] ?? null; },
-    dataset: {}
+    createElement(etiket) {
+      return {
+        tagName: etiket.toUpperCase(),
+        className: '', textContent: '', dataset: {}, attributes: {},
+        cocuklar: [],
+        setAttribute(k, v) { this.attributes[k] = String(v); },
+        appendChild(c) { this.cocuklar.push(c); return c; },
+        removeChild(c) { this.cocuklar = this.cocuklar.filter((x) => x !== c); },
+        get firstChild() { return this.cocuklar[0] ?? null; },
+        addEventListener() {}
+      };
+    }
   };
+}
+
+globalThis.document = sahteDocument();
+const { sozlukEkrani } = await import('../src/ui/sozluk-dom.js');
+
+function sahteDugum() {
+  return globalThis.document.createElement('div');
 }
 
 // Tum agaci duz metne cevirir; ne yazildigini kontrol etmek icin.
 function metinler(d) {
-  const c = d.metin ? [d.metin] : [];
-  for (const k of d.cocuklar) c.push(...metinler(k));
+  const c = d.textContent ? [d.textContent] : [];
+  for (const k of d.cocuklar ?? []) c.push(...metinler(k));
   return c;
 }
 
@@ -1225,7 +1239,7 @@ test('her sonucun dinle dugmesi kelime id sini tasir', () => {
   sozlukEkrani(kok, MODEL_DOLU, ceviri);
   const bul = (d) => {
     if (d.dataset && d.dataset.sozlukDinle) return d.dataset.sozlukDinle;
-    for (const k of d.cocuklar) { const r = bul(k); if (r) return r; }
+    for (const k of d.cocuklar ?? []) { const r = bul(k); if (r) return r; }
     return null;
   };
   assert.equal(bul(kok), 'bag', 'dinle dugmesi kelime id tasimali');
@@ -1345,7 +1359,10 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Test: elle + tarayici (bkz. Step 6)
 
 **Interfaces:**
-- Consumes: `sozlukEkrani` (Task 7), `sozlukModeli` (Task 6), `SOZLUK` (Task 4), `state.loadIngilizce` (Task 5)
+- Consumes: `sozlukEkrani` (Task 7), `sozlukModeli` (Task 6), `SOZLUK` (Task 4)
+  - NOT: `state.loadIngilizce` Faz 1'de KULLANILMIYOR. Ingilizce dersleri
+    Faz 2'de geliyor, okunacak ilerleme henuz yok. Task 5 yine de yapilir:
+    Faz 2'nin temeli ve testi kendi basina degerli.
 - Produces: Ders sekmesinde `[Matematik] [İngilizce] [Sözlük]` secici
 
 - [ ] **Step 1: i18n anahtarlari**
