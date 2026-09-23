@@ -231,10 +231,33 @@ calisma aninda onbellege alinir.
 - `ataol2:ingilizce` -> `{ haftalar, sinavlar }` (yalniz ilerleme)
 - `ataol2:ders` -> `{ haftalar, sinavlar, ayar }` (matematik ilerlemesi + ORTAK ayarlar)
 
-Alan adlari matematikle BIREBIR AYNI (`haftalar`, `sinavlar`) cunku
-`engines/ders.js` icindeki saf fonksiyonlar (`haftaKaydi`, `yildizVer`,
-`quizBitir`, `sinavBitir`, `tamPuanIsaretle`) oldugu gibi tekrar kullanilir.
-Farkli isim vermek ayni mantigi ikinci kez yazmak demekti.
+Alan adlari matematikle BIREBIR AYNI (`haftalar`, `sinavlar`).
+
+Hangi saf fonksiyon tekrar kullanilir, hangisi kullanilamaz - plan yazarken
+olculdu, tahmin edilmedi:
+
+| Fonksiyon | Durum | Neden |
+|---|---|---|
+| `quizBitir` | AYNEN kullanilir | yalniz `kayit.quiz` ve `yildizAlinan`a dokunuyor |
+| `sinavBitir` | AYNEN kullanilir | sinav nesnesi uzerinde calisiyor, hafta kaydini hic gormuyor |
+| `tamPuanIsaretle` | AYNEN kullanilir | yalniz `yildizAlinan`a bakiyor |
+| `yildizVer` | AYNEN kullanilir | ayni |
+| `haftaKaydi` / `bosHafta` | KULLANILAMAZ | matematige ozgu alanlar tutuyor (`anlatim`, `etkilesimBitti`, `alistirmaDogru`) |
+| `haftaDurumu` / `ASAMALAR` | KULLANILAMAZ | matematikte dort asama, Ingilizcede bes |
+
+Bu yuzden Ingilizce kaydi su iki alani MUTLAKA tasir: `quiz` ve
+`yildizAlinan`. Geri kalani kendi alanlari:
+
+```js
+{
+  kelimeler: [],        // gorulen kelime kartlari
+  dinleBitti: false,
+  soyleBitti: false,
+  cumleBitti: false,
+  quiz: { enIyi: 0, denemeler: 0 },   // quizBitir bunu bekliyor
+  yildizAlinan: []                    // yildizVer bunu bekliyor
+}
+```
 
 Sebep: matematik deposu su an canlida ve Deha'nin gercek yildizlarini tutuyor.
 Sekilini degistirmek o ilerlemeyi riske atar. Ayri depo eklemek katkisaldir ve
