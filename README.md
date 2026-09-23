@@ -100,6 +100,16 @@ Olculen degerler (uc konu, sekiz seviye, 46 anlatim adimi):
 konuya cikinca bu kabaca bes katina, yani 60k karakter civarina cikar;
 yine de aylik ucretsiz kotanin onda birinden azdir.
 
+Ingilizce kelime ve ornek cumle sesleri ayri uretilir:
+
+```bash
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js ingilizce
+```
+
+`sesler/en/<id>.mp3` kelimeyi, `sesler/en/<id>-ornek.mp3` ornek cumleyi
+okur. Ses `en-US-Chirp3-HD-Aoede`. Dosya adi `kelimeKimligi()` ile
+uretilir; ui/ses.js ayni fonksiyonu kullanir.
+
 **Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'e commit edilmeli**.
 Uygulama GitHub Pages'tan dogrudan daldan sunuluyor; commit edilmeyen
 dosya cocugun telefonunda yoktur. Ses uretilir, yerelde calar, yayinda
