@@ -3519,7 +3519,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   if (sozlukDinleDugme) {
     const id = sozlukDinleDugme.dataset.sozlukDinle;
     const kelime = SOZLUK.find((k) => k.id === id);
-    if (kelime) ses.oku({ metin: kelime.en, ses: `en/${id}` });
+    if (kelime) ses.oku({ metin: kelime.en, ses: `en/${id}`, dil: 'en' });
     return;
   }
 
