@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
 import { TEMALAR } from '../src/data/ingilizce/temalar.js';
-import { ara, kelimeKimligi } from '../src/engines/ingilizce/sozluk.js';
+import { ara, kelimeKimligi, normalize } from '../src/engines/ingilizce/sozluk.js';
 
 test('her kelimenin temasi gercekten var', () => {
   const no = new Set(TEMALAR.map((t) => t.no));
@@ -28,13 +29,15 @@ test('her kelime kendi Turkcesiyle aranabiliyor', () => {
 });
 
 test('her kelime Turkcesinin DIAKRITIKSIZ hali ile de bulunuyor', () => {
-  const duz = (m) => m.toLocaleLowerCase('tr')
-    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
-    .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
+  // Diakritik katlama burada kendi .replace zincirini tutmaz: motorun
+  // normalize()'i kullanilir. Ayri bir kopya, motordaki DUZ tablosu
+  // degisince (harf eklenince/cikinca) buradan habersiz kalip sessizce
+  // yanlis pozitif/negatif uretirdi - DUZ_DESEN'in tablodan turetilmesiyle
+  // bu dalda zaten bir kez duzeltilen ikinci kaynak sorunu.
   for (const k of SOZLUK) {
-    const s = ara(SOZLUK, duz(k.tr));
+    const s = ara(SOZLUK, normalize(k.tr));
     assert.ok(s.some((x) => x.kelime.id === k.id),
-      `${k.id} diakritiksiz Turkcesiyle ("${duz(k.tr)}") bulunamiyor`);
+      `${k.id} diakritiksiz Turkcesiyle ("${normalize(k.tr)}") bulunamiyor`);
   }
 });
 
@@ -42,6 +45,20 @@ test('ses dosyasi adi uretim ve okuma tarafinda AYNI', () => {
   for (const k of SOZLUK) {
     assert.equal(`en/${k.id}`, `en/${kelimeKimligi(k.en)}`,
       `${k.en}: uretim ve okuma tarafi farkli ad uretiyor`);
+  }
+});
+
+test('her kelimenin mp3 dosyalari gercekten diskte var', () => {
+  // Yukaridaki isim testi ayni gercegi iki tarafa yapistirip karsilastirir,
+  // uretici (tools/ses-uret.js) ile tuketiciyi (src/main.js) hic gormez.
+  // Ikisinden biri degisip ad uretimi kayarsa bu test yesil kalirdi ve
+  // Dinle dugmesi sessizce cihaz TTS'ine duserdi. Burada gercek dosyanin
+  // diskte olup olmadigina bakilir.
+  for (const k of SOZLUK) {
+    const kelimeYolu = new URL(`../sesler/en/${k.id}.mp3`, import.meta.url);
+    const ornekYolu = new URL(`../sesler/en/${k.id}-ornek.mp3`, import.meta.url);
+    assert.ok(existsSync(kelimeYolu), `${k.id}: sesler/en/${k.id}.mp3 yok`);
+    assert.ok(existsSync(ornekYolu), `${k.id}: sesler/en/${k.id}-ornek.mp3 yok`);
   }
 });
 
