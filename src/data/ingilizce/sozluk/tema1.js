@@ -135,17 +135,17 @@ export default [
     ornek: { en: 'This is an important school rule.', tr: 'Bu önemli bir okul kuralı.' }
   },
   {
-    id: 'listen', en: 'listen', tr: 'dinle', tema: 1, tur: 'fiil',
+    id: 'listen', en: 'listen', tr: 'dinlemek', tema: 1, tur: 'fiil',
     gorsel: { tip: 'emoji', deger: '👂' },
     ornek: { en: 'Listen to your teacher, please.', tr: 'Lütfen öğretmenini dinle.' }
   },
   {
-    id: 'speak', en: 'speak', tr: 'konuş', tema: 1, tur: 'fiil',
+    id: 'speak', en: 'speak', tr: 'konuşmak', tema: 1, tur: 'fiil',
     gorsel: { tip: 'emoji', deger: '🗣️' },
     ornek: { en: 'Please speak slowly.', tr: 'Lütfen yavaş konuş.' }
   },
   {
-    id: 'run', en: 'run', tr: 'koş', tema: 1, tur: 'fiil',
+    id: 'run', en: 'run', tr: 'koşmak', tema: 1, tur: 'fiil',
     gorsel: { tip: 'emoji', deger: '🏃' },
     ornek: { en: "Don't run in the classroom.", tr: 'Sınıfta koşma.' }
   },
