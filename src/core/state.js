@@ -282,6 +282,37 @@ export function createAppState(storage) {
 
     saveDersIlerleme(ilerleme) {
       storage.set('ders', ilerleme);
+    },
+
+    /**
+     * Ingilizce ilerlemesi AYRI depoda durur.
+     *
+     * Matematik deposu (ataol2:ders) canlida ve odul defterini (hangi
+     * quiz/sinav icin yildiz verildi bilgisini) tutuyor; cocugun gercek
+     * yildizlari ataol2:days icinde durur. Sekline dokunmak odul
+     * defterini riske atar. Ayri depo katkisaldir ve var olani bozamaz.
+     *
+     * Alan adlari matematikle ayni (haftalar, sinavlar) cunku quizBitir,
+     * sinavBitir, tamPuanIsaretle ve yildizVer aynen tekrar kullaniliyor.
+     *
+     * AYARLAR BURADA DEGIL: sesAcik/otomatikOynat/sabitHafta/sesliCevap
+     * ataol2:ders icindeki ayar alaninda kalir. Ebeveyn sesi iki kez
+     * kapatmak zorunda olmamali.
+     */
+    loadIngilizce() {
+      const bos = { haftalar: {}, sinavlar: {} };
+      const kayit = storage.get('ingilizce', null);
+      if (!kayit || typeof kayit !== 'object' || Array.isArray(kayit)) return bos;
+
+      const nesne = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+      return {
+        haftalar: nesne(kayit.haftalar),
+        sinavlar: nesne(kayit.sinavlar)
+      };
+    },
+
+    saveIngilizce(ilerleme) {
+      storage.set('ingilizce', ilerleme);
     }
   };
 }

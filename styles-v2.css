@@ -3568,3 +3568,62 @@ body {
   color: var(--primary);
   text-align: center;
 }
+
+/* --- Ders secici ve sozluk --- */
+.ders-secici {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ders-secici__dugme {
+  flex: 1;
+  min-height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.ders-secici__dugme--secili {
+  background: var(--primary);
+  color: #fff;
+}
+
+.sozluk__kutu {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.sozluk__kart {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sozluk__emoji { font-size: 2rem; line-height: 1; }
+.sozluk__govde { flex: 1; min-width: 0; }
+.sozluk__en { margin: 0; font-family: var(--font-heading); font-weight: 700; color: var(--text-dark); }
+.sozluk__tr { margin: 2px 0 0; color: var(--primary); font-weight: 600; }
+.sozluk__tur { margin: 2px 0 6px; font-size: 0.78rem; color: var(--text-muted); }
+.sozluk__ornek-en { margin: 0; font-size: 0.85rem; color: var(--text-dark); }
+.sozluk__ornek-tr { margin: 2px 0 0; font-size: 0.85rem; color: var(--text-muted); }
+.sozluk__dinle { min-height: 44px; min-width: 44px; border: none; border-radius: 12px;
+  background: var(--secondary); color: #fff; font-weight: 600; }
+.sozluk__baslik { font-family: var(--font-heading); color: var(--text-dark); }
+.sozluk__mesaj, .sozluk__sayi { color: var(--text-muted); font-size: 0.9rem; }

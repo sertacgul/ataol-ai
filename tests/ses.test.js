@@ -251,6 +251,46 @@ test('Turkce ses YOKSA hic okunmaz, Ingiliz sesiyle Turkce okunmaz', async () =>
     'hicbir sey soylenmemeli: yanlis telaffuz ogretmek sessizlikten kotudur');
 });
 
+test('oku dil en ile cagrilinca Ingilizce sese baglanir', async () => {
+  const tts = sahteTts();
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    Audio: sahteAudioSinifi(false).sinif
+  });
+  await ses.oku({ metin: 'school bag', dil: 'en' });
+
+  const u = tts.olusturulanlar[0];
+  assert.equal(u.voice, EN_SES,
+    'dil en iken Ingilizce sese baglanmali; Turkce sesle Ingilizce kelime okumak yanlis telaffuz ogretir');
+  assert.match(u.lang, /^en/i);
+});
+
+test('dil verilmezse oku eskisi gibi Turkce sese baglanir', async () => {
+  const tts = sahteTts();
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    Audio: sahteAudioSinifi(false).sinif
+  });
+  await ses.oku({ metin: 'Nokta bir yeri gösterir.' });
+
+  const u = tts.olusturulanlar[0];
+  assert.equal(u.voice, TR_SES,
+    'dil parametresi verilmedigi surece varsayilan tr olmali; mevcut cagiranlarin davranisi DEGISMEMELI');
+});
+
+test('yalniz Turkce ses varken Ingilizce istek sessiz kalir', async () => {
+  const tts = sahteTts({ sesler: [TR_SES] });
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    Audio: sahteAudioSinifi(false).sinif
+  });
+  const sonuc = await ses.oku({ metin: 'school bag', dil: 'en' });
+
+  assert.equal(sonuc, 'en-ses-yok');
+  assert.equal(tts.olusturulanlar.length, 0,
+    'hicbir sey soylenmemeli: Turkce sesle Ingilizce okumak da yanlis telaffuz ogretir - kuralin eksik olan yarisi buydu');
+});
+
 test('turkceOkuyabilir cihazin durumunu dogru bildirir', () => {
   const varken = createSes({
     speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance

@@ -4,13 +4,17 @@
  * Kullanim:
  *   GOOGLE_TTS_KEY=... node tools/ses-uret.js
  *   GOOGLE_TTS_KEY=... node tools/ses-uret.js temel-cizimler
+ *   GOOGLE_TTS_KEY=... node tools/ses-uret.js ingilizce
  *
- * Google Cloud Text-to-Speech Chirp 3 HD, tr-TR. Aylik ilk 1M karakter
- * ucretsiz; bu projenin tamami yaklasik 150k karakter, yani ucretsiz
- * kotaya siginir.
+ * Google Cloud Text-to-Speech Chirp 3 HD, tr-TR ve en-US. Aylik ilk 1M
+ * karakter ucretsiz; bu projenin tamami yaklasik 150k karakter, yani
+ * ucretsiz kotaya siginir.
  *
  * Dosya adi konuId-seviye-adimId kalibindan TURETILIR; ui/ses.js ayni
  * fonksiyonu kullanir, boylece iki taraf kendiliginden eslesir.
+ * Ingilizce sozluk kelimeleri icin dosya adi sesler/en/<id>.mp3 ve
+ * sesler/en/<id>-ornek.mp3'tur; id SOZLUK'te kelimeKimligi() ile
+ * uretilmis olarak durur, ui/ses.js okurken de ayni id'yi kullanir.
  *
  * Var olan dosyanin ustune yazmaz. Yeniden uretmek icin once sil.
  */
@@ -20,6 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { KONULAR } from '../src/data/konular/index.js';
 import { adimKimligi } from '../src/views/ders.js';
+import { SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
 
 const KOK = fileURLToPath(new URL('..', import.meta.url));
 const CIKTI = path.join(KOK, 'sesler');
@@ -27,7 +32,10 @@ const CIKTI = path.join(KOK, 'sesler');
 const ANAHTAR = process.env.GOOGLE_TTS_KEY;
 const SADECE = process.argv[2] ?? null;
 
-const SES = 'tr-TR-Chirp3-HD-Aoede';
+const SESLER = {
+  tr: { dil: 'tr-TR', ad: 'tr-TR-Chirp3-HD-Aoede' },
+  en: { dil: 'en-US', ad: 'en-US-Chirp3-HD-Aoede' }
+};
 const UC_NOKTA = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
 if (!ANAHTAR) {
@@ -44,7 +52,8 @@ function adimlariTopla() {
       for (const adim of sev.anlatim) {
         isler.push({
           kimlik: adimKimligi(konuId, sev.seviye, adim.id),
-          metin: adim.metin
+          metin: adim.metin,
+          ses: SESLER.tr
         });
       }
     }
@@ -52,13 +61,22 @@ function adimlariTopla() {
   return isler;
 }
 
-async function seslendir(metin) {
+function ingilizceIsleri() {
+  const isler = [];
+  for (const k of SOZLUK) {
+    isler.push({ kimlik: `en/${k.id}`, metin: k.en, ses: SESLER.en });
+    isler.push({ kimlik: `en/${k.id}-ornek`, metin: k.ornek.en, ses: SESLER.en });
+  }
+  return isler;
+}
+
+async function seslendir(metin, ses) {
   const yanit = await fetch(`${UC_NOKTA}?key=${ANAHTAR}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       input: { text: metin },
-      voice: { languageCode: 'tr-TR', name: SES },
+      voice: { languageCode: ses.dil, name: ses.ad },
       // MP3 formatinda, 24 kHz, konusma hizi yavaslastilmis. Konusma
       // icin yeterli kalite, hafta basina yaklasik 1.8 MB.
       audioConfig: { audioEncoding: 'MP3', sampleRateHertz: 24000, speakingRate: 0.95 }
@@ -74,8 +92,15 @@ async function seslendir(metin) {
 
 async function main() {
   if (!existsSync(CIKTI)) mkdirSync(CIKTI, { recursive: true });
+  mkdirSync(path.join(CIKTI, 'en'), { recursive: true });
 
-  const isler = adimlariTopla();
+  let isler;
+  if (SADECE === 'ingilizce') {
+    isler = ingilizceIsleri();
+  } else {
+    isler = adimlariTopla();
+    if (!SADECE) isler = isler.concat(ingilizceIsleri());
+  }
   console.log(`${isler.length} adim bulundu.`);
 
   let uretilen = 0;
@@ -90,7 +115,7 @@ async function main() {
     }
 
     try {
-      const ses = await seslendir(is.metin);
+      const ses = await seslendir(is.metin, is.ses);
       writeFileSync(hedef, ses);
       uretilen++;
       karakter += is.metin.length;

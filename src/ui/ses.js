@@ -34,27 +34,30 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
   const ttsVar = () => Boolean(speechSynthesis && typeof speechSynthesis.speak === 'function' && typeof SpeechSynthesisUtterance === 'function');
 
   /**
-   * Cihazdaki Turkce sesi bulur, yoksa null doner.
+   * Cihazda verilen dil onekiyle baslayan ilk sesi bulur, yoksa null
+   * doner. dilOnek 'tr' ya da 'en' gibi bir BCP-47 oneki.
    *
-   * u.lang = 'tr-TR' TEK BASINA YETMIYOR: tarayicida Turkce ses yuklu
+   * u.lang = 'tr-TR' TEK BASINA YETMIYOR: tarayicida o dilde ses yuklu
    * degilse bu sessizce yok sayilir ve varsayilan sesle okunur. Bu
    * makinede olculdu: 22 ses var, hicbiri Turkce, varsayilan
    * "Microsoft David - English (United States)". Yani Turkce metni
-   * Ingiliz aksaniyla okuyordu. Cocuga yanlis telaffuz ogretmek hic
-   * okumamaktan kotudur.
+   * Ingiliz aksaniyla okuyordu. Ayni hata tersten de olur: hedef
+   * iPhone'da Turkce ses var ama Ingilizce sozluk kelimesini o Turkce
+   * sesle okumak da yanlis telaffuz ogretir. Cocuga yanlis telaffuz
+   * ogretmek hic okumamaktan kotudur - kural HER dil icin gecerli.
    *
    * getVoices() ilk cagrida bos donebilir, liste asenkron yuklenir;
    * bu yuzden her seferinde yeniden sorulur, onbellege alinmaz.
    */
-  function turkceSes() {
+  function sesBul(dilOnek) {
     if (!speechSynthesis || typeof speechSynthesis.getVoices !== 'function') return null;
     const sesler = speechSynthesis.getVoices() ?? [];
-    return sesler.find((s) => typeof s.lang === 'string' && s.lang.toLowerCase().startsWith('tr')) ?? null;
+    return sesler.find((s) => typeof s.lang === 'string' && s.lang.toLowerCase().startsWith(dilOnek)) ?? null;
   }
 
   /** Cihaz TTS'i Turkce okuyabiliyor mu. Ebeveyn paneli de bunu sorar. */
   function turkceOkuyabilir() {
-    return ttsVar() && turkceSes() !== null;
+    return ttsVar() && sesBul('tr') !== null;
   }
 
   /**
@@ -81,14 +84,16 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
     });
   }
 
-  function ttsOku(metin) {
+  function ttsOku(metin, dil) {
     return new Promise((coz) => {
       if (!ttsVar()) return coz('kapali');
 
-      // Turkce ses yoksa HIC OKUMA. Ingiliz sesiyle Turkce okumak
-      // cocuga yanlis telaffuz ogretir; sessizlik daha az zarar verir.
-      const secilen = turkceSes();
-      if (!secilen) return coz('turkce-ses-yok');
+      // Istenen dilde ses yoksa HIC OKUMA. Baska bir dilin sesiyle
+      // okumak cocuga yanlis telaffuz ogretir; sessizlik daha az zarar
+      // verir. Bu kural Turkce icin oldugu kadar Ingilizce sozluk
+      // kelimeleri icin de gecerli.
+      const secilen = sesBul(dil);
+      if (!secilen) return coz(dil === 'tr' ? 'turkce-ses-yok' : `${dil}-ses-yok`);
 
       const u = new SpeechSynthesisUtterance(metin);
       u.voice = secilen;
@@ -109,10 +114,17 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
    * adim.ses varsa once dosya denenir; dosya yoksa ya da calinamiyorsa
    * sessizce TTS'e dusulur. Dusme sessizdir cunku cocugun ekraninda
    * "ses dosyasi bulunamadi" yazmasinin hicbir faydasi yok.
+   *
+   * adim.dil, TTS'e dusuldugunde aranacak ses dilidir ('tr' ya da 'en'
+   * gibi bir BCP-47 oneki); verilmezse 'tr' varsayilir, yani mevcut tum
+   * cagiranlarin davranisi degismez. Ingilizce sozluk kelimesi 'en'
+   * gecer: Turkce sesle okunan bir Ingilizce kelime yanlis telaffuz
+   * ogretir, dosya sesi kadar onemli bir ayrim.
    */
   async function oku(adim) {
     if (!sesAcik) return 'kapali';
     const metin = String(adim?.metin ?? '');
+    const dil = adim?.dil ?? 'tr';
     if (adim?.ses) {
       try {
         return await dosyaCal(adim.ses);
@@ -121,7 +133,7 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
       }
     }
     if (!metin) return 'kapali';
-    return ttsOku(metin);
+    return ttsOku(metin, dil);
   }
 
   function dur() {
