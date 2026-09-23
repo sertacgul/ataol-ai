@@ -20,7 +20,7 @@ import { el, mount } from './dom.js';
 function sonucKarti(k, ceviri) {
   const gorsel = k.gorsel.tip === 'emoji'
     ? el('span', { className: 'sozluk__emoji', text: k.gorsel.deger })
-    : el('span', { className: 'sozluk__emoji', text: '📘' });
+    : el('span', { className: 'sozluk__emoji', text: '🖼️' });
 
   return el('div', { className: 'sozluk__kart' }, [
     gorsel,

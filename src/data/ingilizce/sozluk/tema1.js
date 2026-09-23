@@ -29,7 +29,7 @@ export default [
     ornek: { en: 'The student is reading a book.', tr: 'Öğrenci bir kitap okuyor.' }
   },
   {
-    id: 'principal', en: 'principal', tr: 'müdür', tema: 1, tur: 'isim',
+    id: 'principal', en: 'principal', tr: 'okul müdürü', tema: 1, tur: 'isim',
     gorsel: { tip: 'cizim', ad: 'okul-muduru' },
     ornek: { en: 'The principal is in the office.', tr: 'Müdür ofiste.' }
   },
@@ -44,7 +44,7 @@ export default [
     ornek: { en: 'He is my best friend.', tr: 'O benim en iyi arkadaşım.' }
   },
   {
-    id: 'caretaker', en: 'caretaker', tr: 'hizmetli', tema: 1, tur: 'isim',
+    id: 'caretaker', en: 'caretaker', tr: 'okul hizmetlisi', tema: 1, tur: 'isim',
     gorsel: { tip: 'cizim', ad: 'okul-hizmetlisi' },
     ornek: { en: 'The caretaker cleans the school.', tr: 'Hizmetli okulu temizler.' }
   },
@@ -253,7 +253,7 @@ export default [
   {
     id: 'ceremony', en: 'ceremony', tr: 'tören', tema: 1, tur: 'isim',
     gorsel: { tip: 'cizim', ad: 'toren' },
-    ornek: { en: 'We stand still during the ceremony.', tr: 'Tören sırasında hareketsiz dururuz.' }
+    ornek: { en: 'We stand still during the ceremony.', tr: 'Tören sırasında hiç kıpırdamadan dururuz.' }
   },
   {
     id: 'holiday', en: 'holiday', tr: 'tatil', tema: 1, tur: 'isim',
