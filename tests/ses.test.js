@@ -261,3 +261,15 @@ test('turkceOkuyabilir cihazin durumunu dogru bildirir', () => {
   assert.equal(varken.turkceOkuyabilir(), true);
   assert.equal(yokken.turkceOkuyabilir(), false);
 });
+
+test('ayarla ile kapatilan ses efekt de calmaz', () => {
+  const tts = sahteTts();
+  const ses = createSes({
+    speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance,
+    AudioContext: sahteAudioContext()
+  });
+  ses.ayarla({ sesAcik: false });
+  ses.efekt('dogru');
+  assert.equal(ses.sonEfekt(), null,
+    'ses kapaliyken efekt calmamali; acilista kayitli ayar uygulanmazsa cocuk zil sesini geri duyar');
+});

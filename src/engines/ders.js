@@ -191,3 +191,24 @@ export function sinavBitir(sinavlar, sinavId, { puan, tarih, tip }) {
     gecti
   };
 }
+
+/**
+ * Tam puanli quiz rozet sayaci hafta basina BIR KEZ artmali.
+ *
+ * Karar burada, saf katmanda veriliyor cunku main.js test edilemiyor
+ * (disa aktarimi yok, modul tepesinde DOM okuyor). Sayac mantigi orada
+ * kalsaydi "ayni haftanin quizini bes kez tekrarlayip rozeti hak etmeden
+ * acmak" hicbir testle yakalanamazdi.
+ *
+ * 'tamPuan' isareti YILDIZ VERMEZ: yildizVer yalniz asama adlarina bakar
+ * ('anlatim', 'etkilesim', 'alistirma', 'quiz'). Tek isi sayaci korumak.
+ */
+export function tamPuanIsaretle(kayit, yuzde) {
+  if (yuzde < 100 || kayit.yildizAlinan.includes('tamPuan')) {
+    return { kayit, sayacArtti: false };
+  }
+  return {
+    kayit: { ...kayit, yildizAlinan: [...kayit.yildizAlinan, 'tamPuan'] },
+    sayacArtti: true
+  };
+}

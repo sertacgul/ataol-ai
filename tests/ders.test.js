@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ASAMALAR, YILDIZ, QUIZ_GECME, SINAV_GECME, ALISTIRMA_HEDEF,
   bosHafta, haftaKaydi, haftaDurumu,
-  adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir
-} from '../src/engines/ders.js';
+  adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, tamPuanIsaretle } from '../src/engines/ders.js';
 
 const ADIMLAR = ['a1', 'a2', 'a3'];
 
@@ -211,4 +210,46 @@ test('tum motor fonksiyonlari saf kalir', () => {
   const sinavlarKopya = JSON.parse(JSON.stringify(sinavlar));
   sinavBitir(sinavlar, 'unite-test', { puan: 80, tarih: '2026-11-08', tip: 'unite' });
   assert.deepEqual(sinavlar, sinavlarKopya);
+});
+
+// --- Tam puan rozet sayaci ------------------------------------------
+// Sayac hafta basina BIR KEZ artmali: ayni haftanin quizini bes kez
+// tekrarlayip "tamPuan" rozetini hak etmeden acmak mumkun olmamali.
+
+test('tam puan ilk kez alininca sayac artar ve isaret konur', () => {
+  const k = { ...bosHafta(), yildizAlinan: ['quiz'] };
+  const s = tamPuanIsaretle(k, 100);
+  assert.equal(s.sayacArtti, true);
+  assert.ok(s.kayit.yildizAlinan.includes('tamPuan'));
+});
+
+test('ayni hafta ikinci kez tam puan alinca sayac ARTMAZ', () => {
+  const k = { ...bosHafta(), yildizAlinan: ['quiz', 'tamPuan'] };
+  const s = tamPuanIsaretle(k, 100);
+  assert.equal(s.sayacArtti, false, 'tekrar tam puan rozeti bir daha kazandirmamali');
+  assert.equal(s.kayit.yildizAlinan.filter((a) => a === 'tamPuan').length, 1,
+    'isaret cogaltilmamali');
+});
+
+test('tam puanin altinda sayac artmaz', () => {
+  for (const yuzde of [0, 70, 90, 99]) {
+    assert.equal(tamPuanIsaretle(bosHafta(), yuzde).sayacArtti, false, `${yuzde} artirmamali`);
+  }
+});
+
+test('tamPuan isareti YILDIZ VERMEZ', () => {
+  const k = tamPuanIsaretle({ ...bosHafta(), yildizAlinan: [] }, 100).kayit;
+  // Isaret konduktan sonra quiz yildizi hala odenebilmeli: 'tamPuan'
+  // asama listesinde olmadigi icin hicbir odemeyi engellememeli.
+  const sonuc = quizBitir(k, 100);
+  assert.ok(sonuc.kazanilanYildiz > 0, 'tamPuan isareti quiz yildizini yutmamali');
+});
+
+test('gecilen sinav sayacinin dayandigi sinyal tekrar gecmede sifirdir', () => {
+  const ilk = sinavBitir({}, 'u1', { puan: 90, tarih: '2026-10-01', tip: 'unite' });
+  assert.ok(ilk.kazanilanYildiz > 0, 'ilk gecis sayilmali');
+  const tekrar = sinavBitir(ilk.sinavlar, 'u1', { puan: 95, tarih: '2026-10-02', tip: 'unite' });
+  assert.equal(tekrar.kazanilanYildiz, 0,
+    'ayni sinavi tekrar gecmek sayaci bir daha artirmamali; main.js bu sinyale bakiyor');
+  assert.equal(tekrar.gecti, true, 'ama gectigi yine de dogru raporlanmali');
 });

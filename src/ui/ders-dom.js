@@ -25,7 +25,7 @@ function haftaKartiDom(kart, ceviri) {
     el('p', { className: 'ders-kart__etiket', text: ceviri('ders.thisWeek') }),
     el('h2', { className: 'ders-kart__hafta', text: ceviri('ders.week', { n: kart.no }) }),
     el('p', { className: 'ders-kart__unite', text: `${ceviri('ders.unit')}: ${kart.uniteAd}` }),
-    el('p', { className: 'ders-kart__tarih', text: ceviri('ders.dates', { bas: kart.bas, bit: kart.bit }) })
+    el('p', { className: 'ders-kart__tarih', text: kart.tarihMetni })
   ]);
 
   const konular = el('div', { className: 'ders-kart__konular' },

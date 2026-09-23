@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TAKVIM, TATILLER } from '../src/data/mufredat.js';
 import { KONULAR } from '../src/data/konular/index.js';
-import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, kazanimDurumu } from '../src/views/ders.js';
+import { adimKimligi, haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, kazanimDurumu, tarihAraligi } from '../src/views/ders.js';
+import { MONTHS } from '../src/engines/calendar.js';
 import { QUIZ_GECME } from '../src/engines/ders.js';
 
 const SAHTE_KONULAR = {
@@ -255,4 +256,36 @@ test('kazanimDurumu ayni haftada iki konunun paylastigi kazanimi bir kez sayar',
   // 3 yalniz bir kez gorunmeli, tamamlanan da bir kez artmali.
   assert.equal(k1.haftalar.filter((h) => h === 3).length, 1);
   assert.equal(k1.haftalar.length, 3);
+});
+
+// --- Tarih araligi -------------------------------------------------
+// Ekran daha once 'YYYY-MM-DD' dizgisini HAM basiyordu:
+// "2026-09-14 - 2026-09-18". On yasindaki bir cocuk icin anlamsiz.
+
+test('ayni aydaki hafta ayi bir kez yazar', () => {
+  assert.equal(tarihAraligi('2026-09-14', '2026-09-18', MONTHS), '14 - 18 Eylül');
+});
+
+test('iki aya yayilan hafta iki ayi da yazar', () => {
+  assert.equal(tarihAraligi('2026-09-28', '2026-10-02', MONTHS), '28 Eylül - 2 Ekim');
+});
+
+test('tarih araligi Date kurmaz, saat dilimi kaydirmaz', () => {
+  // Yerel saat diliminden bagimsiz olmali: dizgi parcalaniyor, Date degil.
+  // 1 Ocak, UTC'den geri kalan dilimlerde Date ile 31 Aralik'a kayardi.
+  assert.equal(tarihAraligi('2027-01-01', '2027-01-05', MONTHS), '1 - 5 Ocak');
+});
+
+test('bozuk tarihte cokmez', () => {
+  assert.equal(typeof tarihAraligi('', '', MONTHS), 'string');
+  assert.equal(typeof tarihAraligi(null, undefined, MONTHS), 'string');
+});
+
+test('hafta karti okunabilir tarih metni tasir', () => {
+  const kart = haftaKarti(
+    { hafta: 1, bas: '2026-09-14', bit: '2026-09-18', unite: 'u', dersler: [] },
+    {}, 'Unite', { haftalar: {} }
+  );
+  assert.equal(kart.tarihMetni, '14 - 18 Eylül');
+  assert.ok(!/\d{4}-\d{2}-\d{2}/.test(kart.tarihMetni), 'ham ISO tarih sizmamali');
 });

@@ -10,6 +10,7 @@
 
 import { haftaKaydi, haftaDurumu, QUIZ_GECME } from '../engines/ders.js';
 import { haftaBul, aktifHafta, haftaGezin } from '../engines/mufredat.js';
+import { MONTHS } from '../engines/calendar.js';
 import { soruUret } from '../engines/uretici/index.js';
 import { selectWeighted } from '../engines/leitner.js';
 
@@ -52,6 +53,7 @@ export function haftaKarti(hafta, konular, uniteAd, ilerleme) {
     no: hafta.hafta,
     bas: hafta.bas,
     bit: hafta.bit,
+    tarihMetni: tarihAraligi(hafta.bas, hafta.bit, MONTHS),
     uniteAd,
     dersler,
     adimIdleri,
@@ -321,4 +323,30 @@ export function kazanimDurumu(takvim, konular, ilerleme) {
     ...s,
     tamam: s.tamamlanan === s.haftalar.length
   }));
+}
+
+/**
+ * Hafta tarih araligini cocugun okuyabilecegi bicime cevirir.
+ *
+ * Veri 'YYYY-MM-DD' dizgisi tutuyor ve ekran bunu HAM basiyordu:
+ * "2026-09-14 - 2026-09-18". On yasindaki bir cocuk icin bu bir sey
+ * ifade etmiyor. Ayni ay icindeyse ay bir kez yazilir.
+ *
+ * Dizgiden parcalanir, Date kurulmaz: yerel saat dilimi bir gun kaydirabilir
+ * ve hafta yanlis gorunur.
+ */
+export function tarihAraligi(bas, bit, aylar) {
+  const parcala = (d) => {
+    const p = String(d ?? '').split('-');
+    return p.length === 3 ? { ay: Number(p[1]), gun: Number(p[2]) } : null;
+  };
+
+  const a = parcala(bas);
+  const b = parcala(bit);
+  if (!a || !b) return `${bas} - ${bit}`;
+
+  const adi = (ay) => aylar[ay - 1] ?? String(ay);
+  return a.ay === b.ay
+    ? `${a.gun} - ${b.gun} ${adi(a.ay)}`
+    : `${a.gun} ${adi(a.ay)} - ${b.gun} ${adi(b.ay)}`;
 }

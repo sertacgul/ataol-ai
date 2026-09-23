@@ -51,6 +51,7 @@ import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, s
 import { widgetKur } from './ui/widget/index.js';
 import { gorselKur } from './ui/gorsel/index.js';
 import { dokunmaNoktasi } from './ui/gorsel/cizim.js';
+import { tamPuanIsaretle } from './engines/ders.js';
 import { haftaKaydi, adimTamamla, etkilesimTamamla, alistirmaCevap, quizBitir, sinavBitir, QUIZ_GECME, SINAV_GECME } from './engines/ders.js';
 import { sinavKur, cevapla as sinavCevapla, puanla, agirlikHesapla } from './engines/sinav.js';
 import { createSes } from './ui/ses.js';
@@ -160,6 +161,19 @@ const ses = createSes({
   AudioContext: window.AudioContext ?? window.webkitAudioContext,
   Audio: window.Audio
 });
+
+/**
+ * Kayitli ses ayarini ses katmanina uygular.
+ *
+ * createSes her zaman sesAcik=true ile basliyor ve ayarla() yalniz
+ * ebeveyn panelindeki kutudan cagriliyordu. Yani ebeveyn sesi kapatip
+ * uygulamayi kapatinca, cocuk actiginda efekt sesleri geri geliyordu
+ * (anlatim ayrica denetleniyordu ama zil ve kutlama sesi degil), kutu
+ * ise kapali gorunuyordu.
+ */
+function dersSesAyariniUygula() {
+  ses.ayarla({ sesAcik: state.loadDersIlerleme().ayar.sesAcik });
+}
 
 function showRecovery() {
   const app = document.getElementById('app');
@@ -1055,9 +1069,18 @@ function dersSoruEkraniCiz(ekranFn, kok, model) {
 
 // Anlatim adimini seslendirir. Ses dosyasi varsa o calinir, yoksa
 // cihaz TTS'i okur; ses.oku bu secimi kendisi yapar.
-function dersAdimiSeslendir() {
+/**
+ * Anlatim adimini seslendirir.
+ *
+ * otomatik=true cagrilar adim degisiminden gelir ve ebeveynin
+ * "Anlatimi otomatik oku" ayarina UYAR. "Tekrar dinle" dugmesi
+ * otomatik=false ile cagirir: cocuk acikca istedigi icin ayar kapali
+ * olsa bile okunur, yoksa dugme olu gorunurdu.
+ */
+function dersAdimiSeslendir({ otomatik = true } = {}) {
   const ilerleme = state.loadDersIlerleme();
   if (!ilerleme.ayar.sesAcik) return;
+  if (otomatik && !ilerleme.ayar.otomatikOynat) return;
 
   const hafta = dersAktifHafta();
   if (!hafta) return;
@@ -1153,7 +1176,19 @@ function dersSinavBitir() {
     dersYildizVer(sonuc.kazanilanYildiz);
     ses.efekt('kutlama');
   }
-  if (p.yuzde >= 100) istArtir((ist) => { ist.tamPuanQuiz += 1; });
+  // Tam puan sayaci hafta basina BIR KEZ artar. 'tamPuan' isareti yildiz
+  // VERMEZ (yildizVer yalniz asama adlarina bakar); tek isi ayni haftanin
+  // quizini bes kez tekrarlayip rozeti hak etmeden acmayi onlemek.
+  //
+  // Kayit DEPODAN geri okunur, sonuc.kayit'tan degil: dersIlerlemeYaz
+  // hafta tamamlandiysa iceride 'hafta' isaretini eklemis olabilir ve
+  // eski nesneyi tekrar yazsaydik o isareti silerdik.
+  const guncel = haftaKaydi(state.loadDersIlerleme(), dersYaziliHaftaNo);
+  const tam = tamPuanIsaretle(guncel, p.yuzde);
+  if (tam.sayacArtti) {
+    istArtir((ist) => { ist.tamPuanQuiz += 1; });
+    dersIlerlemeYaz(dersYaziliHaftaNo, tam.kayit);
+  }
 
   dersSinavSonuc = {
     baslik: ceviri('ders.quiz'),
@@ -1193,7 +1228,10 @@ function dersUniteSinaviBitir() {
     dersYildizVer(sonuc.kazanilanYildiz);
     ses.efekt('kutlama');
   }
-  if (p.gecti) istArtir((ist) => { ist.gecilenSinavlar += 1; });
+  // Sayac sinav basina BIR KEZ artar. kazanilanYildiz > 0 tam olarak
+  // "bu sinav ILK KEZ gecildi" demektir; sinavBitir yildizi da ayni
+  // kurala gore odiyor, yani para ile taninma ayni anda ve bir kez gelir.
+  if (sonuc.kazanilanYildiz > 0) istArtir((ist) => { ist.gecilenSinavlar += 1; });
 
   dersSinavSonuc = {
     baslik: ceviri('ders.unitExam'),
@@ -3462,7 +3500,8 @@ document.getElementById('app').addEventListener('click', (e) => {
     }
 
     if (eylem === 'dinle') {
-      dersAdimiSeslendir();
+      // Cocuk acikca istedi: otomatik okuma ayari kapali olsa da okunur.
+      dersAdimiSeslendir({ otomatik: false });
       return;
     }
 
@@ -3879,6 +3918,7 @@ document.getElementById('ob-basla').addEventListener('click', onboardingBasla);
 // bitmez) uygulamayi baslatir. Iki yol da ayni baslangici kullansin diye
 // ayri fonksiyon.
 function uygulamayiBaslat() {
+  dersSesAyariniUygula();
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) renderIfStale();
   });
