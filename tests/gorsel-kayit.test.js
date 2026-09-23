@@ -24,6 +24,30 @@ test('kayit defterinde veride olmayan gorsel yok', () => {
   }
 });
 
+/** Cizim cagrilarini diziye yazan tuval; ne cizildigini karsilastirir. */
+function izleyenKanvas(kayit) {
+  const y = (ad) => (...a) =>
+    kayit.push(ad + ':' + a.slice(0, 4).map((v) => (typeof v === 'number' ? Math.round(v) : v)).join(','));
+  const b = {
+    beginPath: y('bp'), closePath: y('cp'), moveTo: y('mt'), lineTo: y('lt'),
+    arc: y('arc'), arcTo: y('at'), quadraticCurveTo: y('q'), bezierCurveTo: y('bz'),
+    ellipse: y('el'), rect: y('r'), fillRect: y('fr'), strokeRect: y('sr'), clip: y('cl'),
+    stroke: y('s'), fill: y('f'), clearRect: y('cr'), fillText: y('ft'), strokeText: y('st'),
+    measureText: () => ({ width: 10 }), setLineDash: y('sd'), getLineDash: () => [],
+    save: y('sv'), restore: y('rs'), translate: y('tr'), rotate: y('ro'), scale: y('sc'),
+    setTransform: y('t'), resetTransform: y('rt'),
+    set strokeStyle(v) {}, set fillStyle(v) {}, set lineWidth(v) {},
+    set font(v) {}, set textAlign(v) {}, set textBaseline(v) {},
+    set lineCap(v) {}, set lineJoin(v) {}, set globalAlpha(v) {}
+  };
+  return {
+    width: 320, height: 198,
+    getContext: () => b,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 320, height: 198 }),
+    addEventListener() {}, removeEventListener() {}
+  };
+}
+
 test('her kayitli gorsel sozlesmeyi saglar', () => {
   // Tuval 2d baglaminin cizim gorsellerinin kullandigi tum uyeleri.
   // Eksik bir uye burada TypeError olarak patlar; bu testin isi zaten
@@ -57,6 +81,42 @@ test('her kayitli gorsel sozlesmeyi saglar', () => {
     g.ciz();
     if (g.dokun) g.dokun({ x: 0.5, y: 0.5 });
   }
+});
+
+/**
+ * Her gorselin dokunmaya bir yerde tepki vermesi sart.
+ *
+ * Tarayicida sabit noktalara dokunarak denedigimde sekizi tepkisiz
+ * gorundu; 11x11 tarama hepsinin aslinda tepki verdigini, benim
+ * dokunuslarimin bolgeyi iskaladigini gosterdi. Bu testin isi o
+ * belirsizligi kalici olarak ortadan kaldirmak: tepkisiz bir gorsel
+ * cocuk icin bozuk bir ekrandir ve elle denemeyle guvenilir sekilde
+ * yakalanamaz.
+ */
+test('her gorsel bir yerde dokunmaya tepki verir', () => {
+  const tepkisiz = [];
+
+  for (const [ad, kur] of Object.entries(GORSELLER)) {
+    const kayit = [];
+    const g = kur(izleyenKanvas(kayit), {});
+    if (!g.dokun) { tepkisiz.push(`${ad}: dokun yok`); continue; }
+
+    g.ciz();
+    const ilk = kayit.join('|');
+    let degisti = false;
+
+    for (let i = 0; i <= 10 && !degisti; i++) {
+      for (let j = 0; j <= 10 && !degisti; j++) {
+        kayit.length = 0;
+        g.dokun({ x: i / 10, y: j / 10 });
+        g.ciz();
+        if (kayit.join('|') !== ilk) degisti = true;
+      }
+    }
+    if (!degisti) tepkisiz.push(`${ad}: hicbir dokunusa tepki vermiyor`);
+  }
+
+  assert.deepEqual(tepkisiz, [], tepkisiz.join(' ; '));
 });
 
 test('bilinmeyen ad null doner, atmaz', () => {
