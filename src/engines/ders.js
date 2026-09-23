@@ -65,7 +65,7 @@ export function haftaKaydi(ilerleme, no) {
   };
 }
 
-function yildizVer(kayit, asama, miktar) {
+export function yildizVer(kayit, asama, miktar) {
   if (kayit.yildizAlinan.includes(asama)) {
     return { kayit, kazanilanYildiz: 0 };
   }
