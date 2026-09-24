@@ -104,6 +104,60 @@ function gorselDugum(gorsel, { emojiClass, tuvalClass, tuvalId }) {
 }
 
 /**
+ * Kelime kartlarindan once gelen anlatim. model: ingAnlatimModeli()
+ * ciktisi. Matematikteki anlatimEkrani ile ayni siniflar.
+ *
+ * "Kelimelere gec" HER adimda var: anlatim yildiz vermez ve cocuk onu
+ * ikinci kez dinlemek zorunda kalmamali. Son adimda tek ileri dugmesi
+ * de odur.
+ */
+export function ingAnlatimEkrani(kok, model, ceviri) {
+  const dinleDugmesi = (eylem, etiket) => el('button', {
+    className: 'anlatim__dinle',
+    attrs: { type: 'button' },
+    dataset: { ingAnlatim: eylem }
+  }, [
+    el('span', { className: 'material-symbols-rounded', text: 'volume_up' }),
+    el('span', { text: etiket })
+  ]);
+
+  const gec = el('button', {
+    className: model.sonMu ? 'anlatim__gez anlatim__gez--vurgu' : 'anlatim__gez ing-anlatim__atla',
+    text: ceviri('ing.toCards'),
+    attrs: { type: 'button' },
+    dataset: { ingAnlatim: 'gec' }
+  });
+
+  mount(kok, [
+    ustBar({ ingAnlatim: 'kapat' }, ceviri('ing.cardOf', { n: model.index + 1, t: model.toplam }), ceviri),
+    el('div', { className: 'anlatim__govde' }, [
+      el('p', { className: 'anlatim__konu', text: ceviri('ing.intro') }),
+      el('p', { className: 'anlatim__metin', text: model.adim.tr }),
+      el('p', { className: 'ing-anlatim__ornek', text: model.adim.en })
+    ]),
+    dinleDugmesi('dinle', ceviri('ing.listen')),
+    dinleDugmesi('ornek', ceviri('ing.listenExample')),
+    el('div', { className: 'anlatim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ing.back'),
+        attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+        dataset: { ingAnlatim: 'geri' }
+      }),
+      model.sonMu
+        ? gec
+        : el('button', {
+            className: 'anlatim__gez anlatim__gez--vurgu',
+            text: ceviri('ing.next'),
+            attrs: { type: 'button' },
+            dataset: { ingAnlatim: 'ileri' }
+          })
+    ]),
+    model.sonMu ? null : gec
+  ]);
+}
+
+/**
  * Kelime karti. model: kartModeli() ciktisi.
  *
  * Gorsel tuvali SABIT id tasir (KART_TUVAL_ID); main.js her karti

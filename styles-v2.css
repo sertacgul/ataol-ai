@@ -3724,3 +3724,23 @@ body {
 .ing-secenek__metin {
   font-size: 1rem;
 }
+
+/* Ingilizce anlatim: ornek cumle Turkce aciklamadan ayrilsin ve hedef
+   dil oldugu belli olsun. */
+.ing-anlatim__ornek {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(131, 149, 167, 0.12);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: center;
+}
+
+/* "Kelimelere gec" (son adim disinda): tam genislik, ikincil. */
+.ing-anlatim__atla {
+  flex: none;
+  width: 100%;
+  margin-top: 10px;
+}

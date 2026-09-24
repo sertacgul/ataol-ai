@@ -63,6 +63,34 @@ export function kartModeli(hafta, sozluk, index) {
 }
 
 /**
+ * Anlatim adiminin ses dosyasi kimlikleri. Turkce anlatim Turkce sesle,
+ * Ingilizce ornek Ingilizce sesle uretilir; ikisi ayri dosyadir.
+ * tools/ses-uret.js ayni fonksiyonu kullanir, boylece uretilen dosya adi
+ * ile okunan dosya adi kendiliginden eslesir.
+ */
+export const ingAnlatimSesi = (haftaNo, adimId) => ({
+  tr: `tr-ing/${haftaNo}-${adimId}`,
+  en: `en-ing/${haftaNo}-${adimId}`
+});
+
+/**
+ * Kelime kartlarindan once gosterilen anlatimin bir adimi. index
+ * sinirlarin disina tasarsa en yakin gecerli adima kirpilir.
+ */
+export function ingAnlatimModeli(hafta, index) {
+  const toplam = hafta.anlatim.length;
+  const i = Math.max(0, Math.min(index, toplam - 1));
+  const adim = hafta.anlatim[i];
+  return {
+    adim,
+    index: i,
+    toplam,
+    sonMu: i === toplam - 1,
+    ses: ingAnlatimSesi(hafta.hafta, adim.id)
+  };
+}
+
+/**
  * Dinle-sec sorusunun sunum modeli.
  *
  * bicim kelimenin turune gore degisir: isimler dort GORSEL, fiil ve

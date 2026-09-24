@@ -110,6 +110,18 @@ GOOGLE_TTS_KEY=xxx node tools/ses-uret.js ingilizce
 okur. Ses `en-US-Chirp3-HD-Aoede`. Dosya adi `kelimeKimligi()` ile
 uretilir; ui/ses.js ayni fonksiyonu kullanir.
 
+Ingilizce hafta anlatimi (kelime kartlarindan onceki giris) da ayri
+uretilir:
+
+```bash
+GOOGLE_TTS_KEY=xxx node tools/ses-uret.js ingilizce-anlatim
+```
+
+`sesler/tr-ing/<hafta>-<adim>.mp3` Turkce aciklamayi (`tr-TR` ses),
+`sesler/en-ing/<hafta>-<adim>.mp3` Ingilizce ornegi (`en-US` ses) okur.
+Ikisinin adi da `ingAnlatimSesi()` ile uretilir. Dosya yoksa uygulama
+cihazin sesine duser.
+
 **Onemli:** Uretilen `sesler/*.mp3` dosyalari **git'e commit edilmeli**.
 Uygulama GitHub Pages'tan dogrudan daldan sunuluyor; commit edilmeyen
 dosya cocugun telefonunda yoktur. Ses uretilir, yerelde calar, yayinda

@@ -49,8 +49,8 @@ import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, 
 import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani, dersSecici } from './ui/ders-dom.js';
 import { sozlukEkrani } from './ui/sozluk-dom.js';
-import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli } from './views/ingilizce.js';
-import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
+import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli, ingAnlatimModeli } from './views/ingilizce.js';
+import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, ingAnlatimEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
 import { SOZLUK } from './data/ingilizce/sozluk/index.js';
 import { ING_HAFTALAR } from './data/ingilizce/haftalar.js';
 import { TEMALAR } from './data/ingilizce/temalar.js';
@@ -134,7 +134,8 @@ let dersWidgetAnahtar = null;
 let dersSecim = 'matematik';
 let sozlukSorgu = '';
 
-// Ingilizce dersi icindeki ic ekran: 'hafta' | 'kart' | 'dinle' | 'sonuc'.
+// Ingilizce dersi icindeki ic ekran: 'hafta' | 'anlatim' | 'kart' |
+// 'dinle' | 'sonuc' | 'quiz' | 'tema'.
 // dersEkran'dan AYRI tutulur cunku Ingilizce'nin kendi bes asamasi ve
 // akisi var, matematigin anlatim/etkilesim/alistirma/quiz durum
 // makinesiyle karismamali.
@@ -145,6 +146,9 @@ let ingEkran = 'hafta';
 // tekrar getirirse ekrana DOKUNULMAZ, tuval yeniden kurulmaz.
 let ingKartIndex = 0;
 let ingKartRenderAnahtar = null;
+// Kelime kartlarindan once gelen anlatimin adimi. Tuval yok, bu yuzden
+// R26 anahtarina gerek yok; her render ayni metni yeniden yazar.
+let ingAnlatimIndex = 0;
 let ingKartGorsel = null;
 let ingKartGorselAnahtar = null;
 
@@ -929,6 +933,11 @@ function renderDers() {
 
     const ingHafta = ingAktifHafta();
 
+    if (ingEkran === 'anlatim' && ingHafta) {
+      ingAnlatimEkrani(kok, ingAnlatimModeli(ingHafta, ingAnlatimIndex), ceviri);
+      return;
+    }
+
     if (ingEkran === 'kart' && ingHafta) {
       ingKartEkraniCiz(kok, kartModeli(ingHafta, SOZLUK, ingKartIndex));
       return;
@@ -1254,6 +1263,28 @@ function ingSesOku(kelime, { otomatik = true } = {}) {
   }
   ses.dur();
   ses.oku({ metin: kelime.en, ses: `en/${kelime.id}`, dil: 'en' });
+}
+
+// Anlatim adimini seslendirir: dil 'tr' Turkce aciklamayi, 'en' Ingilizce
+// ornegi okur. Ayar kurali ingSesOku ile ayni.
+function ingAnlatimOku(hafta, dil, { otomatik = true } = {}) {
+  if (otomatik) {
+    const ayar = state.loadDersIlerleme().ayar;
+    if (!ayar.sesAcik || !ayar.otomatikOynat) return;
+  }
+  const m = ingAnlatimModeli(hafta, ingAnlatimIndex);
+  ses.dur();
+  ses.oku({ metin: m.adim[dil], ses: m.ses[dil], dil });
+}
+
+// Kelime kartlarini bastan acar. Anlatimin "Kelimelere gec" dugmesi ve
+// anlatimi olmayan hafta ayni yoldan gecer.
+function ingKartlariAc(hafta) {
+  ingKartIndex = 0;
+  ingKartRenderAnahtar = null;
+  ingEkran = 'kart';
+  renderDers();
+  ingSesOku(kartModeli(hafta, SOZLUK, 0).kelime);
 }
 
 // Ingilizce ilerleme yazmalari TEK funnel'dan gecer (matematikteki
@@ -3950,11 +3981,16 @@ document.getElementById('app').addEventListener('click', (e) => {
     ses.hazirla();
 
     if (asama === 'kelime') {
-      ingKartIndex = 0;
-      ingKartRenderAnahtar = null;
-      ingEkran = 'kart';
+      // Kartlardan once haftanin anlatimi. Anlatimi yazilmamis bir hafta
+      // dogrudan kartlara gecer, bos bir ekran gostermez.
+      if (hafta.anlatim.length === 0) {
+        ingKartlariAc(hafta);
+        return;
+      }
+      ingAnlatimIndex = 0;
+      ingEkran = 'anlatim';
       renderDers();
-      ingSesOku(kartModeli(hafta, SOZLUK, 0).kelime);
+      ingAnlatimOku(hafta, 'tr');
       return;
     }
     if (asama === 'dinle') {
@@ -3981,6 +4017,34 @@ document.getElementById('app').addEventListener('click', (e) => {
     ses.hazirla();
     ingTemaSinaviBaslat(tema);
     renderDers();
+    return;
+  }
+
+  const ingAnlatimDugme = e.target.closest('[data-ing-anlatim]');
+  if (ingAnlatimDugme) {
+    const eylem = ingAnlatimDugme.dataset.ingAnlatim;
+    const hafta = ingAktifHafta();
+    if (!hafta) return;
+
+    if (eylem === 'kapat') {
+      ses.dur();
+      ingEkran = 'hafta';
+      renderDers();
+      return;
+    }
+    // Cocuk acikca istedi: otomatik okuma ayari kapali olsa da okunur.
+    if (eylem === 'dinle') { ingAnlatimOku(hafta, 'tr', { otomatik: false }); return; }
+    if (eylem === 'ornek') { ingAnlatimOku(hafta, 'en', { otomatik: false }); return; }
+    if (eylem === 'gec') {
+      ses.dur();
+      ingKartlariAc(hafta);
+      return;
+    }
+    // 'geri' / 'ileri'
+    const adim = eylem === 'geri' ? -1 : 1;
+    ingAnlatimIndex = Math.max(0, Math.min(hafta.anlatim.length - 1, ingAnlatimIndex + adim));
+    renderDers();
+    ingAnlatimOku(hafta, 'tr');
     return;
   }
 

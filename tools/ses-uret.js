@@ -5,6 +5,7 @@
  *   GOOGLE_TTS_KEY=... node tools/ses-uret.js
  *   GOOGLE_TTS_KEY=... node tools/ses-uret.js temel-cizimler
  *   GOOGLE_TTS_KEY=... node tools/ses-uret.js ingilizce
+ *   GOOGLE_TTS_KEY=... node tools/ses-uret.js ingilizce-anlatim
  *
  * Google Cloud Text-to-Speech Chirp 3 HD, tr-TR ve en-US. Aylik ilk 1M
  * karakter ucretsiz; bu projenin tamami yaklasik 150k karakter, yani
@@ -15,6 +16,9 @@
  * Ingilizce sozluk kelimeleri icin dosya adi sesler/en/<id>.mp3 ve
  * sesler/en/<id>-ornek.mp3'tur; id SOZLUK'te kelimeKimligi() ile
  * uretilmis olarak durur, ui/ses.js okurken de ayni id'yi kullanir.
+ * Ingilizce hafta anlatimi icin sesler/tr-ing/<hafta>-<adim>.mp3 (Turkce
+ * aciklama) ve sesler/en-ing/<hafta>-<adim>.mp3 (Ingilizce ornek);
+ * ikisi de views/ingilizce.js#ingAnlatimSesi ile turetilir.
  *
  * Var olan dosyanin ustune yazmaz. Yeniden uretmek icin once sil.
  */
@@ -25,6 +29,8 @@ import { fileURLToPath } from 'node:url';
 import { KONULAR } from '../src/data/konular/index.js';
 import { adimKimligi } from '../src/views/ders.js';
 import { SOZLUK } from '../src/data/ingilizce/sozluk/index.js';
+import { ING_HAFTALAR } from '../src/data/ingilizce/haftalar.js';
+import { ingAnlatimSesi } from '../src/views/ingilizce.js';
 
 const KOK = fileURLToPath(new URL('..', import.meta.url));
 const CIKTI = path.join(KOK, 'sesler');
@@ -70,6 +76,18 @@ function ingilizceIsleri() {
   return isler;
 }
 
+function ingilizceAnlatimIsleri() {
+  const isler = [];
+  for (const h of ING_HAFTALAR) {
+    for (const a of h.anlatim) {
+      const kimlik = ingAnlatimSesi(h.hafta, a.id);
+      isler.push({ kimlik: kimlik.tr, metin: a.tr, ses: SESLER.tr });
+      isler.push({ kimlik: kimlik.en, metin: a.en, ses: SESLER.en });
+    }
+  }
+  return isler;
+}
+
 async function seslendir(metin, ses) {
   const yanit = await fetch(`${UC_NOKTA}?key=${ANAHTAR}`, {
     method: 'POST',
@@ -92,14 +110,18 @@ async function seslendir(metin, ses) {
 
 async function main() {
   if (!existsSync(CIKTI)) mkdirSync(CIKTI, { recursive: true });
-  mkdirSync(path.join(CIKTI, 'en'), { recursive: true });
+  for (const alt of ['en', 'tr-ing', 'en-ing']) {
+    mkdirSync(path.join(CIKTI, alt), { recursive: true });
+  }
 
   let isler;
   if (SADECE === 'ingilizce') {
     isler = ingilizceIsleri();
+  } else if (SADECE === 'ingilizce-anlatim') {
+    isler = ingilizceAnlatimIsleri();
   } else {
     isler = adimlariTopla();
-    if (!SADECE) isler = isler.concat(ingilizceIsleri());
+    if (!SADECE) isler = isler.concat(ingilizceIsleri(), ingilizceAnlatimIsleri());
   }
   console.log(`${isler.length} adim bulundu.`);
 

@@ -123,6 +123,9 @@ const STRINGS = {
     'ing.themeExamLocked': 'Tema sınavı için 4 haftanın quizini geçmen gerekiyor.',
     'ing.themeExamStart': 'Tema sınavına gir',
     'ing.themeExamScore': 'Tema sınavı: {n} puan',
+    'ing.intro': 'Konu anlatımı',
+    'ing.toCards': 'Kelimelere geç',
+    'ing.listenExample': 'Örneği dinle',
     'ing.starsEarned': '{n} yıldız kazandın!',
     'ing.notReady': 'Bu haftanın içeriği henüz hazırlanıyor.',
 
@@ -505,6 +508,9 @@ const STRINGS = {
     'ing.themeExamLocked': 'You need to pass all 4 weekly quizzes to unlock the theme exam.',
     'ing.themeExamStart': 'Take the theme exam',
     'ing.themeExamScore': 'Theme exam: {n} points',
+    'ing.intro': 'Lesson',
+    'ing.toCards': 'Go to the words',
+    'ing.listenExample': 'Listen to the example',
     'ing.starsEarned': 'You earned {n} stars!',
     'ing.notReady': 'This week is still being prepared.',
 
