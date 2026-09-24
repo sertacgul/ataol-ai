@@ -148,6 +148,29 @@ test('hazirla AudioContext i resume eder (iOS kilidi)', async () => {
   assert.equal(ses.ctxDurumu(), 'running');
 });
 
+test('hazirla cihaz sesinin kilidini BIR KEZ, sessizce acar (iOS)', async () => {
+  // iOS cihaz sesini yalniz bir dokunusun icinde baslatir. Ses dosyasi
+  // yoksa TTS'e 404'ten SONRA dusuluyor; o an dokunus gecmistir ve iOS
+  // okumayi sessizce engeller. Dokunusun icindeki bos soz kilidi acar.
+  const tts = sahteTts();
+  const ses = createSes({ speechSynthesis: tts, SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
+
+  const bekleyen = ses.hazirla();
+  // Kilit await'ten ONCE acilmali: ilk await dokunusun disina tasir.
+  assert.equal(tts.olusturulanlar.length, 1, 'kilit senkron acilmadi');
+  await bekleyen;
+  assert.equal(tts.olusturulanlar[0].text, '');
+  assert.equal(tts.olusturulanlar[0].volume, 0, 'kilit sozu duyulmamali');
+
+  await ses.hazirla();
+  assert.equal(tts.olusturulanlar.length, 1, 'kilit her dokunusta tekrar acilmamali');
+});
+
+test('TTS yoksa hazirla kilit acmaya calismaz, cokmez', async () => {
+  const ses = createSes({ AudioContext: sahteAudioContext() });
+  await ses.hazirla();
+});
+
 test('efekt osilator olusturur ve calistirir', async () => {
   const ses = createSes({ speechSynthesis: sahteTts(), SpeechSynthesisUtterance: SahteUtterance, AudioContext: sahteAudioContext(), Audio: sahteAudioSinifi(true) });
   await ses.hazirla();

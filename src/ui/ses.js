@@ -30,6 +30,7 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
   let ctx = null;
   let calan = null;
   let sonEfekt = null;
+  let ttsKilidiAcik = false;
 
   const ttsVar = () => Boolean(speechSynthesis && typeof speechSynthesis.speak === 'function' && typeof SpeechSynthesisUtterance === 'function');
 
@@ -65,6 +66,17 @@ export function createSes({ speechSynthesis, SpeechSynthesisUtterance, AudioCont
    * "Derse basla" butonu bu dokunustur ve burayi cagirir.
    */
   async function hazirla() {
+    // Cihaz sesinin kilidi: iOS TTS'i yalniz dokunusun icinde baslatir.
+    // Ses dosyasi yoksa oku() TTS'e 404'ten SONRA duser ve o an dokunus
+    // gecmistir; iOS okumayi sessizce engeller. Dokunusun icinde bir kez
+    // soylenen bos, sessiz soz sonraki cagrilarin da calismasini saglar.
+    // Ilk await'ten ONCE olmali, yoksa dokunusun disina tasar.
+    if (!ttsKilidiAcik && ttsVar()) {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+      ttsKilidiAcik = true;
+    }
     if (!AudioContext) return;
     if (!ctx) ctx = new AudioContext();
     if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
