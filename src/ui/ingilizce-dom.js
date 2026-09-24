@@ -28,12 +28,38 @@ function asamaRozeti(ad, tamam, etiket, tiklanabilir) {
   ]);
 }
 
+const TIKLANABILIR = ['kelime', 'dinle', 'quiz'];
+
 /**
- * Hafta karti. model: ingHaftaKarti() ciktisi.
+ * Tema sinavi kutusu. sinav: temaSinaviDurumu() ciktisi. Matematikteki
+ * unite sinavi kutusuyla ayni siniflar (bkz. ders-dom.js haftaEkrani).
+ */
+function temaSinaviKutusu(sinav, ceviri) {
+  return el('div', { className: 'ders-sinav' }, [
+    el('p', {
+      className: 'ders-sinav__baslik',
+      text: sinav.sonPuan > 0
+        ? ceviri('ing.themeExamScore', { n: sinav.sonPuan })
+        : ceviri('ing.themeExam')
+    }),
+    sinav.acik
+      ? el('button', {
+          className: 'ders-sinav__gir',
+          text: ceviri('ing.themeExamStart'),
+          attrs: { type: 'button' },
+          dataset: { ingTemaSinav: sinav.sinavId }
+        })
+      : el('p', { className: 'ders-kart__not', text: ceviri('ing.themeExamLocked') })
+  ]);
+}
+
+/**
+ * Hafta karti. model: ingHaftaKarti() ciktisi, main.js'in ekledigi
+ * sinav alaniyla (temaSinaviDurumu).
  *
- * Yalniz 'kelime' ve 'dinle' asamalari tiklanabilir: bu ikisinin gercek
- * bir ekrani var. 'soyle', 'cumle' ve 'quiz' rozetleri durumu gosterir
- * ama devre disidir - henuz bir ekranlari yok.
+ * 'kelime', 'dinle' ve 'quiz' tiklanabilir: bunlarin gercek bir ekrani
+ * var. 'soyle' ve 'cumle' rozetleri durumu gosterir ama devre disidir -
+ * Faz 2b'ye kadar ekranlari yok.
  */
 export function ingHaftaEkrani(kok, model, ceviri) {
   const ust = el('div', { className: 'ders-kart__ust' }, [
@@ -44,7 +70,7 @@ export function ingHaftaEkrani(kok, model, ceviri) {
 
   const asamalar = el('div', { className: 'ders-kart__asamalar' },
     ING_ASAMALAR.map((ad) =>
-      asamaRozeti(ad, model.durum.asamalar[ad].tamam, ceviri(`ing.stage.${ad}`), ad === 'kelime' || ad === 'dinle')
+      asamaRozeti(ad, model.durum.asamalar[ad].tamam, ceviri(`ing.stage.${ad}`), TIKLANABILIR.includes(ad))
     )
   );
 
@@ -53,7 +79,8 @@ export function ingHaftaEkrani(kok, model, ceviri) {
       ust,
       asamalar,
       el('p', { className: 'ders-kart__ilerleme', text: `${model.durum.yuzde}%` })
-    ])
+    ]),
+    model.sinav ? temaSinaviKutusu(model.sinav, ceviri) : null
   ]);
 }
 

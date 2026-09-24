@@ -433,7 +433,7 @@ export function sinavEkrani(kok, model, ceviri) {
       }),
       el('p', { className: 'anlatim__sayac', text: ceviri('ders.quizOf', { n: model.index + 1, t: model.toplam }) })
     ]),
-    el('p', { className: 'soru__baslik', text: ceviri('ders.unitExam') }),
+    el('p', { className: 'soru__baslik', text: model.baslik ?? ceviri('ders.unitExam') }),
     el('p', { className: 'sinav__not', text: ceviri('ders.examNote') }),
     el('p', { className: 'soru__metin', text: model.soru.soru.tr }),
     gorselTuval,

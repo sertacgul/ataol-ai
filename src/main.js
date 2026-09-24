@@ -53,7 +53,9 @@ import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli } from './views
 import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
 import { SOZLUK } from './data/ingilizce/sozluk/index.js';
 import { ING_HAFTALAR } from './data/ingilizce/haftalar.js';
-import { ingHaftaKaydi, kartGoruldu, dinleBitir } from './engines/ingilizce/ders.js';
+import { TEMALAR } from './data/ingilizce/temalar.js';
+import { ingHaftaKaydi, kartGoruldu, dinleBitir, temaSinaviDurumu } from './engines/ingilizce/ders.js';
+import { haftaQuizi, temaSinavi, sinavNesnesi } from './engines/ingilizce/uretici.js';
 import { widgetKur } from './ui/widget/index.js';
 import { gorselKur } from './ui/gorsel/index.js';
 import { dokunmaNoktasi } from './ui/gorsel/cizim.js';
@@ -166,6 +168,18 @@ let ingDinleGorselAnahtarlari = [null, null, null, null];
 // Kart/dinle-sec bitince gosterilecek sonuc modeli. dolu iken ingEkran
 // 'sonuc'tur.
 let ingSonucModel = null;
+
+// Hafta quizi (ingEkran 'quiz') ve tema sinavi (ingEkran 'tema').
+// Matematigin dersSinav* degiskenlerinden AYRI tutulur: iki ders ayni
+// ekranlari kullaniyor ama ayni anda iki yarim sinav olabilir ve biri
+// digerinin cevaplarini ezmemeli. ingSinavHaftaNo quiz acilirken yakalanir
+// (dersYaziliHaftaNo ile ayni sebep: bitis aninda hafta degismis olabilir).
+let ingSinav = null;
+let ingSinavIndex = 0;
+let ingSinavUyari = '';
+let ingSinavSonuc = null;
+let ingSinavHaftaNo = null;
+let ingSinavTema = null;
 
 // Anlatim adiminin gorseli. Etkilesim widget'indan bagimsizdir: farkli
 // tuval dugumune baglanir ve ikisi hicbir zaman ayni anda gorunmez.
@@ -908,6 +922,11 @@ function renderDers() {
       return;
     }
 
+    if ((ingEkran === 'quiz' || ingEkran === 'tema') && ingSinav) {
+      ingSinavEkraniCiz(kok);
+      return;
+    }
+
     const ingHafta = ingAktifHafta();
 
     if (ingEkran === 'kart' && ingHafta) {
@@ -934,7 +953,12 @@ function renderDers() {
       return;
     }
 
-    ingHaftaEkrani(kok, ingHaftaKarti(ingHafta, SOZLUK, state.loadIngilizce()), ceviri);
+    const ingIlerleme = state.loadIngilizce();
+    const tema = TEMALAR.find((t) => t.no === ingHafta.tema);
+    ingHaftaEkrani(kok, {
+      ...ingHaftaKarti(ingHafta, SOZLUK, ingIlerleme),
+      sinav: tema ? temaSinaviDurumu(tema, ingIlerleme) : null
+    }, ceviri);
     kok.insertBefore(dersSecici(dersSecim, ceviri), kok.firstChild);
     return;
   }
@@ -1292,6 +1316,133 @@ function ingDinleBitirOturum(hafta) {
   };
   ingEkran = 'sonuc';
   render();
+}
+
+// Hafta quizi: haftanin kelimelerinden en fazla 10 soru, her soru farkli
+// kelime. Hafta 10'dan az kelime tasiyorsa kelime sayisi kadar.
+function ingQuizBaslat(hafta) {
+  ingSinav = sinavNesnesi(haftaQuizi(hafta, SOZLUK, Math.random, 10), { gecmeNotu: QUIZ_GECME, aninda: true });
+  ingSinavHaftaNo = hafta.hafta;
+  ingSinavTema = null;
+  ingSinavIndex = 0;
+  ingSinavSonuc = null;
+  ingEkran = 'quiz';
+}
+
+// Tema sinavi: temanin dort haftasindan 20 soru, cevaplar sonda.
+// Matematikteki unite sinaviyla ayni gecme notu ve ayni ekran.
+function ingTemaSinaviBaslat(tema) {
+  const haftalar = tema.haftalar.map((no) => ING_HAFTALAR.find((h) => h.hafta === no)).filter(Boolean);
+  ingSinav = sinavNesnesi(temaSinavi(haftalar, SOZLUK, Math.random, 20), { gecmeNotu: SINAV_GECME, aninda: false });
+  ingSinavTema = tema;
+  ingSinavHaftaNo = null;
+  ingSinavIndex = 0;
+  ingSinavUyari = '';
+  ingSinavSonuc = null;
+  ingEkran = 'tema';
+}
+
+function ingSinavKapat() {
+  ingSinav = null;
+  ingSinavSonuc = null;
+  ingSinavUyari = '';
+  ingSinavHaftaNo = null;
+  ingSinavTema = null;
+  ingEkran = 'hafta';
+}
+
+// Soru, sinav ve sonuc ekranlari matematikten AYNEN gelir (ders-dom.js).
+// Ingilizce sorular gorsel tasimadigi icin dersSoruEkraniCiz'in widget
+// yasam dongusune gerek yok; ekran dogrudan cizilir.
+function ingSinavEkraniCiz(kok) {
+  if (ingSinavSonuc) {
+    sonucEkrani(kok, ingSinavSonuc, ceviri);
+    return;
+  }
+
+  if (ingEkran === 'tema') {
+    sinavEkrani(kok, {
+      baslik: ceviri('ing.themeExam'),
+      soru: ingSinav.sorular[ingSinavIndex],
+      secildi: ingSinav.cevaplar[ingSinavIndex],
+      index: ingSinavIndex,
+      toplam: ingSinav.sorular.length,
+      uyari: ingSinavUyari
+    }, ceviri);
+    return;
+  }
+
+  // Gosterilen soru ingSinavIndex'tir, "ilk bos cevap" DEGIL: cevap
+  // verildigi anda ilk bos cevap bir sonraki soruya kayar ve cocuk
+  // geri bildirimi ve cozumu hic gormeden ilerlerdi. Index yalniz
+  // "Sonraki soru" ile artar.
+  const index = ingSinavIndex;
+  soruEkrani(kok, {
+    baslik: ceviri('ders.quiz'),
+    ustBilgi: ceviri('ders.quizOf', { n: index + 1, t: ingSinav.sorular.length }),
+    soru: ingSinav.sorular[index],
+    secildi: ingSinav.cevaplar[index],
+    dogruMu: ingSinav.cevaplar[index] === ingSinav.sorular[index].dogru,
+    cozumGoster: true,
+    devamEtiketi: ceviri('ders.nextQuestion'),
+    kapatVar: true
+  }, ceviri);
+}
+
+// Quizi bitirir. Yildiz quizBitir icinde bir kez verilir (matematikle
+// ayni kural); tam puan sayaci da tamPuanIsaretle ile hafta basina bir
+// kez artar.
+function ingQuizBitir() {
+  if (ingSinavHaftaNo === null) return;
+  const p = puanla(ingSinav);
+  const sonuc = quizBitir(ingHaftaKaydi(state.loadIngilizce(), ingSinavHaftaNo), p.yuzde);
+  const tam = tamPuanIsaretle(sonuc.kayit, p.yuzde);
+  ingIlerlemeYaz(ingSinavHaftaNo, tam.kayit);
+  if (tam.sayacArtti) istArtir((ist) => { ist.tamPuanQuiz += 1; });
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+  }
+  ingSinavSonuc = {
+    baslik: ceviri('ders.quiz'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: ingSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: []
+  };
+  renderDers();
+}
+
+// Tema sinavini bitirir. sinavBitir matematikle ayni defteri tutar;
+// tip 'unite' 15 yildiz oder (ING_YILDIZ.temaSinavi ile esit, testi var)
+// ve gecilmis sinav ikinci kez odemez.
+function ingTemaSinaviBitir() {
+  const p = puanla(ingSinav);
+  const ilerleme = state.loadIngilizce();
+  const sonuc = sinavBitir(ilerleme.sinavlar, `tema-${ingSinavTema.no}`, {
+    puan: p.yuzde,
+    tarih: bugununTarihi(),
+    tip: 'unite'
+  });
+  state.saveIngilizce({ ...ilerleme, sinavlar: sonuc.sinavlar });
+  if (sonuc.kazanilanYildiz > 0) {
+    dersYildizVer(sonuc.kazanilanYildiz);
+    ses.efekt('kutlama');
+    istArtir((ist) => { ist.gecilenSinavlar += 1; });
+  }
+  ingSinavSonuc = {
+    baslik: ceviri('ing.themeExam'),
+    dogru: p.dogru,
+    toplam: p.toplam,
+    gecti: p.gecti,
+    gecmeNotu: ingSinav.gecmeNotu,
+    yildiz: sonuc.kazanilanYildiz,
+    konular: []
+  };
+  ingSinavUyari = '';
+  renderDers();
 }
 
 function dersWidgetKapat() {
@@ -3771,6 +3922,7 @@ document.getElementById('app').addEventListener('click', (e) => {
     ingDinleRenderAnahtar = null;
     ingEkran = 'hafta';
     ingSonucModel = null;
+    ingSinavKapat();
     renderDers();
     return;
   }
@@ -3808,7 +3960,24 @@ document.getElementById('app').addEventListener('click', (e) => {
       ingSesOku(SOZLUK.find((k) => k.id === ingDinleSirasi[0]));
       return;
     }
-    // 'soyle', 'cumle', 'quiz': rozet disabled, buraya gelinmez.
+    if (asama === 'quiz') {
+      ingQuizBaslat(hafta);
+      renderDers();
+      return;
+    }
+    // 'soyle', 'cumle': rozet disabled, buraya gelinmez.
+    return;
+  }
+
+  const ingTemaDugme = e.target.closest('[data-ing-tema-sinav]');
+  if (ingTemaDugme) {
+    const tema = TEMALAR.find((t) => `tema-${t.no}` === ingTemaDugme.dataset.ingTemaSinav);
+    // Dugme yalniz kilit acikken cizilir; yine de burada tekrar bakilir,
+    // eski bir ekrandan gelen tiklama kilidi atlamasin.
+    if (!tema || !temaSinaviDurumu(tema, state.loadIngilizce()).acik) return;
+    ses.hazirla();
+    ingTemaSinaviBaslat(tema);
+    renderDers();
     return;
   }
 
@@ -3914,6 +4083,88 @@ document.getElementById('app').addEventListener('click', (e) => {
     ingEkran = 'hafta';
     render();
     return;
+  }
+
+  // Ingilizce quiz ve tema sinavi matematigin ekranlarini kullandigi icin
+  // ayni data-ders-* dugmelerini uretir. Bu blok matematik isleyicilerinden
+  // ONCE gelmeli: data-ders-sinav ve data-ders-sonuc isleyicileri dersEkran'a
+  // bakmadan calisiyor ve Ingilizce sonucu matematik defterine yazardi.
+  if (dersSecim === 'ingilizce' && (ingEkran === 'quiz' || ingEkran === 'tema') && ingSinav) {
+    const secenek = e.target.closest('[data-ders-secenek]');
+    const soruD = e.target.closest('[data-ders-soru]');
+    const sinavD = e.target.closest('[data-ders-sinav]');
+    const sonucD = e.target.closest('[data-ders-sonuc]');
+
+    if (secenek && !ingSinavSonuc) {
+      const secilen = Number(secenek.dataset.dersSecenek);
+      if (ingEkran === 'tema') {
+        ingSinav = sinavCevapla(ingSinav, ingSinavIndex, secilen);
+        ses.efekt('tik');   // dogru/yanlis SOYLENMEZ, bu bir olcme
+        ingSinavUyari = '';
+      } else {
+        if (ingSinav.cevaplar[ingSinavIndex] !== null) return;   // ayni soruya iki kez cevap yok
+        ingSinav = sinavCevapla(ingSinav, ingSinavIndex, secilen);
+        ses.efekt(secilen === ingSinav.sorular[ingSinavIndex].dogru ? 'dogru' : 'yanlis');
+      }
+      renderDers();
+      return;
+    }
+
+    if (soruD) {
+      if (soruD.dataset.dersSoru === 'kapat') {
+        ingSinavKapat();
+        render();
+        return;
+      }
+      if (ingSinav.cevaplar.every((c) => c !== null)) {
+        ingQuizBitir();
+        return;
+      }
+      ingSinavIndex = Math.min(ingSinav.sorular.length - 1, ingSinavIndex + 1);
+      renderDers();
+      return;
+    }
+
+    if (sinavD) {
+      const eylem = sinavD.dataset.dersSinav;
+      if (eylem === 'kapat') {
+        ingSinavKapat();
+        render();
+        return;
+      }
+      if (eylem === 'geri' || eylem === 'ileri') {
+        const adim = eylem === 'geri' ? -1 : 1;
+        ingSinavIndex = Math.max(0, Math.min(ingSinav.sorular.length - 1, ingSinavIndex + adim));
+        ingSinavUyari = '';
+        renderDers();
+        return;
+      }
+      // 'bitir': bos soru varsa once uyar, ikinci basista bitir.
+      const bos = ingSinav.cevaplar.filter((c) => c === null).length;
+      if (bos > 0 && !ingSinavUyari) {
+        ingSinavUyari = ceviri('ders.unanswered', { n: bos });
+        renderDers();
+        return;
+      }
+      ingTemaSinaviBitir();
+      return;
+    }
+
+    if (sonucD) {
+      if (sonucD.dataset.dersSonuc === 'tekrar') {
+        if (ingEkran === 'tema' && ingSinavTema) {
+          ingTemaSinaviBaslat(ingSinavTema);
+        } else {
+          const hafta = ING_HAFTALAR.find((h) => h.hafta === ingSinavHaftaNo);
+          if (hafta) ingQuizBaslat(hafta); else ingSinavKapat();
+        }
+        renderDers();
+        return;
+      }
+      ingSinavKapat();
+      render();
+      return;
+    }
   }
 
   const dersBasla = e.target.closest('[data-ders-basla]');

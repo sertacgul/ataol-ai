@@ -7,7 +7,7 @@
  * tamPuanIsaretle aynen tekrar kullanilabiliyor.
  */
 
-import { yildizVer } from '../ders.js';
+import { yildizVer, QUIZ_GECME } from '../ders.js';
 
 export const ING_ASAMALAR = ['kelime', 'dinle', 'soyle', 'cumle', 'quiz'];
 
@@ -109,4 +109,28 @@ export function dinleBitir(kayit, dogruSayisi, toplam) {
 
   const sonuc = yildizVer({ ...kayit, dinleBitti: true }, 'dinle', ING_YILDIZ.dinle);
   return { ...sonuc, gecti: true };
+}
+
+/**
+ * Tema sinavinin kilidi ve sonucu.
+ *
+ * Temanin TUM haftalarinin quizi gecilmeden acilmaz; sinav temayi olcer,
+ * gorulmemis haftadan soru sormak cocugu ogretilmemis seyle sinamak olurdu.
+ * Sonuc ilerleme.sinavlar[sinavId] icinde durur (matematikteki sinavBitir
+ * ile ayni defter), yildiz orada bir kez odenir.
+ */
+export function temaSinaviDurumu(tema, ilerleme) {
+  const sinavId = `tema-${tema.no}`;
+  const acik = tema.haftalar.every((no) =>
+    ingHaftaKaydi(ilerleme, no).quiz.enIyi >= QUIZ_GECME);
+  const kayit = nesne(nesne(ilerleme?.sinavlar)[sinavId]);
+  return {
+    sinavId,
+    acik,
+    // sinavBitir puan ve gecti'yi her denemede ustune yazar; yildizAlindi
+    // ise bir kez gecildikten sonra hep true kalir. Gecip sonra kalan
+    // cocuk "gecilmedi" gormesin.
+    gecildi: kayit.gecti === true || kayit.yildizAlindi === true,
+    sonPuan: sayi(kayit.puan)
+  };
 }

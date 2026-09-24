@@ -132,3 +132,39 @@ export function haftaQuizi(hafta, sozluk, rng, adet) {
   const secilenIdler = siraliIdler.slice(0, sayi);
   return secilenIdler.map((id) => hedefliSoruUret(id, hafta.kelimeler, sozluk, rng));
 }
+
+/**
+ * Tema sinavi: temanin her haftasindan esit pay (artan sorular ilk
+ * haftalara), sonra karisik sira. Her soru kendi haftasinin quizi gibi
+ * uretilir, yani celdiriciler SORUNUN KENDI haftasindan gelir.
+ *
+ * Haftalar blok halinde sorulmaz; art arda ayni hafta gelirse cocuk
+ * sinavi "bitti mi" diye degil "hala mi" diye yasar (engines/sinav.js ile
+ * ayni gerekce).
+ */
+export function temaSinavi(haftalar, sozluk, rng, adet) {
+  const taban = Math.floor(adet / haftalar.length);
+  const artan = adet % haftalar.length;
+  const sorular = haftalar.flatMap((h, i) =>
+    haftaQuizi(h, sozluk, rng, taban + (i < artan ? 1 : 0)));
+  return karistir(sorular, rng);
+}
+
+/**
+ * Uretilen sorulari matematigin sinav nesnesine cevirir. Boylece
+ * engines/sinav.js'teki cevapla/puanla ve ui/ders-dom.js'teki soru,
+ * sinav ve sonuc ekranlari AYNEN kullanilir.
+ *
+ * Ekranlar soru metnini soru.soru.tr'den, cozumu adim dizisi olarak
+ * okur; Ingilizce soruda ikisi de tek metin oldugu icin sarilir.
+ */
+export function sinavNesnesi(sorular, { gecmeNotu, aninda }) {
+  return {
+    sorular: sorular.map((q) => ({ ...q, soru: { tr: q.soru, en: q.soru }, cozum: [q.cozum] })),
+    soruKaynagi: sorular.map((q) => q.kelimeId),
+    cevaplar: sorular.map(() => null),
+    gecmeNotu,
+    aninda,
+    bitti: false
+  };
+}
