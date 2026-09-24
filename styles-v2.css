@@ -3627,3 +3627,100 @@ body {
   background: var(--secondary); color: #fff; font-weight: 600; }
 .sozluk__baslik { font-family: var(--font-heading); color: var(--text-dark); }
 .sozluk__mesaj, .sozluk__sayi { color: var(--text-muted); font-size: 0.9rem; }
+
+/* --- Ingilizce: kelime karti ve dinle-sec --- */
+
+/* Henuz ekrani olmayan asamalar (soyle, cumle, quiz) disabled gelir
+   (bkz. ingilizce-dom.js asamaRozeti); ders-asama--tamam ile karismasin
+   diye tek isaretleri opacity'dir. */
+.ders-asama:disabled {
+  opacity: 0.45;
+}
+
+.ing-kart__gorsel {
+  display: block;
+  font-size: 3.4rem;
+  line-height: 1;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.ing-kart__tuval {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 2.5;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 8px;
+}
+
+.ing-kart__en {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: center;
+}
+
+.ing-kart__tr {
+  margin: 2px 0 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+}
+
+.ing-kart__ornek-en {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  text-align: center;
+}
+
+.ing-kart__ornek-tr {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ing-secenekler {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+/* Gorselli bicim (isimler): dort resim 2x2 izgarada, metin bicimindeki
+   sol ikon-bosluk paddingine ihtiyaci yok - secenek merkezlenir. */
+.ing-secenekler--gorsel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ing-secenekler--gorsel .ing-secenek {
+  min-height: 96px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ing-secenek__gorsel {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.ing-secenek__tuval {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.ing-secenek__metin {
+  font-size: 1rem;
+}
