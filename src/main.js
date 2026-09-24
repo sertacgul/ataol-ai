@@ -1074,8 +1074,11 @@ function renderDers() {
       return;
     }
     if (dersSinav) {
-      const i = dersSinav.cevaplar.findIndex((c) => c === null);
-      const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+      // Gosterilen soru dersSinavIndex'tir, "ilk bos cevap" DEGIL: cevap
+      // verildigi anda ilk bos cevap bir sonraki soruya kayar ve cocuk
+      // geri bildirimi ve cozumu hic gormeden ilerlerdi. Index yalniz
+      // "Sonraki soru" ile artar.
+      const index = dersSinavIndex;
       dersSoruEkraniCiz(soruEkrani, kok, {
         baslik: dersEkran === 'quiz' ? ceviri('ders.quiz') : ceviri('ders.unitExam'),
         ustBilgi: ceviri('ders.quizOf', { n: index + 1, t: dersSinav.sorular.length }),
@@ -4332,6 +4335,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       const hafta = dersHaftaYakala();
       if (!hafta) { dersEkran = 'hafta'; renderDers(); return; }
       dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+      dersSinavIndex = 0;
       dersSinavSonuc = null;
     } else if (dersEkran === 'etkilesim' || dersEkran === 'alistirma') {
       dersHaftaYakala();
@@ -4412,8 +4416,7 @@ document.getElementById('app').addEventListener('click', (e) => {
   }
 
   if (secenekDugme && (dersEkran === 'quiz' || dersEkran === 'sinav')) {
-    const i = dersSinav.cevaplar.findIndex((c) => c === null);
-    const index = i === -1 ? dersSinav.sorular.length - 1 : i;
+    const index = dersSinavIndex;
     if (dersSinav.cevaplar[index] !== null) return;
 
     dersSinav = sinavCevapla(dersSinav, index, Number(secenekDugme.dataset.dersSecenek));
@@ -4438,6 +4441,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       dersSinavBitir();
       return;
     }
+    dersSinavIndex = Math.min(dersSinav.sorular.length - 1, dersSinavIndex + 1);
     renderDers();
     return;
   }
@@ -4521,6 +4525,7 @@ document.getElementById('app').addEventListener('click', (e) => {
       } else {
         dersEkran = 'quiz';
         dersSinav = sinavKur({ kaynaklar: haftaninKaynaklari(hafta), soruSayisi: 10, gecmeNotu: QUIZ_GECME, aninda: true }, Math.random);
+        dersSinavIndex = 0;
       }
       dersAiMetin = '';
       renderDers();
