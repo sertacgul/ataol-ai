@@ -85,9 +85,11 @@ const ASSETS = [
   './src/engines/ingilizce/sozluk.js',
   './src/engines/ingilizce/ders.js',
   './src/engines/ingilizce/uretici.js',
+  './src/engines/ingilizce/cumle.js',
   './src/views/ingilizce.js',
   './src/ui/sozluk-dom.js',
   './src/ui/ingilizce-dom.js',
+  './src/ui/kayit.js',
   // PWA ikonlari
   './icons/icon-192.png',
   './icons/icon-512.png',

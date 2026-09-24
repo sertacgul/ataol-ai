@@ -3744,3 +3744,49 @@ body {
   width: 100%;
   margin-top: 10px;
 }
+/* Cumle kur: dizilen satir ustte, karisik parcalar altta. Parcalar
+   soru__secenek ile ayni renkleri kullanir ama yan yana akar. */
+.ing-cumle__satir,
+.ing-cumle__havuz {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.ing-cumle__satir {
+  min-height: 60px;
+  padding: 8px;
+  border: 2px dashed var(--primary-light);
+  border-radius: 14px;
+}
+
+.ing-cumle__satir--dogru {
+  border-style: solid;
+  border-color: var(--secondary);
+  background: rgba(0, 206, 201, 0.08);
+}
+
+.ing-cumle__satir--yanlis {
+  border-style: solid;
+  border-color: var(--danger);
+}
+
+.ing-cumle__parca {
+  min-height: 44px;
+  padding: 8px 14px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: #fff;
+  border: 2px solid var(--primary-light);
+  border-radius: 12px;
+}
+
+.ing-cumle__son {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}

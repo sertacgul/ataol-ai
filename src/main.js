@@ -50,11 +50,13 @@ import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani, dersSecici } from './ui/ders-dom.js';
 import { sozlukEkrani } from './ui/sozluk-dom.js';
 import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli, ingAnlatimModeli } from './views/ingilizce.js';
-import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, ingAnlatimEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
+import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, ingAnlatimEkrani, soyleIzinEkrani, soyleEkrani, cumleEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
+import { cumleOturumu, cumleDurumu } from './engines/ingilizce/cumle.js';
+import { createKayit } from './ui/kayit.js';
 import { SOZLUK } from './data/ingilizce/sozluk/index.js';
 import { ING_HAFTALAR } from './data/ingilizce/haftalar.js';
 import { TEMALAR } from './data/ingilizce/temalar.js';
-import { ingHaftaKaydi, kartGoruldu, dinleBitir, temaSinaviDurumu } from './engines/ingilizce/ders.js';
+import { ingHaftaKaydi, kartGoruldu, dinleBitir, temaSinaviDurumu, soyleBitir, cumleBitir } from './engines/ingilizce/ders.js';
 import { haftaQuizi, temaSinavi, sinavNesnesi } from './engines/ingilizce/uretici.js';
 import { widgetKur } from './ui/widget/index.js';
 import { gorselKur } from './ui/gorsel/index.js';
@@ -135,7 +137,7 @@ let dersSecim = 'matematik';
 let sozlukSorgu = '';
 
 // Ingilizce dersi icindeki ic ekran: 'hafta' | 'anlatim' | 'kart' |
-// 'dinle' | 'sonuc' | 'quiz' | 'tema'.
+// 'dinle' | 'soyleIzin' | 'soyle' | 'cumle' | 'sonuc' | 'quiz' | 'tema'.
 // dersEkran'dan AYRI tutulur cunku Ingilizce'nin kendi bes asamasi ve
 // akisi var, matematigin anlatim/etkilesim/alistirma/quiz durum
 // makinesiyle karismamali.
@@ -149,6 +151,25 @@ let ingKartRenderAnahtar = null;
 // Kelime kartlarindan once gelen anlatimin adimi. Tuval yok, bu yuzden
 // R26 anahtarina gerek yok; her render ayni metni yeniden yazar.
 let ingAnlatimIndex = 0;
+
+// "Soyle" asamasi. ingSoyleIzin cocugun aciklama ekranindaki secimidir
+// ve sayfa acik kaldikca hatirlanir: null (henuz sorulmadi), 'verildi',
+// 'kayitsiz' (cocuk kayitsiz devam etti), 'reddedildi' (tarayici izni
+// reddetti). ingSoyleTur her kelime degisiminde ve cikista artar; geciken
+// bir kayit sonucu o arada ekran degistiyse yok sayilir.
+let ingSoyleIndex = 0;
+let ingSoyleIzin = null;
+let ingSoyleKaydediyor = false;
+let ingSoyleKayitVar = false;
+let ingSoyleTur = 0;
+
+// "Cumle kur" oturumu. Kartlar oturum basinda bir kez uretilir; her
+// render'da uretilseydi parcalar yer degistirirdi.
+let ingCumleOturum = [];
+let ingCumleIndex = 0;
+let ingCumleDizili = [];
+let ingCumleSonuc = null;
+let ingCumleYanlis = 0;
 let ingKartGorsel = null;
 let ingKartGorselAnahtar = null;
 
@@ -224,6 +245,16 @@ const ses = createSes({
   speechSynthesis: window.speechSynthesis,
   SpeechSynthesisUtterance: window.SpeechSynthesisUtterance,
   AudioContext: window.AudioContext ?? window.webkitAudioContext,
+  Audio: window.Audio
+});
+
+// "Soyle" asamasinin ses kaydi. Adi sesKaydi: bu dosyada 'kayit' hafta
+// kaydi icin yerel degisken olarak cok yerde geciyor.
+const sesKaydi = createKayit({
+  navigator: window.navigator,
+  MediaRecorder: window.MediaRecorder,
+  Blob: window.Blob,
+  URL: window.URL,
   Audio: window.Audio
 });
 
@@ -933,6 +964,21 @@ function renderDers() {
 
     const ingHafta = ingAktifHafta();
 
+    if (ingEkran === 'soyleIzin' && ingHafta) {
+      soyleIzinEkrani(kok, ceviri);
+      return;
+    }
+
+    if (ingEkran === 'soyle' && ingHafta) {
+      ingSoyleCiz(kok, ingHafta);
+      return;
+    }
+
+    if (ingEkran === 'cumle' && ingHafta && ingCumleOturum.length > 0) {
+      ingCumleCiz(kok);
+      return;
+    }
+
     if (ingEkran === 'anlatim' && ingHafta) {
       ingAnlatimEkrani(kok, ingAnlatimModeli(ingHafta, ingAnlatimIndex), ceviri);
       return;
@@ -1275,6 +1321,108 @@ function ingAnlatimOku(hafta, dil, { otomatik = true } = {}) {
   const m = ingAnlatimModeli(hafta, ingAnlatimIndex);
   ses.dur();
   ses.oku({ metin: m.adim[dil], ses: m.ses[dil], dil });
+}
+
+// "Soyle" ekrani. Kelime cizimi durumsuz oldugu icin (cocuk dokunmuyor)
+// her render'da yikilip yeniden kurulur; kayit durumu degistikce ekran
+// yeniden cizildiginden R26'daki "dokunma" kurali burada gerekmiyor.
+function ingSoyleCiz(kok, hafta) {
+  const m = kartModeli(hafta, SOZLUK, ingSoyleIndex);
+  const sebep = ingSoyleSebep();
+  // Ebeveyn ayari sonradan kapatabilir; izin verilmis olsa da engel
+  // varsa kayit modu acilmaz.
+  const kayitModu = ingSoyleIzin === 'verildi' && sebep === null;
+  ingKartGorseliKapat();
+  soyleEkrani(kok, {
+    ...m,
+    mod: kayitModu ? 'kayit' : 'tekrarla',
+    sebep,
+    kaydediyor: ingSoyleKaydediyor,
+    kayitVar: ingSoyleKayitVar
+  }, ceviri);
+  ingKartGorseliKur(m.kelime);
+}
+
+// Kayit neden yok: ekranda ACIKCA yazilir (spec D6), kirik dugme birakilmaz.
+function ingSoyleSebep() {
+  if (!state.loadDersIlerleme().ayar.sesliCevap) return 'ing.speak.off';
+  if (!sesKaydi.destekli()) return 'ing.speak.unsupported';
+  if (ingSoyleIzin === 'reddedildi') return 'ing.speak.denied';
+  return null;
+}
+
+function ingSoyleBaslat() {
+  ingSoyleIndex = 0;
+  ingSoyleKaydediyor = false;
+  ingSoyleKayitVar = false;
+  ingSoyleTur += 1;
+  // Ayar kapaliysa ya da cihaz desteklemiyorsa izin hic sorulmaz:
+  // olmayacak bir sey icin cocuga aciklama okutmanin anlami yok.
+  const sorulmali = ingSoyleIzin === null && ingSoyleSebep() === null;
+  ingEkran = sorulmali ? 'soyleIzin' : 'soyle';
+}
+
+function ingSoyleKapat() {
+  ingSoyleTur += 1;
+  ingSoyleKaydediyor = false;
+  ingSoyleKayitVar = false;
+  sesKaydi.birak();
+  ingKartGorseliKapat();
+}
+
+// Once dogru soylenis, hemen ardindan cocugun kendi sesi.
+async function ingSoyleKarsilastir(kelime) {
+  const tur = ingSoyleTur;
+  ses.dur();
+  sesKaydi.sustur();
+  await ses.oku({ metin: kelime.en, ses: `en/${kelime.id}`, dil: 'en' });
+  if (tur !== ingSoyleTur) return;
+  await sesKaydi.cal();
+}
+
+function ingCumleCiz(kok) {
+  const kart = ingCumleOturum[ingCumleIndex];
+  const d = cumleDurumu(kart, ingCumleDizili);
+  cumleEkrani(kok, {
+    index: ingCumleIndex,
+    toplam: ingCumleOturum.length,
+    tr: kart.tr,
+    son: kart.son,
+    dizili: d.dizili,
+    kalan: d.kalan,
+    tamam: d.tamam,
+    sonuc: ingCumleSonuc,
+    // Iki yanlistan sonra dogrusu gosterilir: takilan cocuk oturumu
+    // birakmasin, ama ilk denemede de cevap verilmesin.
+    cevapGoster: ingCumleYanlis >= 2,
+    tam: kart.tam
+  }, ceviri);
+}
+
+function ingCumleKartiSifirla() {
+  ingCumleDizili = [];
+  ingCumleSonuc = null;
+  ingCumleYanlis = 0;
+}
+
+function ingCumleOku({ otomatik = true } = {}) {
+  if (otomatik) {
+    const ayar = state.loadDersIlerleme().ayar;
+    if (!ayar.sesAcik || !ayar.otomatikOynat) return;
+  }
+  const kart = ingCumleOturum[ingCumleIndex];
+  ses.dur();
+  ses.oku({ metin: kart.tam, ses: kart.ses, dil: 'en' });
+}
+
+// Soyle ve cumle bitisi: yildiz yok (spec D12), yalniz asama tamam.
+function ingAsamaBitir(hafta, bitirFn) {
+  const sonuc = bitirFn(ingHaftaKaydi(state.loadIngilizce(), hafta.hafta));
+  ingIlerlemeYaz(hafta.hafta, sonuc.kayit);
+  ses.efekt('kutlama');
+  ingSonucModel = { baslik: ceviri('ing.stageDone'), yildiz: sonuc.kazanilanYildiz };
+  ingEkran = 'sonuc';
+  render();
 }
 
 // Kelime kartlarini bastan acar. Anlatimin "Kelimelere gec" dugmesi ve
@@ -3957,6 +4105,8 @@ document.getElementById('app').addEventListener('click', (e) => {
     ingEkran = 'hafta';
     ingSonucModel = null;
     ingSinavKapat();
+    ingSoyleKapat();
+    ingCumleOturum = [];
     renderDers();
     return;
   }
@@ -4004,8 +4154,154 @@ document.getElementById('app').addEventListener('click', (e) => {
       renderDers();
       return;
     }
-    // 'soyle', 'cumle': rozet disabled, buraya gelinmez.
+    if (asama === 'soyle') {
+      ingSoyleBaslat();
+      renderDers();
+      if (ingEkran === 'soyle') ingSesOku(kartModeli(hafta, SOZLUK, 0).kelime);
+      return;
+    }
+    if (asama === 'cumle') {
+      ingCumleOturum = cumleOturumu(hafta, SOZLUK, Math.random, 5);
+      if (ingCumleOturum.length === 0) return;
+      ingCumleIndex = 0;
+      ingCumleKartiSifirla();
+      ingEkran = 'cumle';
+      renderDers();
+      return;
+    }
     return;
+  }
+
+  const ingSoyleDugme = e.target.closest('[data-ing-soyle]');
+  if (ingSoyleDugme) {
+    const eylem = ingSoyleDugme.dataset.ingSoyle;
+    const hafta = ingAktifHafta();
+    if (!hafta) return;
+    const kelime = kartModeli(hafta, SOZLUK, ingSoyleIndex).kelime;
+
+    if (eylem === 'kapat') {
+      ses.dur();
+      ingSoyleKapat();
+      ingEkran = 'hafta';
+      renderDers();
+      return;
+    }
+    if (eylem === 'izin' || eylem === 'kayitsiz') {
+      // Tarayicinin izin kutusu burada DEGIL, ilk "Kaydet" dokunusunda
+      // cikar: iOS mikrofonu yalniz bir dokunusun icinde acar ve cocuk
+      // o ana kadar ne olacagini okumus olur.
+      ingSoyleIzin = eylem === 'izin' ? 'verildi' : 'kayitsiz';
+      ingEkran = 'soyle';
+      renderDers();
+      ingSesOku(kelime);
+      return;
+    }
+    if (eylem === 'dinle') {
+      ingSesOku(kelime, { otomatik: false });
+      return;
+    }
+    if (eylem === 'kaydet') {
+      if (ingSoyleKaydediyor) return;
+      const tur = ingSoyleTur;
+      ses.dur();
+      sesKaydi.sustur();
+      ingSoyleKaydediyor = true;
+      renderDers();
+      // 3 saniye: tek kelime ya da kisa ifade icin yeterli, cocugun
+      // "ne zaman bitecek" diye beklemesine yetmeyecek kadar kisa.
+      sesKaydi.kaydet(3000).then(() => {
+        if (tur !== ingSoyleTur) return;
+        ingSoyleKaydediyor = false;
+        ingSoyleKayitVar = true;
+        renderDers();
+        ingSoyleKarsilastir(kelime);
+      }).catch(() => {
+        if (tur !== ingSoyleTur) return;
+        ingSoyleKaydediyor = false;
+        ingSoyleIzin = 'reddedildi';
+        sesKaydi.birak();
+        renderDers();
+      });
+      return;
+    }
+    if (eylem === 'karsilastir') {
+      ingSoyleKarsilastir(kelime);
+      return;
+    }
+    if (eylem === 'bitir') {
+      ses.dur();
+      ingSoyleKapat();
+      ingAsamaBitir(hafta, soyleBitir);
+      return;
+    }
+    // 'geri' / 'ileri': kayit o kelimeye aitti, birakilir; mikrofon acik kalir.
+    ses.dur();
+    sesKaydi.sustur();
+    ingSoyleTur += 1;
+    ingSoyleKaydediyor = false;
+    ingSoyleKayitVar = false;
+    const adim = eylem === 'geri' ? -1 : 1;
+    ingSoyleIndex = kartModeli(hafta, SOZLUK, ingSoyleIndex + adim).index;
+    renderDers();
+    ingSesOku(kartModeli(hafta, SOZLUK, ingSoyleIndex).kelime);
+    return;
+  }
+
+  if (ingEkran === 'cumle' && ingCumleOturum.length > 0) {
+    const parcaDugme = e.target.closest('[data-ing-cumle-parca]');
+    if (parcaDugme && ingCumleSonuc !== 'dogru') {
+      ingCumleDizili = [...ingCumleDizili, parcaDugme.dataset.ingCumleParca];
+      ingCumleSonuc = null;
+      ses.efekt('tik');
+      renderDers();
+      return;
+    }
+    const geriDugme = e.target.closest('[data-ing-cumle-geri]');
+    if (geriDugme && ingCumleSonuc !== 'dogru') {
+      ingCumleDizili = ingCumleDizili.filter((id) => id !== geriDugme.dataset.ingCumleGeri);
+      ingCumleSonuc = null;
+      renderDers();
+      return;
+    }
+    const cumleDugme = e.target.closest('[data-ing-cumle]');
+    if (cumleDugme) {
+      const eylem = cumleDugme.dataset.ingCumle;
+      const hafta = ingAktifHafta();
+      if (!hafta) return;
+      if (eylem === 'kapat') {
+        ses.dur();
+        ingCumleOturum = [];
+        ingEkran = 'hafta';
+        renderDers();
+        return;
+      }
+      if (eylem === 'dinle') {
+        ingCumleOku({ otomatik: false });
+        return;
+      }
+      if (eylem === 'kontrol') {
+        const d = cumleDurumu(ingCumleOturum[ingCumleIndex], ingCumleDizili);
+        if (!d.tamam) return;
+        ingCumleSonuc = d.dogru ? 'dogru' : 'yanlis';
+        if (!d.dogru) ingCumleYanlis += 1;
+        ses.efekt(d.dogru ? 'dogru' : 'yanlis');
+        renderDers();
+        if (d.dogru) ingCumleOku();
+        return;
+      }
+      if (eylem === 'devam') {
+        ses.dur();
+        if (ingCumleIndex + 1 >= ingCumleOturum.length) {
+          ingCumleOturum = [];
+          ingAsamaBitir(hafta, cumleBitir);
+          return;
+        }
+        ingCumleIndex += 1;
+        ingCumleKartiSifirla();
+        renderDers();
+        return;
+      }
+    }
   }
 
   const ingTemaDugme = e.target.closest('[data-ing-tema-sinav]');
@@ -4605,6 +4901,15 @@ document.getElementById('app').addEventListener('click', (e) => {
 
   const nav = e.target.closest('[data-nav]');
   if (nav) {
+    // Baska sekmeye gecilince mikrofon birakilir: iPhone mikrofon acik
+    // kaldikca ekranda isik yakar ve kayit hafizada kalmamali. Soyle
+    // ekrani acik kalir, sonraki "Kaydet" izni tarayicidan yeniden alir.
+    if (nav.dataset.nav !== 'ders') {
+      sesKaydi.birak();
+      ingSoyleTur += 1;
+      ingSoyleKaydediyor = false;
+      ingSoyleKayitVar = false;
+    }
     for (const v of document.querySelectorAll('.v2-view')) v.classList.remove('active');
     for (const b of document.querySelectorAll('[data-nav]')) b.classList.remove('active');
     document.getElementById(`view-${nav.dataset.nav}`).classList.add('active');

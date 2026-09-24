@@ -112,6 +112,20 @@ export function dinleBitir(kayit, dogruSayisi, toplam) {
 }
 
 /**
+ * "Soyle" ve "cumle kur" asamalari biter. Ikisi de sinirsiz tekrar
+ * edilebildigi icin yildiz VERMEZ (spec D12) ve yildizAlinan'a dokunmaz;
+ * yalniz asamayi tamam isaretler. Donus sekli digerleriyle ayni ki
+ * cagiran ayri bir yol yazmasin.
+ */
+export function soyleBitir(kayit) {
+  return { kayit: { ...kayit, soyleBitti: true }, kazanilanYildiz: ING_YILDIZ.soyle };
+}
+
+export function cumleBitir(kayit) {
+  return { kayit: { ...kayit, cumleBitti: true }, kazanilanYildiz: ING_YILDIZ.cumle };
+}
+
+/**
  * Tema sinavinin kilidi ve sonucu.
  *
  * Temanin TUM haftalarinin quizi gecilmeden acilmaz; sinav temayi olcer,

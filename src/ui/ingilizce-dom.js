@@ -28,7 +28,7 @@ function asamaRozeti(ad, tamam, etiket, tiklanabilir) {
   ]);
 }
 
-const TIKLANABILIR = ['kelime', 'dinle', 'quiz'];
+const TIKLANABILIR = ['kelime', 'dinle', 'soyle', 'cumle', 'quiz'];
 
 /**
  * Tema sinavi kutusu. sinav: temaSinaviDurumu() ciktisi. Matematikteki
@@ -57,9 +57,8 @@ function temaSinaviKutusu(sinav, ceviri) {
  * Hafta karti. model: ingHaftaKarti() ciktisi, main.js'in ekledigi
  * sinav alaniyla (temaSinaviDurumu).
  *
- * 'kelime', 'dinle' ve 'quiz' tiklanabilir: bunlarin gercek bir ekrani
- * var. 'soyle' ve 'cumle' rozetleri durumu gosterir ama devre disidir -
- * Faz 2b'ye kadar ekranlari yok.
+ * Bes asamanin besi de tiklanabilir; TIKLANABILIR listesi yeni bir asama
+ * eklenip ekrani henuz yazilmadiginda rozeti kapali tutmak icin durur.
  */
 export function ingHaftaEkrani(kok, model, ceviri) {
   const ust = el('div', { className: 'ders-kart__ust' }, [
@@ -154,6 +153,169 @@ export function ingAnlatimEkrani(kok, model, ceviri) {
           })
     ]),
     model.sonMu ? null : gec
+  ]);
+}
+
+/**
+ * "Soyle" oncesi aciklama (spec D7): mikrofon izni ISTENMEDEN once cocuga
+ * ne olacagi ve kaydin nereye gittigi soylenir. Reddederse kayitsiz
+ * devam eder, asama yine de yapilabilir.
+ */
+export function soyleIzinEkrani(kok, ceviri) {
+  mount(kok, [
+    ustBar({ ingSoyle: 'kapat' }, '', ceviri),
+    el('div', { className: 'anlatim__govde' }, [
+      el('p', { className: 'anlatim__konu', text: ceviri('ing.stage.soyle') }),
+      el('p', { className: 'anlatim__metin', text: ceviri('ing.speak.explain') })
+    ]),
+    el('div', { className: 'anlatim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ing.speak.noRecord'),
+        attrs: { type: 'button' },
+        dataset: { ingSoyle: 'kayitsiz' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ing.speak.allow'),
+        attrs: { type: 'button' },
+        dataset: { ingSoyle: 'izin' }
+      })
+    ])
+  ]);
+}
+
+/**
+ * "Soyle" ekrani.
+ *
+ * model: {
+ *   kelime, index, toplam, sonMu,
+ *   mod: 'kayit' | 'tekrarla', sebep: i18n anahtari ya da null,
+ *   kaydediyor, kayitVar
+ * }
+ *
+ * 'tekrarla' modunda kayit dugmesi hic cizilmez ve sebep ACIKCA yazilir
+ * (spec D6): kirik ya da olu bir dugme birakilmaz.
+ */
+export function soyleEkrani(kok, model, ceviri) {
+  const k = model.kelime;
+  const dugme = (eylem, ikon, etiket, ek = {}) => el('button', {
+    className: 'anlatim__dinle',
+    attrs: { type: 'button', ...ek },
+    dataset: { ingSoyle: eylem }
+  }, [
+    el('span', { className: 'material-symbols-rounded', text: ikon }),
+    el('span', { text: etiket })
+  ]);
+
+  const eylemler = [dugme('dinle', 'volume_up', ceviri('ing.listen'))];
+  if (model.mod === 'kayit') {
+    eylemler.push(model.kaydediyor
+      ? dugme('kaydet', 'mic', ceviri('ing.speak.recording'), { disabled: 'true' })
+      : dugme('kaydet', 'mic', ceviri('ing.speak.record')));
+    if (model.kayitVar && !model.kaydediyor) {
+      eylemler.push(dugme('karsilastir', 'compare_arrows', ceviri('ing.speak.compare')));
+    }
+  }
+
+  mount(kok, [
+    ustBar({ ingSoyle: 'kapat' }, ceviri('ing.cardOf', { n: model.index + 1, t: model.toplam }), ceviri),
+    el('div', { className: 'anlatim__govde' }, [
+      gorselDugum(k.gorsel, { emojiClass: 'ing-kart__gorsel', tuvalClass: 'ing-kart__tuval', tuvalId: KART_TUVAL_ID }),
+      el('p', { className: 'ing-kart__en', text: k.en }),
+      el('p', { className: 'ing-kart__tr', text: k.tr }),
+      el('p', {
+        className: 'ders-kart__not',
+        text: ceviri(model.sebep ?? (model.mod === 'kayit' ? 'ing.speak.recordHint' : 'ing.speak.repeat'))
+      })
+    ]),
+    ...eylemler,
+    el('div', { className: 'anlatim__alt' }, [
+      el('button', {
+        className: 'anlatim__gez',
+        text: ceviri('ing.back'),
+        attrs: model.index === 0 ? { type: 'button', disabled: 'true' } : { type: 'button' },
+        dataset: { ingSoyle: 'geri' }
+      }),
+      el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: model.sonMu ? ceviri('ing.finish') : ceviri('ing.next'),
+        attrs: { type: 'button' },
+        dataset: { ingSoyle: model.sonMu ? 'bitir' : 'ileri' }
+      })
+    ])
+  ]);
+}
+
+/**
+ * "Cumle kur" ekrani. Cocuk alttaki karisik parcalara DOKUNARAK siraya
+ * dizer; dizilmis parcaya dokunmak onu geri alir. Surukle-birak yerine
+ * dokunma: telefonda kucuk parmakla surukleme hem zor hem kaydirmayla
+ * karisiyor.
+ *
+ * model: {
+ *   index, toplam, tr, son, dizili, kalan, tamam,
+ *   sonuc: null | 'dogru' | 'yanlis', cevapGoster, tam
+ * }
+ */
+export function cumleEkrani(kok, model, ceviri) {
+  const parca = (p, dataset) => el('button', {
+    className: 'ing-cumle__parca',
+    text: p.metin,
+    attrs: model.sonuc === 'dogru' ? { type: 'button', disabled: 'true' } : { type: 'button' },
+    dataset
+  });
+
+  const satir = el('div', { className: `ing-cumle__satir ${model.sonuc ? `ing-cumle__satir--${model.sonuc}` : ''}` }, [
+    ...model.dizili.map((p) => parca(p, { ingCumleGeri: p.id })),
+    model.son ? el('span', { className: 'ing-cumle__son', text: model.son }) : null
+  ]);
+
+  let geri = null;
+  if (model.sonuc === 'dogru') {
+    geri = el('p', { className: 'soru__geri soru__geri--dogru', text: ceviri('ing.correct') });
+  } else if (model.sonuc === 'yanlis') {
+    geri = el('div', { className: 'soru__cozum' }, [
+      el('p', { className: 'soru__geri soru__geri--yanlis', text: ceviri('ing.build.tryAgain') }),
+      model.cevapGoster
+        ? el('p', { className: 'soru__cozum-adim', text: `${ceviri('ing.build.answer')} ${model.tam}` })
+        : null
+    ]);
+  }
+
+  const altDugme = model.sonuc === 'dogru'
+    ? el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: model.index + 1 === model.toplam ? ceviri('ing.finish') : ceviri('ing.next'),
+        attrs: { type: 'button' },
+        dataset: { ingCumle: 'devam' }
+      })
+    : el('button', {
+        className: 'anlatim__gez anlatim__gez--vurgu',
+        text: ceviri('ing.build.check'),
+        attrs: model.tamam ? { type: 'button' } : { type: 'button', disabled: 'true' },
+        dataset: { ingCumle: 'kontrol' }
+      });
+  const alt = el('div', { className: 'anlatim__alt' }, [altDugme]);
+
+  mount(kok, [
+    ustBar({ ingCumle: 'kapat' }, ceviri('ing.cardOf', { n: model.index + 1, t: model.toplam }), ceviri),
+    el('p', { className: 'soru__baslik', text: ceviri('ing.build.prompt') }),
+    el('p', { className: 'soru__metin', text: model.tr }),
+    satir,
+    el('div', { className: 'ing-cumle__havuz' }, model.kalan.map((p) => parca(p, { ingCumleParca: p.id }))),
+    geri,
+    model.sonuc === 'dogru'
+      ? el('button', {
+          className: 'anlatim__dinle',
+          attrs: { type: 'button' },
+          dataset: { ingCumle: 'dinle' }
+        }, [
+          el('span', { className: 'material-symbols-rounded', text: 'volume_up' }),
+          el('span', { text: ceviri('ing.listen') })
+        ])
+      : null,
+    alt
   ]);
 }
 
