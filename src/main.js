@@ -49,8 +49,8 @@ import { haftaKarti, ekranDurumu, gezinmeHedefleri, anlatimModeli, ornekModeli, 
 import { haftaNo } from './engines/mufredat.js';
 import { haftaEkrani, anlatimEkrani, ornekEkrani, etkilesimEkrani, soruEkrani, sinavEkrani, sonucEkrani, dersSecici } from './ui/ders-dom.js';
 import { sozlukEkrani } from './ui/sozluk-dom.js';
-import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli, ingAnlatimModeli } from './views/ingilizce.js';
-import { ingHaftaEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, ingAnlatimEkrani, soyleIzinEkrani, soyleEkrani, cumleEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
+import { sozlukModeli, ingHaftaKarti, kartModeli, dinleSecModeli, ingAnlatimModeli, ingBaslangic } from './views/ingilizce.js';
+import { ingHaftaEkrani, ingBaslamadiEkrani, kartEkrani, dinleSecEkrani, ingSonucEkrani, ingAnlatimEkrani, soyleIzinEkrani, soyleEkrani, cumleEkrani, KART_TUVAL_ID, DINLE_GORSEL_ID } from './ui/ingilizce-dom.js';
 import { cumleOturumu, cumleDurumu } from './engines/ingilizce/cumle.js';
 import { createKayit } from './ui/kayit.js';
 import { SOZLUK } from './data/ingilizce/sozluk/index.js';
@@ -998,13 +998,16 @@ function renderDers() {
     // uygulanamaz) hafta ekranina dus.
     ingEkran = 'hafta';
 
+    // Hafta gezinmesi matematikle ORTAK: iki ders ayni takvim haftasini
+    // gosterir, data-ders-git ikisinde de dersGorulenHafta'yi degistirir.
+    const hedefler = dersModeli().hedefler;
+
     if (!ingHafta) {
-      mount(kok, [
-        dersSecici(dersSecim, ceviri),
-        el('div', { className: 'ders-kart ders-kart--bilgi' }, [
-          el('p', { className: 'ders-kart__not', text: ceviri('ing.notReady') })
-        ])
-      ]);
+      ingBaslamadiEkrani(kok, {
+        baslangic: ingBaslangic(dersAktifHafta()?.hafta ?? null, ING_HAFTALAR, TAKVIM),
+        hedefler
+      }, ceviri);
+      kok.insertBefore(dersSecici(dersSecim, ceviri), kok.firstChild);
       return;
     }
 
@@ -1012,7 +1015,8 @@ function renderDers() {
     const tema = TEMALAR.find((t) => t.no === ingHafta.tema);
     ingHaftaEkrani(kok, {
       ...ingHaftaKarti(ingHafta, SOZLUK, ingIlerleme),
-      sinav: tema ? temaSinaviDurumu(tema, ingIlerleme) : null
+      sinav: tema ? temaSinaviDurumu(tema, ingIlerleme) : null,
+      hedefler
     }, ceviri);
     kok.insertBefore(dersSecici(dersSecim, ceviri), kok.firstChild);
     return;

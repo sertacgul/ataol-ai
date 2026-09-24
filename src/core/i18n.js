@@ -145,6 +145,8 @@ const STRINGS = {
     'ing.build.answer': 'Doğrusu:',
     'ing.starsEarned': '{n} yıldız kazandın!',
     'ing.notReady': 'Bu haftanın içeriği henüz hazırlanıyor.',
+    'ing.startsOn': 'İngilizce dersleri {n}. haftada ({t}) başlıyor.',
+    'ing.goToWeek': '{n}. haftaya git',
 
     'routine.greeting': 'Merhaba {ad}',
     'routine.total': 'Toplam {n}★',
@@ -547,6 +549,8 @@ const STRINGS = {
     'ing.build.answer': 'The answer is:',
     'ing.starsEarned': 'You earned {n} stars!',
     'ing.notReady': 'This week is still being prepared.',
+    'ing.startsOn': 'English lessons start in week {n} ({t}).',
+    'ing.goToWeek': 'Go to week {n}',
 
     'routine.greeting': 'Hi {ad}',
     'routine.total': 'Total {n}★',

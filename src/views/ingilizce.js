@@ -8,6 +8,21 @@
 
 import { ara } from '../engines/ingilizce/sozluk.js';
 import { ingHaftaKaydi, ingHaftaDurumu } from '../engines/ingilizce/ders.js';
+import { tarihAraligi } from './ders.js';
+import { MONTHS } from '../engines/calendar.js';
+
+/**
+ * Bu hafta Ingilizce icerik yoksa onumuzdeki ilk icerikli hafta ve
+ * tarihi. "Hazirlaniyor" demek yetmez: cocuk (ve ebeveyn) ne zaman
+ * baslayacagini bilmeli. haftaNo null ise (tatil, yil disi) ilk icerikli
+ * hafta doner; yazilmis haftalar gecildiyse null.
+ */
+export function ingBaslangic(haftaNo, haftalar, takvim) {
+  const h = haftalar.find((x) => haftaNo === null || x.hafta > haftaNo);
+  if (!h) return null;
+  const t = takvim.find((x) => x.hafta === h.hafta);
+  return { hafta: h.hafta, tarihMetni: t ? tarihAraligi(t.bas, t.bit, MONTHS) : '' };
+}
 
 export function haftaninTemasi(temalar, haftaNo) {
   if (!Number.isInteger(haftaNo)) return null;

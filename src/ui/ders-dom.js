@@ -68,7 +68,7 @@ function haftaKartiDom(kart, ceviri) {
 // hedefler: { geri, ileri } — views/ders.js#gezinmeHedefleri ciktisi.
 // Hedefi null olan yon hic cizilmez: gidecek yeri olmayan bir dugme
 // cocuk icin bos bir tiklamadir.
-function gezinme(hedefler, ceviri) {
+export function gezinme(hedefler, ceviri) {
   const geri = hedefler.geri !== null
     ? el('button', {
         className: 'ders-gezinme__dugme',

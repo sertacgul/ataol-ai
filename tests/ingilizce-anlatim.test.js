@@ -1,8 +1,30 @@
 // tests/ingilizce-anlatim.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ingAnlatimModeli, ingAnlatimSesi } from '../src/views/ingilizce.js';
+import { ingAnlatimModeli, ingAnlatimSesi, ingBaslangic } from '../src/views/ingilizce.js';
 import { ING_HAFTALAR } from '../src/data/ingilizce/haftalar.js';
+import { TAKVIM } from '../src/data/mufredat.js';
+
+test('icerik gelmeden once cocuga ne zaman baslayacagi soylenir', () => {
+  // 2. hafta tekrar haftasi; Ingilizce 4. haftada basliyor.
+  const b = ingBaslangic(2, ING_HAFTALAR, TAKVIM);
+  assert.equal(b.hafta, 4);
+  assert.equal(b.tarihMetni, '5 - 9 Ekim');
+});
+
+test('baslangic ONUMUZDEKI ilk icerikli haftadir', () => {
+  assert.equal(ingBaslangic(3, ING_HAFTALAR, TAKVIM).hafta, 4);
+});
+
+test('icerigi yazilmis haftalar gecildiyse baslangic yok', () => {
+  // 9. haftada "4. haftada basliyor" demek yanlis olurdu.
+  const son = Math.max(...ING_HAFTALAR.map((h) => h.hafta));
+  assert.equal(ingBaslangic(son + 2, ING_HAFTALAR, TAKVIM), null);
+});
+
+test('hafta bilinmiyorsa (tatil, yil disi) ilk icerikli hafta', () => {
+  assert.equal(ingBaslangic(null, ING_HAFTALAR, TAKVIM).hafta, ING_HAFTALAR[0].hafta);
+});
 
 const H4 = ING_HAFTALAR[0];
 

@@ -12,6 +12,7 @@
  */
 
 import { el, mount } from './dom.js';
+import { gezinme } from './ders-dom.js';
 import { ING_ASAMALAR } from '../engines/ingilizce/ders.js';
 
 export const DINLE_GORSEL_ID = (i) => `ing-secenek-gorsel-${i}`;
@@ -79,7 +80,37 @@ export function ingHaftaEkrani(kok, model, ceviri) {
       asamalar,
       el('p', { className: 'ders-kart__ilerleme', text: `${model.durum.yuzde}%` })
     ]),
-    model.sinav ? temaSinaviKutusu(model.sinav, ceviri) : null
+    model.sinav ? temaSinaviKutusu(model.sinav, ceviri) : null,
+    model.hedefler ? gezinme(model.hedefler, ceviri) : null
+  ]);
+}
+
+/**
+ * Bu hafta Ingilizce icerik yoksa. model: { baslangic, hedefler } -
+ * baslangic ingBaslangic() ciktisi ya da null.
+ *
+ * Yalniz "hazirlaniyor" yazmak cocugu cikissiz birakiyordu: Ingilizce
+ * sekmesinde hafta degistirecek dugme yoktu. Simdi ne zaman baslayacagi
+ * yazar, o haftaya goturen bir dugme ve matematikteki hafta gezinmesi var.
+ */
+export function ingBaslamadiEkrani(kok, model, ceviri) {
+  const b = model.baslangic;
+  mount(kok, [
+    el('div', { className: 'ders-kart ders-kart--bilgi' }, [
+      el('p', {
+        className: 'ders-kart__not',
+        text: b ? ceviri('ing.startsOn', { n: b.hafta, t: b.tarihMetni }) : ceviri('ing.notReady')
+      }),
+      b
+        ? el('button', {
+            className: 'ders-sinav__gir',
+            text: ceviri('ing.goToWeek', { n: b.hafta }),
+            attrs: { type: 'button' },
+            dataset: { dersGit: String(b.hafta) }
+          })
+        : null
+    ]),
+    gezinme(model.hedefler, ceviri)
   ]);
 }
 
